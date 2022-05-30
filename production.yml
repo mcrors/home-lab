@@ -1,0 +1,27 @@
+---
+
+  - name: Home Lab
+    hosts: all
+    become: yes
+
+    tasks:
+      - name: Update and upgrade apt
+        apt:
+          update_cache: yes
+          cache_valid_time: 3600
+
+      - name: get linux dotfiles from github
+        git:
+          dest: /home/rory/linux-dotfiles
+          repo: https://github.com/mcrors/linux-dotfiles.git
+
+      - name: install stow
+        apt:
+          name: stow
+
+      - name: stow bash dotfiles
+        stow:
+          state: supress
+          package: bash
+          dir: '$HOME/linux-dotfiles'
+        tags: stow
