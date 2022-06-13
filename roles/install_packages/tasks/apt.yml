@@ -1,0 +1,16 @@
+---
+
+- name: Update and upgrade apt
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install apt packages
+  apt:
+    name: "{{ item }}"
+  with_items:
+    - stow
+    - tmux
+    - bat
+    - fzf
+    - kitty

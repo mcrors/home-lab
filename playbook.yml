@@ -1,0 +1,59 @@
+---
+
+
+- name: Home Lab
+  hosts: home_lab
+  become: yes
+  vars_files:
+    - /vars/main.yml
+
+  tasks:
+    - name: Update and upgrade apt
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: get linux dotfiles from github
+      git:
+        dest: '$HOME/linux-dotfiles'
+        repo: https://github.com/mcrors/linux-dotfiles.git
+
+    - name: install stow
+      apt:
+        name: stow
+
+    - name: check if bashrc exists
+      stat:
+        path: '$HOME/.bashrc'
+      register: bashrc_exists
+
+    - name: delete bashrc
+      file:
+        path: '$HOME/.bashrc'
+        state: absent
+      when: bashrc_exists.stat.exists
+
+    - name: check if profile exists
+      stat:
+        path: '$HOME/.profile'
+      register: profile_exists
+
+    - name: delete profile
+      file:
+        path: '$HOME/.profile'
+        state: absent
+      when: profile_exists.stat.exests
+
+    - name: stow bash dotfiles
+      stow:
+        package: bash
+
+
+- name: laptop
+  hosts: laptop
+  connection: local
+  become: yes
+  vars_files:
+    - vars.yml
+  roles:
+    - install_packages

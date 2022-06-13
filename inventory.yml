@@ -1,4 +1,13 @@
 ---
+
 media:
   hosts:
     liboc01:
+
+home_lab:
+  hosts:
+    liboc01:
+
+laptop:
+  hosts:
+    localhost:

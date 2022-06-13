@@ -1,0 +1,10 @@
+---
+- name: update pip
+  pip:
+    name: pip
+    state: latest
+
+- name: install virtualenvwrapper
+  become_user: "{{ user }}"
+  pip:
+    name: virtualenvwrapper
