@@ -5,6 +5,10 @@
     update_cache: yes
     cache_valid_time: 3600
 
+- name: add neovim apt repository
+  apt_repository:
+    repo: ppa:neovim-ppa/unstable
+
 - name: Install apt packages
   apt:
     name: "{{ item }}"
@@ -14,3 +18,8 @@
     - bat
     - fzf
     - kitty
+    - rofi
+    - vim
+    - neovim
+    - zsh
+    - polybar

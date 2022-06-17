@@ -25,15 +25,8 @@
     - install_packages.pip
 
 # others
-# zoom
 # global protect
-# dropbopx
-# rofi
-# picom
-# vim
-# nvim
-# polybor
-# zsh
+# dropbox
 # oh my zsh
 # airplane themes
 # tmux themes
