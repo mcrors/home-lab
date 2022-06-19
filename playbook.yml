@@ -42,7 +42,7 @@
       file:
         path: '$HOME/.profile'
         state: absent
-      when: profile_exists.stat.exests
+      when: profile_exists.stat.exists
 
     - name: stow bash dotfiles
       stow:
