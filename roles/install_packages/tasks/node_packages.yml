@@ -1,0 +1,11 @@
+---
+
+- name: install pyright
+  become_user: "{{ user }}"
+  npm:
+    name: pyright
+    global: yes
+  tags:
+    - install_packages
+    - install_packages.node_packages
+
