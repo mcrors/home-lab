@@ -1,10 +1,13 @@
 ---
 
-- name: install pyright
+- name: install node packages
   become_user: "{{ user }}"
   npm:
-    name: pyright
+    name: "{{ item }}"
     global: yes
+  with_items:
+    - pyright
+    - neovim
   tags:
     - install_packages
     - install_packages.node_packages
