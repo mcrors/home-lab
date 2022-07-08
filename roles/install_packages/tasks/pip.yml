@@ -3,8 +3,17 @@
   pip:
     name: pip
     state: latest
+  tags:
+    - install_packages
+    - install_packages.pip
 
-- name: install virtualenvwrapper
+- name: install pip packages
   become_user: "{{ user }}"
   pip:
-    name: virtualenvwrapper
+    name: "{{ item }}"
+  with_items:
+    - virtualenvwrapper
+    - pynvim
+  tags:
+    - install_packages
+    - install_packages.pip
