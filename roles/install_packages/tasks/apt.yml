@@ -24,4 +24,5 @@
     - zsh
     - polybar
     - simple-scan
+    - bpython
     - exuberant-ctags
