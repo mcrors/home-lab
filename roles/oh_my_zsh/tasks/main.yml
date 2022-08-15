@@ -1,0 +1,19 @@
+
+- name: download oh-my-zsh
+  become_user: "{{ user }}"
+  get_url:
+    url: https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh
+    dest: "/home/{{ user }}/Downloads/oh_my_zsh_install.sh"
+    force: yes
+    mode: 0664
+    owner: "{{ user }}"
+    group: "{{ user }}"
+  tags:
+    - oh-my-zsh
+
+
+- name: install oh-my-zsh
+  become_user: "{{ user }}"
+  command: "sh -C /home/{{ user }}/Downloads/oh_my_zsh_install.sh"
+  tags:
+    - oh-my-zsh

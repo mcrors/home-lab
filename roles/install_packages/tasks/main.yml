@@ -9,11 +9,11 @@
 - name: install deb packages
   include_tasks: deb.yml
   with_items:
-    - { package_name: ripgrep, url: "https://github.com/BurntSushi/ripgrep/releases/download/13.0.0/ripgrep_13.0.0_amd64.deb" }
+    #    - { package_name: ripgrep, url: "https://github.com/BurntSushi/ripgrep/releases/download/13.0.0/ripgrep_13.0.0_amd64.deb" }
     - { package_name: code, url: "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64" }
     - { package_name: slack, url: "https://downloads.slack-edge.com/releases/linux/4.26.1/prod/x64/slack-desktop-4.26.1-amd64.deb" }
-    - { package_name: obsidian, url: "https://github.com/obsidianmd/obsidian-releases/releases/download/v0.14.15/obsidian_0.14.15_amd64.deb" }
-    - { package_name: zoom, url: "https://cdn.zoom.us/prod/5.10.7.3311/zoom_amd64.deb" }
+    - { package_name: obsidian, url: "https://github.com/obsidianmd/obsidian-releases/releases/download/v0.15.9/obsidian_0.15.9_amd64.deb" }
+      #    - { package_name: zoom, url: "https://cdn.zoom.us/prod/5.10.7.3311/zoom_amd64.deb" }
     - { package_name: dropbox, url: "https://www.dropbox.com/download?dl=packages/ubuntu/dropbox_2020.03.04_amd64.deb" }
   tags:
     - install_packages
@@ -37,11 +37,15 @@
     - install_packages
     - install_packages.node_packages
 
-- name: install wget packages
-  import_tasks: wget.yml
+- name: install nerd fonts packages
+  include_tasks: nerd_fonts.yml
+  with_items:
+    - {name: Monofur, url: https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/Monofur.zip }
+    - {name: JetBrainsMono, url: https://github.com/ryanoasis/nerd-fonts/releases/download/v2.1.0/JetBrainsMono.zip }
+    - {name: Hack, url: https://github.com/source-foundry/Hack/releases/download/v3.003/Hack-v3.003-ttf.zip }
   tags:
     - install_packages
-    - install_packages.wget
+    - install_packages.nerd_fonts
 
 
 # others

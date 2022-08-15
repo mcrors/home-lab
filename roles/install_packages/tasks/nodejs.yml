@@ -25,7 +25,7 @@
 - name: install nodejs
   become_user: "{{ user }}"
   shell:
-    chdir: /home/{{ user }}/.config/nvm/
+    chdir: /home/{{ user }}/.nvm/
     cmd: "source nvm.sh && nvm install --lts"
   args:
       executable: /bin/bash

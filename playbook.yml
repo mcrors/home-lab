@@ -44,10 +44,6 @@
         state: absent
       when: profile_exists.stat.exists
 
-    - name: stow bash dotfiles
-      stow:
-        package: bash
-
 
 - name: laptop
   hosts: laptop
@@ -57,3 +53,6 @@
     - vars.yml
   roles:
     - install_packages
+    - config
+    - oh_my_zsh
+
