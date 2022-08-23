@@ -8,6 +8,7 @@
   with_items:
     - pyright
     - neovim
+    - tree-sitter-cli
   tags:
     - install_packages
     - install_packages.node_packages
