@@ -11,11 +11,25 @@
     - install_packages.nerd_fonts
 
 
-- name: download and unzip font archive file
-  unarchive:
-    src: "{{ item.url }}"
+- name: download font file
+  get_url:
+    url: "{{ item.url }}"
     dest: "/home/{{ user }}/Downloads/fonts/{{ item.name }}"
+    force: yes
+    mode: 0764
+    owner: "{{ user }}"
+    group: "{{ user }}"
+  tags:
+    - install_packages
+    - install_packages.nerd_fonts
+
+
+- name: unzip if archive file
+  unarchive:
+    src: "/home/{{ user }}/Downloads/fonts/{{ item.name }}/{{ item.file_name }}"
+    dest: "/home/{{ user }}/Downloads/fonts/{{ item.name }}/"
     remote_src: yes
+  when: "{{ item.url.endswith('.zip') }}"
   tags:
     - install_packages
     - install_packages.nerd_fonts

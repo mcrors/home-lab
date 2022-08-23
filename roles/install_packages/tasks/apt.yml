@@ -1,15 +1,17 @@
 ---
 
+- name: add extra apt repositories
+  apt_repository:
+    repo: "{{ item }}"
+  with_items:
+    - ppa:neovim-ppa/unstable
+
+
 - name: Update and upgrade apt
   apt:
     update_cache: yes
     cache_valid_time: 3600
     upgrade: yes
-
-
-- name: add neovim apt repository
-  apt_repository:
-    repo: ppa:neovim-ppa/unstable
 
 
 - name: Install apt packages
@@ -85,3 +87,8 @@
     - scrot
     - imagemagick
     - nomacs
+    - libgdk-pixbuf2.0-dev
+    - openjdk-11-jdk
+    - openjdk-17-jdk
+    - openjdk-17-jre
+    - arandr
