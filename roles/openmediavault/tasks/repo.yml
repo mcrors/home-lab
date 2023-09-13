@@ -1,0 +1,16 @@
+---
+- name: Add omv apt key
+  apt_key:
+    url: http://packages.openmediavault.org/public/archive.key
+    state: present
+
+# this doesn't work for now
+- name: Add openmediavault repository in sources.list.d/
+  apt_repository:
+    repo: deb http://packages.openmediavault.org/public stoneburner main
+    update_cache: yes
+
+- name: update packages
+  apt:
+    upgrade: dist
+    cache_valid_time: 86400
