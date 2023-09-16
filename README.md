@@ -38,3 +38,12 @@ inventory file.
 * Delete the `pi` user
 * Update DNS table:
     * Add the IP address of the new host to the DNS table of the router.
+
+# Open Media Vault
+I have not been able to get this to work with Raspbian. There is a way to manage OMV on
+debian using Ansible. But for Raspbian, it seems that there is just a script that can been
+run. This script is not idempotent, and it is not safe to use with Raspbian via Ansible.
+Therefore to install Open Media Vault, the following steps need to be taken.
+
+The script can be found [here](https://github.com/OpenMediaVault-Plugin-Developers/installScript).
+
