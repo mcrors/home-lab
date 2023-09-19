@@ -6,6 +6,6 @@ all:
     k8sworkers:
       hosts:
         # lib-potato-01.home
-        lib-potato-02.home:
+        # lib-potato-02.home:
         lib-potato-03.home:
         lib-potato-04.home:

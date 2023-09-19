@@ -46,4 +46,8 @@ run. This script is not idempotent, and it is not safe to use with Raspbian via 
 Therefore to install Open Media Vault, the following steps need to be taken.
 
 The script can be found [here](https://github.com/OpenMediaVault-Plugin-Developers/installScript).
+Initial login details for omv are:
+WebGUI
+User: admin
+Password: openmediavault
 
