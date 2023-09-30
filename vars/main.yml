@@ -1,5 +1,3 @@
 ---
 
 user: rhoulihan
-repo:
-- 'deb http://packages.openmediavault.org/public stoneburner main'
