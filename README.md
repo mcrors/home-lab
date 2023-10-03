@@ -18,6 +18,8 @@ inventory file.
 * Add the hla user:
     * Boot up the raspberry pi
     * Login with the default pi user
+        * username: pi
+        * password: raspberry
     * Add the hla user
         * `sudo useradd -s /bin/bash -m hla`
     * Add a password for the new hla user

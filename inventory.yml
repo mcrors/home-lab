@@ -2,17 +2,16 @@
 
 nfsservers:
   hosts:
-    lib-pi-01.home:
+    lib-pi-01.home:  # 192.168.1.154
 
 k3smaster:
   hosts:
-    #   lib-potato-01:
+    lib-potato-02.home:   # 192.168.1.237
 
 k3snodes:
   hosts:
-    lib-potato-02.home:
-    lib-potato-03.home:
-    lib-potato-04.home:
+    lib-potato-03.home: # 192.168.1.195
+    lib-potato-04.home: # 192.168.1.136
 
 k3s_cluster:
   children:

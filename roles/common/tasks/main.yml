@@ -18,4 +18,3 @@
       static domain_name_servers=192.168.1.1
       inform ip_address={{ ansible_default_ipv4.address }}
     state: present
-  when: inventory_hostname not in groups['nfsservers']
