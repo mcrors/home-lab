@@ -24,7 +24,7 @@
   vars_files:
       - vars/main.yml
 
-- hosts: master
+- hosts: k3smaster
   become: true
   remote_user: hla
   roles:
@@ -32,7 +32,7 @@
   vars_files:
       - vars/main.yml
 
-- hosts: node
+- hosts: k3snodes
   become: true
   remote_user: hla
   roles:
