@@ -23,13 +23,19 @@
   file:
     path: /mnt/nfs_share
     state: directory
-    owner: root
-    group: root
-    mode: '0644'
+    owner: nobody
+    group: nogroup
+    mode: '0755'
 
 - include_tasks: roles/nfs/tasks/make_share.yaml
   with_items:
     - jenkins
   loop_control:
     loop_var: share
+
+- name: Restart nfs service service
+  systemd:
+    state: restarted
+    daemon_reload: true
+    name: nfs-kernel-server
 
