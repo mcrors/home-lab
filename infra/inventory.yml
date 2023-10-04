@@ -1,12 +1,20 @@
 ---
 
+nginx:
+  hosts:
+    lib-hp-01.home: # 192.168.1.96
+
+postgres:
+  hosts:
+    lib-hp-01.home: # 192.168.1.96
+
 nfsservers:
   hosts:
-    lib-pi-01.home:  # 192.168.1.154
+    lib-pi-01.home: # 192.168.1.154
 
 k3smaster:
   hosts:
-    lib-potato-02.home:   # 192.168.1.237
+    lib-potato-02.home: # 192.168.1.237
 
 k3snodes:
   hosts:
