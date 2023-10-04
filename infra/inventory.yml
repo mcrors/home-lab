@@ -25,3 +25,13 @@ k3s_cluster:
   children:
     k3smaster:
     k3snodes:
+
+raspbian:
+  lib-pi-01:
+  lib-potato-02:
+  lib-potato-03:
+  lib-potato-04:
+
+ubuntu:
+  lib-hp-01:
+
