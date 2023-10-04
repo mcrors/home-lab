@@ -1,5 +1,6 @@
 ---
 
+# TODO: This isn't working. The shared directory ends up with a load of weird permissions
 - name: Create Logical Volume
   lvol:
     vg: "{{ vg_name }}"
