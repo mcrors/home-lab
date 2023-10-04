@@ -1,0 +1,22 @@
+---
+- name: Test for raspberry pi /proc/device-tree/model
+  command: grep -E "Raspberry Pi" /proc/device-tree/model
+  register: grep_device_tree_model_raspberrypi
+  failed_when: false
+  changed_when: false
+
+- name: Test for Libre Computer /proc/device-tree/model
+  command: grep -E "Libre Computer" /proc/device-tree/model
+  register: grep_device_tree_model_libre_computer
+  failed_when: false
+  changed_when: false
+
+- name: execute OS related tasks on the Potato
+  include_tasks: prereq/lapotato.yaml
+  when:
+    grep_device_tree_model_libre_computer.rc == 0
+
+- name: execute OS related tasks on the Pi
+  include_tasks: prereq/raspberrypi.yaml
+  when:
+    grep_device_tree_model_raspberrypi.rc == 0

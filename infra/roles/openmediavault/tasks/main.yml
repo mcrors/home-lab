@@ -1,0 +1,43 @@
+- name: Install omv specific apt packages
+  apt:
+    pkg:
+      - lvm2
+    state: present
+
+- name: Create a physical volume & volume group
+  lvg:
+      vg: nas-vg
+      pvs: /dev/sda1
+      pesize: 4
+
+- name: Create a backup physical volume & volume group
+  lvg:
+      vg: backup-vg
+      pvs: /dev/sdb1
+      pesize: 4
+
+- name: Create a test logical volume
+  lvol:
+    vg: nas-vg
+    lv: test
+    size: 1g
+
+- name: Make a filesystem on test logical volume
+  filesystem:
+    fstype: ext4
+    dev: /dev/nas-vg/test
+
+- name: Create a directory if it does not exist
+  file:
+    path: /shared/test
+    state: directory
+    owner: hla
+    group: hla
+    mode: '0755'
+
+- name: Mount the test volume
+  mount:
+    path: /shared/test
+    src: /dev/nas-vg/test
+    fstype: ext4
+    state: present
