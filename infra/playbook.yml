@@ -40,3 +40,8 @@
   vars_files:
       - vars/main.yml
 
+- hosts: nginx
+  become: true
+  remote_user: hla
+  roles:
+    - role: docker

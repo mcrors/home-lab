@@ -1,0 +1,46 @@
+- name: Install required packages
+  package:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+    state: present
+  when: ansible_os_family == 'Debian'
+
+- name: Add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+  when: ansible_os_family == 'Debian'
+
+- name: Add Docker APT repository
+  apt_repository:
+    repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+  when: ansible_os_family == 'Debian'
+
+- name: Update apt package cache
+  apt:
+    update_cache: yes
+  when: ansible_os_family == 'Debian'
+
+- name: Install Docker
+  package:
+    name: docker-ce
+    state: present
+
+- name: Add user to the Docker group
+  user:
+    name: hla
+    groups: docker
+    append: yes
+
+- name: Restart Docker service
+  service:
+    name: docker
+    state: restarted
+
+- name: Start and enable Docker service
+  service:
+    name: docker
+    state: started
+    enabled: yes
