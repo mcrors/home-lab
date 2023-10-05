@@ -7,10 +7,9 @@ metadata:
 spec:
   selector:
     app: jenkins-server
-  type: NodePort
+  type: ClusterIP
   ports:
     - name: jenkins-port
       protocol: TCP
       port: 8080
       targetPort: 8080
-      nodePort: 30007
