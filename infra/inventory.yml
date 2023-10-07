@@ -18,7 +18,7 @@ k3smaster:
 
 k3snodes:
   hosts:
-    lib-potato-01.home: # 192.168.1.24
+    lib-potato-01.home: # 192.168.1.27
     lib-potato-03.home: # 192.168.1.195
     lib-potato-04.home: # 192.168.1.136
 

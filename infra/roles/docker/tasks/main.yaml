@@ -34,13 +34,23 @@
     groups: docker
     append: yes
 
-- name: Restart Docker service
+- name: Start & enable Docker service
   service:
     name: docker
-    state: restarted
+    state: started
+    enabled: yes
 
 - name: Start and enable Docker service
   service:
     name: docker
     state: started
     enabled: yes
+
+- name: Install docker-compose
+  get_url:
+    url: https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-linux-x86_64
+    dest: /usr/local/bin/docker-compose
+    mode: '0755'
+  vars:
+    docker_compose_version: "v2.22.0"  # You can adjust the version if needed
+
