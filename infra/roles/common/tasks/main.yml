@@ -8,6 +8,7 @@
     pkg:
       - vim
       - net-tools
+      - lm-sensors
     state: present
 
 - name: Set static IP

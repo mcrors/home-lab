@@ -1,26 +1,45 @@
 ---
 
+# List of machine names and IP addresses
+# lib-hp-01.home      192.168.1.95
+# lib-potato-01.home  192.168.1.27
+# lib-potato-02.home  192.168.1.237
+# lib-potato-03.home  192.168.1.195
+# lib-potato-04.home  192.168.1.136
+# lib-pi-01.home      192.168.1.154
+
 nginx:
   hosts:
-    lib-hp-01.home: # 192.168.1.96
+    lib-hp-01.home:
 
 postgres:
   hosts:
-    lib-hp-01.home: # 192.168.1.96
+    lib-hp-01.home:
+
+pihole:
+  hosts:
+    lib-hp-01.home:
 
 nfsservers:
   hosts:
-    lib-pi-01.home: # 192.168.1.154
+    lib-pi-01.home:
+
+docker:
+  children:
+    nginx:
+    postgres:
+    nfsservers:
+    pihole:
 
 k3smaster:
   hosts:
-    lib-potato-02.home: # 192.168.1.237
+    lib-potato-02.home:
 
 k3snodes:
   hosts:
-    lib-potato-01.home: # 192.168.1.27
-    lib-potato-03.home: # 192.168.1.195
-    lib-potato-04.home: # 192.168.1.136
+    lib-potato-01.home:
+    lib-potato-03.home:
+    lib-potato-04.home:
 
 k3s_cluster:
   children:
