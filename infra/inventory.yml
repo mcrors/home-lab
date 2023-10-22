@@ -7,6 +7,8 @@
 # lib-potato-03.home  192.168.1.195
 # lib-potato-04.home  192.168.1.136
 # lib-pi-01.home      192.168.1.154
+# lib-pi-02.home      192.168.1.86
+# lib-pi-03.home      192.168.1.167
 
 nginx:
   hosts:
@@ -28,7 +30,7 @@ docker:
   children:
     nginx:
     postgres:
-    nfsservers:
+    # nfsservers:
     pihole:
 
 k3smaster:
@@ -40,6 +42,8 @@ k3snodes:
     lib-potato-01.home:
     lib-potato-03.home:
     lib-potato-04.home:
+    lib-pi-02.home:
+    lib-pi-03.home:
 
 k3s_cluster:
   children:
@@ -47,11 +51,13 @@ k3s_cluster:
     k3snodes:
 
 raspbian:
-  lib-pi-01:
-  lib-potato-01:
-  lib-potato-02:
-  lib-potato-03:
-  lib-potato-04:
+  lib-pi-01.home:
+  lib-pi-02.home:
+  lib-pi-03.home:
+  lib-potato-01.home:
+  lib-potato-02.home:
+  lib-potato-03.home:
+  lib-potato-04.home:
 
 ubuntu:
   lib-hp-01:
