@@ -46,9 +46,3 @@
   roles:
     - role: docker
 
-- hosts: all
-  gather_facts: false
-  roles:
-    - role: ping
-  tags: ping
-

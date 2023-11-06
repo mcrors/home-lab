@@ -1,0 +1,12 @@
+# install pip
+# install virtualenv
+# create a virtualenv
+# install python dependencies
+#     pip install fanshim
+#     pip install rpi.gpio>=0.7.0
+#     pip install psutil
+# Add automatic.py to the virtualenv
+#     https://github.com/pimoroni/fanshim-python/blob/master/examples/automatic.py
+# copy the systemd service file
+# enable and start the service
+#     https://github.com/pimoroni/fanshim-python/blob/master/examples/install-service.sh
