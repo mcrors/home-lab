@@ -9,6 +9,7 @@
 # lib-pi-01.home      192.168.1.154
 # lib-pi-02.home      192.168.1.86
 # lib-pi-03.home      192.168.1.167
+# lib-pi-04.home
 
 nginx:
   hosts:
@@ -50,14 +51,17 @@ k3s_cluster:
     k3snodes:
 
 raspbian:
-  lib-pi-01.home:
-  lib-pi-02.home:
-  lib-pi-03.home:
-  lib-potato-01.home:
-  lib-potato-02.home:
-  lib-potato-03.home:
-  lib-potato-04.home:
+  hosts:
+    lib-pi-01.home:
+    lib-pi-02.home:
+    lib-pi-03.home:
+    lib-pi-04.home:
+    lib-potato-01.home:
+    lib-potato-02.home:
+    lib-potato-03.home:
+    lib-potato-04.home:
 
 ubuntu:
-  lib-hp-01:
+  hosts:
+    lib-hp-01.home:
 
