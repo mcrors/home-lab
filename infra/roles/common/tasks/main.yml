@@ -23,6 +23,14 @@
     state: present
   when: inventory_hostname not in groups.get('nginx', [])
 
+- name: Disable ssh Password login
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+  notify:
+    - restart sshd
+
 - name: Copy rc files
   copy:
     src: "./src_files/{{ item }}"
