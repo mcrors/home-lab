@@ -1,0 +1,9 @@
+- name: Update dhcpcd.conf
+  blockinfile:
+    dest: /etc/dhcpcd.conf
+    block: |
+      interface {{ interface }}
+      static_routers={{ gateway }}
+      static domain_name_servers={{ dns }}
+      inform ip_address={{ ansible_default_ipv4.address }}
+    state: present

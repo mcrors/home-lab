@@ -5,6 +5,9 @@
   remote_user: hla
   roles:
     - common
+    - set_static_ip
+  vars_files:
+      - vars/main.yaml
 
 - hosts: nfsservers
   become: true
@@ -22,7 +25,7 @@
     - role: download
     - role: raspberrypi
   vars_files:
-      - vars/main.yml
+      - vars/main.yaml
 
 - hosts: k3smaster
   become: true
@@ -30,7 +33,7 @@
   roles:
     - role: k3s/master
   vars_files:
-      - vars/main.yml
+      - vars/main.yaml
 
 - hosts: k3snodes
   become: true
@@ -38,7 +41,7 @@
   roles:
     - role: k3s/node
   vars_files:
-      - vars/main.yml
+      - vars/main.yaml
 
 - hosts: docker
   become: true

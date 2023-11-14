@@ -1,0 +1,17 @@
+- name: Check if NetworkManager is active
+  shell: systemctl is-active NetworkManager
+  register: nm_status
+  ignore_errors: true
+
+- name: Set static IP using NetworkManager
+  include_tasks: networkmanager.yaml
+  when: nm_status.rc == 0
+
+- name: Check if dhcpcd is active
+  shell: systemctl is-active dhcpcd
+  register: dhcpcd_status
+  ignore_errors: true
+
+- name: Set static IP using dhcpcd
+  include_tasks: dhcpcd.yaml
+  when: dhcpcd_status.rc == 0

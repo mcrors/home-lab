@@ -12,17 +12,6 @@
       - python3-pip
     state: present
 
-- name: Set static IP
-  blockinfile:
-    dest: /etc/dhcpcd.conf
-    block: |
-      interface eth0
-      static_routers=192.168.1.1
-      static domain_name_servers=192.168.1.1
-      inform ip_address={{ ansible_default_ipv4.address }}
-    state: present
-  when: inventory_hostname not in groups.get('nginx', [])
-
 - name: Disable ssh Password login
   lineinfile:
     path: /etc/ssh/sshd_config

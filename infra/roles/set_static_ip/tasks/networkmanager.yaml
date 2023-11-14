@@ -1,0 +1,17 @@
+---
+- name: Create NetworkManager connection profile
+  command: >
+    nmcli connection add con-name "{{ networkmanager_connection_name }}"
+    ifname "{{ interface }}"
+    type ethernet
+    ipv4.method manual
+    ipv4.addresses "{{ ansible_default_ipv4.address }}/24"
+
+- name: Set static IP, gateway, and DNS
+  command: >
+    nmcli connection modify "{{ networkmanager_connection_name }}"
+    ipv4.gateway "{{ gateway }}"
+    ipv4.dns "{{ dns }}"
+
+- name: Activate the connection
+  command: nmcli connection up "{{ networkmanager_connection_name }}"
