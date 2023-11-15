@@ -15,3 +15,12 @@
 - name: Set static IP using dhcpcd
   include_tasks: dhcpcd.yaml
   when: dhcpcd_status.rc == 0
+
+- name: Check if systemd-networkd is active
+  shell: systemctl is-active systemd-networkd
+  register: systemd_networkd_status
+  ignore_errors: true
+
+- name: Set static IP using systemd-networkd
+  include_tasks: systemd_networkd.yaml
+  when: systemd_networkd_status.rc == 0

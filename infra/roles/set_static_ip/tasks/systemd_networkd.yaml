@@ -1,0 +1,11 @@
+---
+- name: Create systemd-networkd configuration file
+  blockinfile:
+    path: /etc/systemd/network/01-eth.network
+    create: true
+    block: |
+      [Network]
+      Address={{ ansible_default_ipv4.address }}/24
+      Gateway={{ gateway }}
+      DNS={{ dns }}
+  notify: Restart systemd-networkd

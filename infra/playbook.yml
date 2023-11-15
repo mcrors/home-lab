@@ -8,6 +8,7 @@
     - set_static_ip
   vars_files:
       - vars/main.yaml
+  tags: common
 
 - hosts: nfsservers
   become: true
