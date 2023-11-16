@@ -49,4 +49,5 @@
   remote_user: hla
   roles:
     - role: docker
+  tags: docker
 
