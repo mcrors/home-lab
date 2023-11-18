@@ -1,0 +1,15 @@
+namespace:
+  name: "jenkins"
+
+serviceAccount:
+  name: "jenkins-admin"
+
+volume:
+  nfs:
+    path: "/jenkins"
+    server: "192.168.1.96"
+    capacity: "1Gi"
+  pv_name:
+    name: "jenkins-pv"
+  pvc:
+    name: "jenkins-pvc"
