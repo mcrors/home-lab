@@ -19,7 +19,7 @@
         dest: "{{ compose_file_path }}/{{ compose_file_name }}"
 
     - name: Start Docker Compose Pihole service
-      command: docker compose up -d
+      command: docker compose up --force-recreate -d
       args:
         chdir: "{{ compose_file_path }}"
 
