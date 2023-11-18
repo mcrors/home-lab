@@ -2,35 +2,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: jenkins-deployment
-  namespace: jenkins-ns
+  name: {{ .Values.deployment.name }}
+  namespace: {{ .Values.namespace.name }}
   labels:
-    app: jenkins-server
+    app: {{ .Values.deployment.app.name }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: jenkins-server
+      app: {{ .Values.deployment.app.name }}
   template:
     metadata:
-      name: jenkins-pod
+      name: {{ .Values.deployment.spec.name }}
       labels:
-        app: jenkins-server
+        app: {{ .Values.deployment.app.name }}
     spec:
       securityContext:
             fsGroup: 1000
             runAsUser: 1000
-      serviceAccountName: jenkins-admin
+      serviceAccountName: {{ .Values.serviceAccount.name }}
       containers:
         - name: jenkins
           image: jenkins/jenkins:2.60.3
           resources:
             limits:
-              memory: "1Gi"
-              cpu: "1000m"
+              memory: {{ .Values.deployment.container.resources.limits.memory }}
+              cpu: {{ .Values.deployment.container.resources.limits.cpu }}
             requests:
-              memory: "500Mi"
-              cpu: "500m"
+              memory: {{ .Values.deployment.container.resources.requests.memory }}
+              cpu: {{ .Values.deployment.container.resources.requests.cpu }}
           ports:
             - name: httpport
               containerPort: 8080
@@ -58,4 +58,4 @@ spec:
       volumes:
         - name: jenkins-data
           persistentVolumeClaim:
-              claimName: jenkins-pvc
+              claimName: {{ .Values.volume.pvc.name }}

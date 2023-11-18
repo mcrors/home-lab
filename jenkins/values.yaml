@@ -9,7 +9,28 @@ volume:
     path: "/jenkins"
     server: "192.168.1.96"
     capacity: "1Gi"
-  pv_name:
+  pv:
     name: "jenkins-pv"
   pvc:
     name: "jenkins-pvc"
+
+deployment:
+  app:
+    name: "jenkins-server"
+  name: "jenkins-deployment"
+  spec:
+    name: jenkins-pod
+  container:
+    resources:
+      limits:
+        memory: "1Gi"
+        cpu: "1000m"
+      requests:
+        memory: "500Mi"
+        cpu: "500m"
+
+service:
+  name: "jenkins-service"
+
+ingress:
+  name: "jenkins-ingress"
