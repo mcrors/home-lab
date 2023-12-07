@@ -1,0 +1,48 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.deployment.app.name }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.deployment.app.name }}
+  template:
+    metadata:
+      name: {{ .Values.deployment.spec.name }}
+      labels:
+        app: {{ .Values.deployment.app.name }}
+    spec:
+      securityContext:
+            fsGroup: 1000
+            runAsUser: 1000
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      containers:
+        - name: {{ .Values.deployment.app.name }}
+          image: {{ .Values.transmission.image }}@{{ .Values.transmission.digest }}
+          resources:
+            limits:
+              memory: {{ .Values.deployment.container.resources.limits.memory }}
+              cpu: {{ .Values.deployment.container.resources.limits.cpu }}
+            requests:
+              memory: {{ .Values.deployment.container.resources.requests.memory }}
+              cpu: {{ .Values.deployment.container.resources.requests.cpu }}
+          ports:
+            - name: httpport
+              containerPort: {{ .Values.transmission.port }}
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+              claimName: {{ .Values.transmission.volume.config.pv }}
+        - name: config
+          persistentVolumeClaim:
+              claimName: {{ .Values.transmission.volume.config.pvc }}
