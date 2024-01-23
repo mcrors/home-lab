@@ -1,0 +1,29 @@
+version: '3.3'
+
+services:
+    transmission-openvpn:
+        container_name: transmission
+        cap_add:
+            - NET_ADMIN
+        volumes:
+            - transmission-data:/data'
+            - transmission-config:/config
+        environment:
+            - OPENVPN_PROVIDER=PROTONVPN
+            - OPENVPN_USERNAME=xN0gJwtV0kffkyCi0b4yQO9F
+            - OPENVPN_PASSWORD=4fA1tf+0wkMgqGq/fslStS1C
+            - OPENVPN_CONFIG=nl.protonvpn.net.udp
+            - LOCAL_NETWORK=192.168.0.0/16
+        logging:
+            driver: json-file
+            options:
+                max-size: 10m
+        ports:
+            - '9091:9091'
+        image: haugene/transmission-openvpn
+
+volumes:
+  transmission-config:
+    external: true
+  transmission-data:
+    external: true

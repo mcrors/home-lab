@@ -1,0 +1,22 @@
+---
+
+vars:
+  compose_file_path: /opt/containers/pihole/
+  compose_file_name: docker-compose.yaml
+
+tasks:
+  - name: Create directory on remote host
+    file:
+      path: "{{ compose_file_path }}"
+      state: directory
+
+  - name: Copy Docker Compose file to remote host
+    copy:
+      src: "{{ compose_file_name }}"
+      dest: "{{ compose_file_path }}/{{ compose_file_name }}"
+
+  - name: Start Docker Compose Pihole service
+    command: docker compose up --force-recreate -d
+    args:
+      chdir: "{{ compose_file_path }}"
+

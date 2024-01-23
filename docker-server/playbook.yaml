@@ -1,0 +1,10 @@
+---
+
+- hosts: all
+  become: true
+  remote_user: hla
+  roles:
+    # - common
+    # - pihole
+    - transmission
+    # - nginx

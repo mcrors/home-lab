@@ -1,0 +1,32 @@
+---
+
+vars:
+  compose_file_path: /opt/containers/transmission/
+  compose_file_name: docker-compose.yaml
+
+tasks:
+  - name: Create NFS-backed Docker Volume
+    docker_volume:
+      name: transmission-config
+      driver: local
+      driver_options:
+        type: nfs
+        o: addr=192.168.1.96,rw
+        device: ":/transmission"
+    become: true
+
+  - name: Create directory on remote host
+    file:
+      path: "{{ compose_file_path }}"
+      state: directory
+
+  - name: Copy Docker Compose file to remote host
+    copy:
+      src: "./src_files/{{ compose_file_name }}"
+      dest: "{{ compose_file_path }}/{{ compose_file_name }}"
+
+  - name: Start Docker Compose transmission service
+    command: docker compose up --force-recreate -d
+    args:
+      chdir: "{{ compose_file_path }}"
+
