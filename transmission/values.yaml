@@ -1,0 +1,61 @@
+labels:
+  app: transmission-app
+
+namespace:
+  name: "transmission"
+
+serviceAccount:
+  name: "transmission-admin"
+
+nfsServerIP: "192.168.1.96"
+
+configVolume:
+  nfs:
+    path: "/transmission"
+    capacity: "1Gi"
+  pv:
+    name: "transmission-pv"
+  pvc:
+    name: "transmission-pvc"
+
+dataVolume:
+  nfs:
+    path: "/downloads"
+    capacity: "100Gi"
+  pv:
+    name: "downloads-pv"
+  pvc:
+    name: "downloads-pvc"
+
+configMap:
+  name: "transmission-config"
+  openvpnProvider: "PROTONVON"
+  openvpnConfig: "nl.protonvpn.net.udp"
+  localNetwork: "192.168.1.0/24"
+
+deployment:
+  name: transmissoin-deployment
+
+pod:
+  name: transmission-pod
+  securityContext:
+    runAsUser: 0
+
+container:
+  name: transmission
+  image: haugene/transmission-openvpn
+
+secret:
+  name: "openvpn-credentials"
+  username: "not-real-username"
+  password: "not-real-password"
+
+service:
+  name: "transmission-service"
+  portName: transmission-port
+  port: 9091
+  targetPort: 9091
+
+ingress:
+  name:
+  hostName: transmission.local

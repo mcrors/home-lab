@@ -70,5 +70,18 @@ renamed.
 On the NAS server, `Transmission`, `Sonarr` and `Radarr` will have read/write access. `Prowlarr` should
 not require any access on the NAS server.
 
+# Helm
+* Install the helm chart with these commands:
+```bash
+source .env
+helm install transmission-openvpn transmission \
+   --set secret.username=$OPENVPN_USERNAME,secret.password=$OPENVPN_PASSWORD
+```
+* Upgrade the helm chart with these commandes:
+```bash
+source .env
+helm install transmission-openvpn transmission \
+   --set secret.username=$OPENVPN_USERNAME,secret.password=$OPENVPN_PASSWORD
+```
 
 

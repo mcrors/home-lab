@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.configMap.name }}
+  namespace: {{ .Values.namespace.name }}
+data:
+  OPENVPN_PROVIDER: {{ .Values.configMap.openvpnProvider }}
+  OPENVPN_CONFIG: {{ .Values.configMap.openvpnConfig }}
+  LOCAL_NETWORK: {{ .Values.configMap.localNetwork }}
