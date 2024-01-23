@@ -10,10 +10,10 @@ services:
             - transmission-config:/config
         environment:
             - OPENVPN_PROVIDER=PROTONVPN
-            - OPENVPN_USERNAME=xN0gJwtV0kffkyCi0b4yQO9F
-            - OPENVPN_PASSWORD=4fA1tf+0wkMgqGq/fslStS1C
+            - OPENVPN_USERNAME={{ OPENVPN_USERNAME }}
+            - OPENVPN_PASSWORD={{ OPENVPN_PASSWORD }}
             - OPENVPN_CONFIG=nl.protonvpn.net.udp
-            - LOCAL_NETWORK=192.168.0.0/16
+            - LOCAL_NETWORK=192.168.1.0/24
         logging:
             driver: json-file
             options:
@@ -21,9 +21,19 @@ services:
         ports:
             - '9091:9091'
         image: haugene/transmission-openvpn
+        restart: on-failure
 
 volumes:
   transmission-config:
-    external: true
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=192.168.1.96,rw,nfsvers=4"
+      device: ":/transmission"
+
   transmission-data:
-    external: true
+    driver: local
+    driver_opts:
+      type: "nfs"
+      o: "addr=192.168.1.96,rw,nfsvers=4"
+      device: ":/media"

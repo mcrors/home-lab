@@ -9,7 +9,7 @@ metadata:
 spec:
   replicas: 1
   selector:
-    matchLabels:
+    matchLabel:
       app: {{ .Values.deployment.app.name }}
   template:
     metadata:

@@ -3,8 +3,7 @@
 - hosts: all
   become: true
   remote_user: hla
+  vars_files:
+      - .env
   roles:
-    # - common
-    # - pihole
-    - transmission
-    # - nginx
+    - pihole
