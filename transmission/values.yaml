@@ -57,5 +57,5 @@ service:
   targetPort: 9091
 
 ingress:
-  name:
+  name: transmission-ingress
   hostName: transmission.local
