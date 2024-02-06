@@ -29,7 +29,7 @@ dataVolume:
 
 configMap:
   name: "transmission-config"
-  openvpnProvider: "PROTONVON"
+  openvpnProvider: "PROTONVPN"
   openvpnConfig: "nl.protonvpn.net.udp"
   localNetwork: "192.168.1.0/24"
 
@@ -52,7 +52,7 @@ secret:
 
 service:
   name: "transmission-service"
-  portName: transmission-port
+  portName: http-port
   port: 9091
   targetPort: 9091
 
