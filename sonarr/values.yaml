@@ -1,0 +1,29 @@
+namespace:
+  name: "sonarr"
+
+serviceAccount:
+  name: "sonarr-admin"
+
+volume:
+  pv:
+    name: "sonarr-pv"
+  pvc:
+    name: "sonarr-pvc"
+  nfs:
+    serverIP: "192.168.1.96"
+    capacity: "1Gi"
+    path: "/sonarr"
+
+deployment:
+  name: "sonarr-deployment"
+
+labels:
+  app: "sonarr-app"
+
+pod:
+  name: "sonarr-pod"
+
+container:
+  name: "sonarr"
+  image: "ghcr.io/hotio/sonarr"
+  tag: "release"

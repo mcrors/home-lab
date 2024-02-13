@@ -1,0 +1,67 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.labels.app }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.labels.app }}
+  template:
+    metadata:
+      name: {{ .Values.pod.name }}
+      labels:
+        app: {{ .Values.labels.app }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      restartPolicy: Always
+      containers:
+        - name: {{ .Values.container.name }}
+          image: {{ .Values.container.image }}:{{ .Values.container.tag }}
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: transmission-config
+              mountPath: /config
+            - name: transmission-downloads
+              mountPath: /data
+          ports:
+            - name: {{ .Values.service.portName }}
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+          env:
+            - name: OPENVPN_PROVIDER
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.configMap.name }}
+                  key: OPENVPN_PROVIDER
+            - name: OPENVPN_CONFIG
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.configMap.name }}
+                  key: OPENVPN_CONFIG
+            - name: LOCAL_NETWORK
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.configMap.name }}
+                  key: LOCAL_NETWORK
+            - name: OPENVPN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.name }}
+                  key: OPENVPN_USERNAME
+            - name: OPENVPN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.name }}
+                  key: OPENVPN_PASSWORD
+      volumes:
+        - name: transmission-config
+          persistentVolumeClaim:
+            claimName: {{ .Values.configVolume.pvc.name }}
+        - name: transmission-downloads
+          persistentVolumeClaim:
+            claimName: {{ .Values.dataVolume.pvc.name }}
