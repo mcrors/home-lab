@@ -30,7 +30,7 @@ dataVolume:
 configMap:
   name: "transmission-config"
   openvpnProvider: "PROTONVPN"
-  openvpnConfig: "nl.protonvpn.net.udp"
+  openvpnConfig: "nl.protonvpn.udp"
   localNetwork: "192.168.1.0/24"
 
 deployment:
