@@ -1,0 +1,35 @@
+namespace:
+  name: "prowlarr"
+
+serviceAccount:
+  name: "prowlarr-admin"
+
+nvsServerIp: "192.168.1.96"
+
+configVolume:
+  nfs:
+    path: "/prowlarr"
+    capacity: "1Gi"
+  pv:
+    name: "transmission-pv"
+  pvc:
+    name: "transmission-pvc"
+
+deployment:
+  name: "prowlarr"
+
+labels:
+  app: "prowlarr-app"
+
+pod:
+  name: "prowlarr-pod"
+
+container:
+  name: "prowlarr"
+  image: "ghcr.io/hotio/prowlarr"
+  tag: "arm64v8-1.13.3"
+
+service:
+  portName: "http-port"
+  targetPort: "9696"
+
