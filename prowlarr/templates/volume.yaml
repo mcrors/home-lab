@@ -1,0 +1,72 @@
+{{- if eq .Values.clusterType "k3s" }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.configVolume.pv.name }}
+spec:
+  capacity:
+    storage: {{ .Values.configVolume.nfs.capacity }}
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs
+  mountOptions:
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: {{ .Values.configVolume.nfs.path }}
+    server: {{ .Values.nfsServerIP }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.configVolume.pvc.name }}
+  namespace: {{ .Values.namespace.name }}
+spec:
+  storageClassName: nfs
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: {{ .Values.configVolume.nfs.capacity }}
+{{- else if eq .Values.clusterType "kind" }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.configVolume.pv.name }}
+spec:
+  capacity:
+    storage: {{ .Values.configVolume.local.capacity }}
+  volumeMode: Filesystem
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-storage
+  local:
+    path: {{ .Values.configVolume.local.path }}
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/hostname
+          operator: In
+          values:
+          - my-k8s-cluster-control-plane
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.configVolume.pvc.name }}
+  namespace: {{ .Values.namespace.name }}
+spec:
+  storageClassName: local-storage
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.configVolume.local.capacity }}
+{{- end }}
+

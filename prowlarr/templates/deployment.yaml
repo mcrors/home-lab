@@ -1,0 +1,45 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.labels.app }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.labels.app }}
+  template:
+    metadata:
+      name: {{ .Values.pod.name }}
+      labels:
+        app: {{ .Values.labels.app }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      restartPolicy: Always
+      containers:
+        - name: {{ .Values.container.name }}
+          image: {{ .Values.container.image }}:{{ .Values.container.tag }}
+          imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - name: prowlarr-config
+              mountPath: /config
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Etc/UTC"
+            - name: UMASK
+              value: "002"
+          ports:
+            - name: {{ .Values.service.portName }}
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+      volumes:
+        - name: prowlarr-config
+          persistentVolumeClaim:
+            claimName: {{ .Values.configVolume.pvc.name }}
