@@ -58,4 +58,4 @@ service:
 
 ingress:
   name: transmission-ingress
-  hostName: transmission.local
+  hostName: transmission.home
