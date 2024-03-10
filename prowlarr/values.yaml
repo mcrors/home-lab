@@ -1,22 +1,27 @@
+clusterType: kind
+
 namespace:
-  name: "prowlarr"
+  name: prowlarr
 
 serviceAccount:
   name: "prowlarr-admin"
 
-nvsServerIp: "192.168.1.96"
+nfsServerIP: 192.168.1.96
 
 configVolume:
   nfs:
-    path: "/prowlarr"
-    capacity: "1Gi"
+    path: /prowlarr
+    capacity: 1Gi
+  local:
+    path: /mnt/prowlarr
+    capacity: 1Gi
   pv:
-    name: "transmission-pv"
+    name: "prowlarr-pv"
   pvc:
-    name: "transmission-pvc"
+    name: "prowlarr-pvc"
 
 deployment:
-  name: "prowlarr"
+  name: prowlarr
 
 labels:
   app: "prowlarr-app"
@@ -25,11 +30,16 @@ pod:
   name: "prowlarr-pod"
 
 container:
-  name: "prowlarr"
-  image: "ghcr.io/hotio/prowlarr"
-  tag: "arm64v8-1.13.3"
+  name: prowlarr
+  image: ghcr.io/hotio/prowlarr
+  tag: latest
 
 service:
+  name: "prowlarr-service"
   portName: "http-port"
-  targetPort: "9696"
+  targetPort: 9696
+  port: 9696
 
+ingress:
+  name: "prowlarr-ingress"
+  hostName: "prowlarr.local"

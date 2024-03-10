@@ -23,12 +23,18 @@ spec:
         - name: {{ .Values.container.name }}
           image: {{ .Values.container.image }}:{{ .Values.container.tag }}
           imagePullPolicy: IfNotPresent
-          securityContext:
-            runAsUser: 1000
-            fsGroup: 1000
           volumeMounts:
             - name: prowlarr-config
               mountPath: /config
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Etc/UTC"
+            - name: UMASK
+              value: "002"
           ports:
             - name: {{ .Values.service.portName }}
               containerPort: {{ .Values.service.targetPort }}
