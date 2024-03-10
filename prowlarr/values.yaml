@@ -42,4 +42,4 @@ service:
 
 ingress:
   name: "prowlarr-ingress"
-  hostName: "prowlarr.local"
+  hostName: "prowlarr.home"
