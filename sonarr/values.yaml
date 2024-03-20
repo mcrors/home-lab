@@ -1,53 +1,57 @@
 namespace:
-  name: "sonarr"
+  name: sonarr
 
 serviceAccount:
-  name: "sonarr-admin"
+  name: sonarr-admin
 
-nfsServerIP: "192.168.1.96"
+nfsServerIP: 192.168.1.96
 
 configVolume:
-  accessModes: "ReadWriteOnce"
+  accessModes: ReadWriteOnce
   pv:
-    name: "sonarr-config-pv"
+    name: sonarr-config-pv
   pvc:
-    name: "sonarr-config-pvc"
+    name: sonarr-config-pvc
   nfs:
-    path: "/sonarr"
-    capacity: "1Gi"
+    path: /sonarr
+    capacity: 1Gi
 
 mediaVolume:
-  accessModes: "ReadWriteMany"
+  accessModes: ReadWriteMany
   pv:
-    name: "media-pv"
+    name: media-pv
   pvc:
-    name: "media-pvc"
+    name: media-pvc
   nfs:
-    capacity: "4Ti"
-    path: "/media"
+    capacity: 4Ti
+    path: /media
 
 transmissionVolume:
   pvc:
-    name: "transmission-pvc"
+    name: transmission-pvc
 
 deployment:
-  name: "sonarr-deployment"
+  name: sonarr-deployment
 
 labels:
-  app: "sonarr-app"
+  app: sonarr-app
 
 pod:
-  name: "sonarr-pod"
+  name: sonarr-pod
   securityContext:
     runAsUser: 0
 
 container:
-  name: "sonarr"
-  image: "ghcr.io/hotio/sonarr"
-  tag: "release"
+  name: sonarr
+  image: ghcr.io/hotio/sonarr
+  tag: release
 
 service:
-  name: "sonarr-service"
+  name: sonarr-service
   portName: http-port
   port: 8989
   targetPort: 8989
+
+ingress:
+  name: sonarr-ingress
+  hostname: sonarr.home
