@@ -26,6 +26,10 @@ mediaVolume:
     capacity: "4Ti"
     path: "/media"
 
+transmissionVolume:
+  pvc:
+    name: "transmission-pvc"
+
 deployment:
   name: "sonarr-deployment"
 
@@ -34,8 +38,16 @@ labels:
 
 pod:
   name: "sonarr-pod"
+  securityContext:
+    runAsUser: 0
 
 container:
   name: "sonarr"
   image: "ghcr.io/hotio/sonarr"
   tag: "release"
+
+service:
+  name: "sonarr-service"
+  portName: http-port
+  port: 8989
+  targetPort: 8989

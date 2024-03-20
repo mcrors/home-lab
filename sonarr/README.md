@@ -8,5 +8,6 @@ Transmission will download to the downloads share, and then Sonarr will copy the
 A Cron job will be created to clean up the downloads share every 24 hours.
 This will allow us to keep the downloads share smaller. And will keep the media files seperate for a future migration to a different server.
 
-The next steps are to create the pv's and pvc's for the nfs shares. Then to create the deployment and service for the sonarr chart.
+The next steps are to create the pv's and pvc's for the nfs shares.
+Then to create the deployment and service for the sonarr chart.
 Finally, we will create an ingress to be able to access the sonarr web interface.
