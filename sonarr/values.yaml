@@ -7,6 +7,7 @@ serviceAccount:
 nfsServerIP: "192.168.1.96"
 
 configVolume:
+  accessModes: "ReadWriteOnce"
   pv:
     name: "sonarr-config-pv"
   pvc:
@@ -15,14 +16,14 @@ configVolume:
     path: "/sonarr"
     capacity: "1Gi"
 
-media-volume:
+mediaVolume:
+  accessModes: "ReadWriteMany"
   pv:
-    name: "sonarr-pv"
+    name: "media-pv"
   pvc:
-    name: "sonarr-pvc"
+    name: "media-pvc"
   nfs:
-    serverIP: "192.168.1.96"
-    capacity: "1Gi"
+    capacity: "4Ti"
     path: "/media"
 
 deployment:

@@ -8,7 +8,7 @@ spec:
     storage: {{ .Values.volume.configVolume.nfs.capacity }}
   volumeMode: Filesystem
   accessModes:
-    - ReadWriteOnce
+    - {{ .Values.configVolume.accessMode }}
   persistentVolumeReclaimPolicy: Retain
   storageClassName: nfs
   mountOptions:
@@ -27,7 +27,7 @@ metadata:
 spec:
   storageClassName: nfs
   accessModes:
-    - ReadWriteMany
+    - {{ .Values.configVolume.accessMode }}
   resources:
     requests:
       storage: {{ .Values.configVolume.nfs.capacity }}
