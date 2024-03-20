@@ -4,6 +4,17 @@ namespace:
 serviceAccount:
   name: "sonarr-admin"
 
+nfsServerIP: "192.168.1.96"
+
+configVolume:
+  pv:
+    name: "sonarr-config-pv"
+  pvc:
+    name: "sonarr-config-pvc"
+  nfs:
+    path: "/sonarr"
+    capacity: "1Gi"
+
 media-volume:
   pv:
     name: "sonarr-pv"

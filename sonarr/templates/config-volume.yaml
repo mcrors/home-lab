@@ -2,27 +2,27 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: {{ .Values.volume.pv.name }}
+  name: {{ .Values.configVolume.pv.name }}
 spec:
   capacity:
-    storage: {{ .Values.volume.nfs.capacity }}
+    storage: {{ .Values.volume.configVolume.nfs.capacity }}
   volumeMode: Filesystem
   accessModes:
-    - ReadWriteMany
+    - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   storageClassName: nfs
   mountOptions:
     - hard
     - nfsvers=4.1
   nfs:
-    path: {{ .Values.volume.nfs.path }}
-    server: {{ .Values.volume.nfs.serverIP }}
+    path: {{ .Values.configVolume.nfs.path }}
+    server: {{ .Values.nfsServerIP }}
 
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Values.volume.pvc.name }}
+  name: {{ .Values.configVolume.pvc.name }}
   namespace: {{ .Values.namespace.name }}
 spec:
   storageClassName: nfs
@@ -30,4 +30,4 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: {{ .Values.volume.nfs.capacity }}
+      storage: {{ .Values.configVolume.nfs.capacity }}
