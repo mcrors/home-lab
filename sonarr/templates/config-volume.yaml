@@ -5,7 +5,7 @@ metadata:
   name: {{ .Values.configVolume.pv.name }}
 spec:
   capacity:
-    storage: {{ .Values.volume.configVolume.nfs.capacity }}
+    storage: {{ .Values.configVolume.nfs.capacity }}
   volumeMode: Filesystem
   accessModes:
     - {{ .Values.configVolume.accessMode }}

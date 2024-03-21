@@ -7,7 +7,7 @@ serviceAccount:
 nfsServerIP: 192.168.1.96
 
 configVolume:
-  accessModes: ReadWriteOnce
+  accessMode: ReadWriteOnce
   pv:
     name: sonarr-config-pv
   pvc:
@@ -17,7 +17,7 @@ configVolume:
     capacity: 1Gi
 
 mediaVolume:
-  accessModes: ReadWriteMany
+  accessMode: ReadWriteMany
   pv:
     name: media-pv
   pvc:

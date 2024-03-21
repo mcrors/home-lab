@@ -5,7 +5,7 @@ metadata:
   name: {{ .Values.mediaVolume.pv.name }}
 spec:
   capacity:
-    storage: {{ .Values.volume.mediaVolume.nfs.capacity }}
+    storage: {{ .Values.mediaVolume.nfs.capacity }}
   volumeMode: Filesystem
   accessModes:
     - {{ .Values.mediaVolume.accessMode }}
