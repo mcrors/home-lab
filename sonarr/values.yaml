@@ -26,9 +26,15 @@ mediaVolume:
     capacity: 4Ti
     path: /media
 
-transmissionVolume:
+downloadsVolume:
+  accessMode: ReadWriteMany
+  pv:
+    name: sonarr-downloads-pv
   pvc:
-    name: transmission-pvc
+    name: sonarr-downloads-pvc
+  nfs:
+    capacity: 100Gi
+    path: /downloads
 
 deployment:
   name: sonarr-deployment

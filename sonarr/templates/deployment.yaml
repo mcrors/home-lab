@@ -30,7 +30,7 @@ spec:
               mountPath: /config
             - name: sonarr-media
               mountPath: /data/media
-            - name: transmission-downloads
+            - name: sonarr-downloads
               mountPath: /data/downloads
           ports:
             - name: {{ .Values.service.portName }}
@@ -52,6 +52,6 @@ spec:
         - name: sonarr-media
           persistentVolumeClaim:
             claimName: {{ .Values.mediaVolume.pvc.name }}
-        - name: transmission-downloads
+        - name: sonarr-downloads
           persistentVolumeClaim:
-            claimName: {{ .Values.transmissionVolume.pvc.name }}
+            claimName: {{ .Values.downloadsVolume.pvc.name }}
