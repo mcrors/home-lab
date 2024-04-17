@@ -10,13 +10,6 @@
       - vars/main.yaml
   tags: common
 
-- hosts: nfsservers
-  become: true
-  remote_user: hla
-  roles:
-    - nfs
-  tags: nfs
-
 - hosts: k3s_cluster
   gather_facts: yes
   become: true

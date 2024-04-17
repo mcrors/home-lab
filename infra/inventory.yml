@@ -19,9 +19,6 @@ pihole:
   hosts:
     lib-pi-04.home:
 
-nfsservers:
-  hosts:
-
 docker:
   children:
     nginx:
