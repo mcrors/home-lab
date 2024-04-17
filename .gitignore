@@ -1,3 +1,6 @@
 node_modules/*
 package.json
 package-lock.json
+
+# ignore all dotenv files in subdirectories
+**/.env
