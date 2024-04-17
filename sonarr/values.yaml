@@ -60,4 +60,4 @@ service:
 
 ingress:
   name: sonarr-ingress
-  hostname: sonarr.home
+  hostName: sonarr.home

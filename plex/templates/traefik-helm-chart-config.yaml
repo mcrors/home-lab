@@ -1,0 +1,49 @@
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    # move this to it's own Chart when plex is working
+    dashboard:
+      enabled: true
+    ports:
+      traefik:
+      # Open up Traefik dashboard port 9000
+        expose: true
+      discovery:
+        port: 1900
+        expose: false
+        exposedPort: 1900
+        protocol: UDP
+      gdm1:
+        port: 31410
+        expose: false
+        exposedPort: 31410
+        protocol: UDP
+      gdm2:
+        port: 31412
+        expose: false
+        exposedPort: 31412
+        protocol: UDP
+      gdm3:
+        port: 31413
+        expose: false
+        exposedPort: 31413
+        protocol: UDP
+      gdm4:
+        port: 31414
+        expose: false
+        exposedPort: 31414
+        protocol: UDP
+    logs:
+      access:
+        enabled: true
+    additionalArguments:
+      - "--entrypoints.discovery.address=:1900/udp"
+      - "--entrypoints.gdm1.address=:31410/udp"
+      - "--entrypoints.gdm2.address=:31412/udp"
+      - "--entrypoints.gdm3.address=:31413/udp"
+      - "--entrypoints.gdm4.address=:31414/udp"

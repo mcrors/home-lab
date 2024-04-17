@@ -1,0 +1,33 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.transcodeVolume.pv.name }}
+spec:
+  capacity:
+    storage: {{ .Values.transcodeVolume.nfs.capacity }}
+  volumeMode: Filesystem
+  accessModes:
+    - {{ .Values.transcodeVolume.accessMode }}
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs
+  mountOptions:
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: {{ .Values.transcodeVolume.nfs.path }}
+    server: {{ .Values.nfsServerIP }}
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.transcodeVolume.pvc.name }}
+  namespace: {{ .Values.namespace.name }}
+spec:
+  storageClassName: nfs
+  accessModes:
+    - {{ .Values.transcodeVolume.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.transcodeVolume.nfs.capacity }}

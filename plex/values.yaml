@@ -1,0 +1,109 @@
+namespace:
+  name: plex
+
+serviceAccount:
+  name: plex-admin
+
+nfsServerIP: 192.168.1.96
+
+configVolume:
+  accessMode: ReadWriteOnce
+  pv:
+    name: plex-config
+  pvc:
+    name: plex-config
+  nfs:
+    path: /plex
+    capacity: 1Gi
+
+transcodeVolume:
+  accessMode: ReadWriteOnce
+  pv:
+    name: plex-transcode
+  pvc:
+    name: plex-transcode
+  nfs:
+    path: /transcode
+    capacity: 1Gi
+
+mediaVolume:
+  accessMode: ReadWriteMany
+  pv:
+    name: plex-media
+  pvc:
+    name: plex-media
+  nfs:
+    path: /media
+    capacity: 4Ti
+
+secret:
+  name: plex-secret
+  plexClaimToken: claim-xxxxx
+
+deployment:
+  name: plex-deployment
+
+labels:
+  app: plex-app
+
+pod:
+  name: plex-pod
+  securityContext:
+    runAsUser: 0
+
+container:
+  name: plex-container
+  image: ghcr.io/linuxserver/plex:arm64v8-latest
+
+service:
+  name: plex-service
+  web:
+    name: web
+    port: 32400
+    targetPort: 32400
+    protocol: TCP
+  companion:
+    name: companion
+    port: 3005
+    targetPort: 3005
+    protocol: TCP
+  secure:
+    name: secure
+    port: 8324
+    targetPort: 8324
+    protocol: TCP
+  dlna:
+    name: dlna
+    port: 32469
+    targetPort: 32469
+    protocol: TCP
+  discovery:
+    name: discovery
+    port: 1900
+    targetPort: 1900
+    protocol: UDP
+  gdm1:
+    name: gdm1
+    port: 32410
+    targetPort: 32410
+    protocol: UDP
+  gdm2:
+    name: gdm2
+    port: 32412
+    targetPort: 32412
+    protocol: UDP
+  gdm3:
+    name: gdm3
+    port: 32413
+    targetPort: 32413
+    protocol: UDP
+  gdm4:
+    name: gdm4
+    port: 32414
+    targetPort: 32414
+    protocol: UDP
+
+ingress:
+  http:
+    name: plex-ingress
+    hostName: plex.home

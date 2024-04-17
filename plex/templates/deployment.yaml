@@ -1,0 +1,86 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.labels.app }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.labels.app }}
+  template:
+    metadata:
+      name: {{ .Values.pod.name }}
+      labels:
+        app: {{ .Values.labels.app }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      restartPolicy: Always
+      containers:
+        - name: {{ .Values.container.name }}
+          image: {{ .Values.container.image }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: {{ .Values.pod.securityContext.runAsUser }}
+          volumeMounts:
+            - name: plex-config
+              mountPath: /config
+            - name: plex-transcode
+              mountPath: /transcode
+            - name: plex-media
+              mountPath: /media
+          ports:
+            - name: {{ .Values.service.web.name }}
+              containerPort: {{ .Values.service.web.targetPort }}
+              protocol: {{ .Values.service.web.protocol }}
+            - name: {{ .Values.service.companion.name }}
+              containerPort: {{ .Values.service.companion.targetPort }}
+              protocol: {{ .Values.service.companion.protocol }}
+            - name: {{ .Values.service.secure.name }}
+              containerPort: {{ .Values.service.secure.targetPort }}
+              protocol: {{ .Values.service.secure.protocol }}
+            - name: {{ .Values.service.dlna.name }}
+              containerPort: {{ .Values.service.dlna.targetPort }}
+              protocol: {{ .Values.service.dlna.protocol }}
+            - name: {{ .Values.service.discovery.name }}
+              containerPort: {{ .Values.service.discovery.targetPort }}
+              protocol: {{ .Values.service.discovery.protocol }}
+            - name: {{ .Values.service.gdm1.name }}
+              containerPort: {{ .Values.service.gdm1.targetPort }}
+              protocol: {{ .Values.service.gdm1.protocol }}
+            - name: {{ .Values.service.gdm2.name }}
+              containerPort: {{ .Values.service.gdm2.targetPort }}
+              protocol: {{ .Values.service.gdm2.protocol }}
+            - name: {{ .Values.service.gdm3.name }}
+              containerPort: {{ .Values.service.gdm3.targetPort }}
+              protocol: {{ .Values.service.gdm3.protocol }}
+            - name: {{ .Values.service.gdm4.name }}
+              containerPort: {{ .Values.service.gdm4.targetPort }}
+              protocol: {{ .Values.service.gdm4.protocol }}
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Europe/Prague"
+            - name: HOSTNAME
+              value: "PlexServer"
+            - name: PLEX_CLAIM
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.name }}
+                  key: PLEX_CLAIM
+      volumes:
+        - name: plex-config
+          persistentVolumeClaim:
+            claimName: {{ .Values.configVolume.pvc.name }}
+        - name: plex-transcode
+          persistentVolumeClaim:
+            claimName: {{ .Values.transcodeVolume.pvc.name }}
+        - name: plex-media
+          persistentVolumeClaim:
+            claimName: {{ .Values.mediaVolume.pvc.name }}

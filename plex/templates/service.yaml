@@ -1,0 +1,47 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.service.name }}
+  namespace: {{ .Values.namespace.name }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ .Values.labels.app }}
+  ports:
+    - name: {{ .Values.service.web.name }}
+      protocol: {{ .Values.service.web.protocol }}
+      port: {{ .Values.service.web.port }}
+      targetPort: {{ .Values.service.web.targetPort }}
+    - name: {{ .Values.service.companion.name }}
+      protocol: {{ .Values.service.companion.protocol }}
+      port: {{ .Values.service.companion.port }}
+      targetPort: {{ .Values.service.companion.targetPort }}
+    - name: {{ .Values.service.secure.name }}
+      protocol: {{ .Values.service.secure.protocol }}
+      port: {{ .Values.service.secure.port }}
+      targetPort: {{ .Values.service.secure.targetPort }}
+    - name: {{ .Values.service.dlna.name }}
+      protocol: {{ .Values.service.dlna.protocol }}
+      port: {{ .Values.service.dlna.port }}
+      targetPort: {{ .Values.service.dlna.targetPort }}
+    - name: {{ .Values.service.discovery.name }}
+      protocol: {{ .Values.service.discovery.protocol }}
+      port: {{ .Values.service.discovery.port }}
+      targetPort: {{ .Values.service.discovery.targetPort }}
+    - name: {{ .Values.service.gdm1.name }}
+      protocol: {{ .Values.service.gdm1.protocol }}
+      port: {{ .Values.service.gdm1.port }}
+      targetPort: {{ .Values.service.gdm1.targetPort }}
+    - name: {{ .Values.service.gdm2.name }}
+      protocol: {{ .Values.service.gdm2.protocol }}
+      port: {{ .Values.service.gdm2.port }}
+      targetPort: {{ .Values.service.gdm2.targetPort }}
+    - name: {{ .Values.service.gdm3.name }}
+      protocol: {{ .Values.service.gdm3.protocol }}
+      port: {{ .Values.service.gdm3.port }}
+      targetPort: {{ .Values.service.gdm3.targetPort }}
+    - name: {{ .Values.service.gdm4.name }}
+      protocol: {{ .Values.service.gdm4.protocol }}
+      port: {{ .Values.service.gdm4.port }}
+      targetPort: {{ .Values.service.gdm4.targetPort }}
