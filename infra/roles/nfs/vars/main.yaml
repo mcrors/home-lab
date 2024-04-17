@@ -1,6 +1,0 @@
-vg_name: nas-vg
-backup_vg_name: backup-vg
-nfs_root: /mnt/nfs_share
-nfs_share_path: /etc/exports
-nfs_client_ip: 192.168.1.0/24
-
