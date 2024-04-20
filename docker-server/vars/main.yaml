@@ -2,3 +2,4 @@
 
 compose_files_dir: /opt/containers
 compose_file_name: docker-compose.yaml
+PIHOLE_TZ: Europe/Prague
