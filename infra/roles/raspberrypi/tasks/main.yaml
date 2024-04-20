@@ -11,12 +11,34 @@
   failed_when: false
   changed_when: false
 
+- name: Test For bookworm
+  command: grep -E "bookworm" /etc/os-release
+  register: grep_os_release_bookworm
+  failed_when: false
+  changed_when: false
+
+- name: Test For bullseye
+  command: grep -E "bullseye" /etc/os-release
+  register: grep_os_release_bullseye
+  failed_when: false
+  changed_when: false
+
 - name: execute OS related tasks on the Potato
   include_tasks: prereq/lapotato.yaml
   when:
     grep_device_tree_model_libre_computer.rc == 0
 
-- name: execute OS related tasks on the Pi
+- name: execute OS related tasks on the Pi Debian 11
+  include_tasks: prereq/debian-11.yaml
+  when:
+    grep_device_tree_model_raspberrypi.rc == 0 and grep_os_release_bullseye.rc == 0
+
+- name: execute OS related tasks on the Pi Debian 12
+  include_tasks: prereq/debian-12.yaml
+  when:
+    grep_device_tree_model_raspberrypi.rc == 0 and grep_os_release_bookworm.rc == 0
+
+- name: execute OS related tasks on the Pi regardless of OS
   include_tasks: prereq/raspberrypi.yaml
   when:
     grep_device_tree_model_raspberrypi.rc == 0
