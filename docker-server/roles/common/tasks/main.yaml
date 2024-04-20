@@ -1,0 +1,5 @@
+---
+- name: Create directory on remote host
+  file:
+    path: "{{ compose_file_path }}"
+    state: directory

@@ -4,6 +4,7 @@
   become: true
   remote_user: hla
   vars_files:
-      - .env
+    - .env
+    - vars/main.yaml
   roles:
     - pihole
