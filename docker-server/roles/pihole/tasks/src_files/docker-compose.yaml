@@ -19,7 +19,7 @@ services:
       WEBPASSWORD: ${WEBPASSWORD}
     # Volumes store your data between container upgrades
     volumes:
-      - pihole:/etc-pihole:/etc/pihole
+      - pihole:/etc/pihole
       - dnsmasq:/etc/dnsmasq.d
     #   https://github.com/pi-hole/docker-pi-hole#note-on-capabilities
     cap_add:
