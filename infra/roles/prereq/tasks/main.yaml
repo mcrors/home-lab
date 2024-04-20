@@ -1,4 +1,22 @@
 ---
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Remove nftables
+  apt:
+    name: nftables
+    state: absent
+    autoremove: yes
+    purge: yes
+
+- name: Install iptables
+  apt:
+    name: iptables
+    state: present
+
 - name: Enable IPv4 forwarding
   sysctl:
     name: net.ipv4.ip_forward
