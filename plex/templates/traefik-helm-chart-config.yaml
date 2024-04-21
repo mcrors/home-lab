@@ -41,9 +41,3 @@ spec:
     logs:
       access:
         enabled: true
-    additionalArguments:
-      - "--entrypoints.discovery.address=:1900/udp"
-      - "--entrypoints.gdm1.address=:31410/udp"
-      - "--entrypoints.gdm2.address=:31412/udp"
-      - "--entrypoints.gdm3.address=:31413/udp"
-      - "--entrypoints.gdm4.address=:31414/udp"
