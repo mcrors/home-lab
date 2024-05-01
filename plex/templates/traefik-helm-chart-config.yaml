@@ -15,29 +15,20 @@ spec:
         expose: true
       discovery:
         port: 1900
-        expose: false
+        expose: true
         exposedPort: 1900
         protocol: UDP
-      gdm1:
-        port: 31410
-        expose: false
-        exposedPort: 31410
-        protocol: UDP
-      gdm2:
-        port: 31412
-        expose: false
-        exposedPort: 31412
-        protocol: UDP
-      gdm3:
-        port: 31413
-        expose: false
-        exposedPort: 31413
-        protocol: UDP
-      gdm4:
-        port: 31414
-        expose: false
-        exposedPort: 31414
-        protocol: UDP
+      plex:
+        port: 32400
+        expose: true
+        exposePort: 32400
+        protocol: TCP
     logs:
       access:
         enabled: true
+    entryPoints:
+      discovery:
+        address: ":1900/udp"
+      plex:
+        address: ":32400/tcp"
+
