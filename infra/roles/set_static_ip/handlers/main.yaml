@@ -3,4 +3,16 @@
   systemd:
     name: systemd-networkd
     state: restarted
+    enabled: true
 
+- name: Restart systemd-resolved
+  systemd:
+    name: systemd-resolved
+    state: restarted
+    enabled: true
+
+- name: Restart dhcpcd
+  systemd:
+    name: dhcpcd
+    state: restarted
+    enabled: true

@@ -8,4 +8,6 @@
       Address={{ ansible_default_ipv4.address }}/24
       Gateway={{ gateway }}
       DNS={{ dns }}
-  notify: Restart systemd-networkd
+  notify:
+    - Restart systemd-networkd
+    - Restart systemd-resolved

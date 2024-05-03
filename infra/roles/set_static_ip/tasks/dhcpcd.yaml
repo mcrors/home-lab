@@ -7,3 +7,5 @@
       static domain_name_servers={{ dns }}
       inform ip_address={{ ansible_default_ipv4.address }}
     state: present
+  notify:
+    - Restart dhcpcd
