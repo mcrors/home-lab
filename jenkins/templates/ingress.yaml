@@ -4,8 +4,8 @@ metadata:
   name: {{ .Values.ingress.name }}
   namespace: {{ .Values.namespace.name }}
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-    traefik.ingress.kubernetes.io/router.middlewares: {{ .Values.namespace }}-enforce-https@kubernetescrd
+    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.middlewares: {{ .Values.namespace.name }}-enforce-https@kubernetescrd
 spec:
   tls:
     - secretName: jenkins-cert
