@@ -5,9 +5,12 @@ metadata:
   namespace: {{ .Values.namespace.name }}
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
+    traefik.ingress.kubernetes.io/router.middlewares: {{ .Values.namespace }}-enforce-https@kubernetescrd
 spec:
+  tls:
+    - secretName: jenkins-cert
   rules:
-    - host: jenkins.home
+    - host: jenkins.houli.eu
       http:
         paths:
           - path: /
