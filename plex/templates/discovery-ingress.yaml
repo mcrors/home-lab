@@ -6,7 +6,7 @@ metadata:
   namespace: {{ .Values.namespace.name }}
 spec:
   entryPoints:
-    - discovery
+    - {{ .Values.ingress.discovery.entryPoint }}
   routes:
   - services:
     - name: {{ .Values.service.discovery.name }}

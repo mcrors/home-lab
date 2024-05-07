@@ -33,9 +33,9 @@ spec:
             - name: plex-media
               mountPath: /media
           ports:
-            - name: {{ .Values.service.web.name }}
-              containerPort: {{ .Values.service.web.targetPort }}
-              protocol: {{ .Values.service.web.protocol }}
+            - name: {{ .Values.service.http.name }}
+              containerPort: {{ .Values.service.http.targetPort }}
+              protocol: {{ .Values.service.http.protocol }}
             - name: {{ .Values.service.discovery.name }}
               containerPort: {{ .Values.service.discovery.targetPort }}
               protocol: {{ .Values.service.discovery.protocol }}

@@ -2,13 +2,13 @@
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRouteTCP
 metadata:
-  name: tcp-ingress
+  name: {{ .Values.ingress.tcpdlna.name }}
   namespace: {{ .Values.namespace.name }}
 spec:
   entryPoints:
-    - plex
+    - {{ .Values.ingress.tcpdlna.entryPoint }}
   routes:
   - match: HostSNI(`*`)
     services:
-    - name: tcp-service
-      port: {{ .Values.service.web.port }}
+    - name: {{ .Values.service.tcpdlna.name }}
+      port: {{ .Values.service.tcpdlna.port }}

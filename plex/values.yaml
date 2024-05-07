@@ -56,9 +56,8 @@ container:
   image: ghcr.io/linuxserver/plex:arm64v8-latest
 
 service:
-  name: plex-service
-  web:
-    name: web
+  http:
+    name: http
     port: 32400
     targetPort: 32400
     protocol: TCP
@@ -67,8 +66,18 @@ service:
     port: 1900
     targetPort: 1900
     protocol: UDP
+  tcpdlna:
+    name: tcp-dlna
+    port: 32469
+    targetPort: 32469
+    protocol: TCP
 
 ingress:
   http:
     name: plex-ingress
     hostName: plex.home
+  discovery:
+    entryPoint: discovery
+  tcpdlna:
+    name: tcp-dlna
+    entryPoint: tcp-dlna

@@ -2,14 +2,14 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: tcp-service
+  name: {{ .Values.service.tcpdlna.name }}
   namespace: {{ .Values.namespace.name }}
 spec:
   type: ClusterIP
   selector:
     app: {{ .Values.labels.app }}
   ports:
-    - name: {{ .Values.service.web.name }}
-      protocol: {{ .Values.service.web.protocol }}
-      port: {{ .Values.service.web.port }}
-      targetPort: {{ .Values.service.web.targetPort }}
+    - name: {{ .Values.service.tcpdlna.name }}
+      protocol: {{ .Values.service.tcpdlna.protocol }}
+      port: {{ .Values.service.tcpdlna.port }}
+      targetPort: {{ .Values.service.tcpdlna.targetPort }}
