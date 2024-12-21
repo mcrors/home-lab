@@ -39,6 +39,21 @@ spec:
             - name: {{ .Values.service.discovery.name }}
               containerPort: {{ .Values.service.discovery.targetPort }}
               protocol: {{ .Values.service.discovery.protocol }}
+            - name: {{ .Values.service.tcpdlna.name }}
+              containerPort: {{ .Values.service.tcpdlna.targetPort }}
+              protocol: {{ .Values.service.tcpdlna.protocol }}
+            - name: gdm-0
+              containerPort: 32410
+              protocol: UDP
+            - name: gdm-2
+              containerPort: 32412
+              protocol: UDP
+            - name: gdm-3
+              containerPort: 32413
+              protocol: UDP
+            - name: gdm-4
+              containerPort: 32414
+              protocol: UDP
           env:
             - name: PUID
               value: "1000"

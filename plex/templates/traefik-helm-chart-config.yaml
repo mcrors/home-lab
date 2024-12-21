@@ -18,10 +18,10 @@ spec:
         expose: true
         exposedPort: 1900
         protocol: UDP
-      plex:
-        port: 32400
+      tcp-dlna:
+        port: 32469
         expose: true
-        exposePort: 32400
+        exposePort: 32469
         protocol: TCP
     logs:
       access:
@@ -29,6 +29,6 @@ spec:
     entryPoints:
       discovery:
         address: ":1900/udp"
-      plex:
-        address: ":32400/tcp"
+      txp-dlna:
+        address: ":32469/tcp"
 
