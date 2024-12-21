@@ -1,0 +1,80 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.deployment.name }}
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: {{ .Values.labels.app }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.labels.app }}
+  template:
+    metadata:
+      name: {{ .Values.pod.name }}
+      labels:
+        app: {{ .Values.labels.app }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+      restartPolicy: Always
+      containers:
+        - name: {{ .Values.container.name }}
+          image: {{ .Values.container.image }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            runAsUser: {{ .Values.pod.securityContext.runAsUser }}
+          volumeMounts:
+            - name: plex-config
+              mountPath: /config
+            - name: plex-transcode
+              mountPath: /transcode
+            - name: plex-media
+              mountPath: /media
+          ports:
+            - name: {{ .Values.service.http.name }}
+              containerPort: {{ .Values.service.http.targetPort }}
+              protocol: {{ .Values.service.http.protocol }}
+            - name: {{ .Values.service.discovery.name }}
+              containerPort: {{ .Values.service.discovery.targetPort }}
+              protocol: {{ .Values.service.discovery.protocol }}
+            - name: {{ .Values.service.tcpdlna.name }}
+              containerPort: {{ .Values.service.tcpdlna.targetPort }}
+              protocol: {{ .Values.service.tcpdlna.protocol }}
+            - name: gdm-0
+              containerPort: 32410
+              protocol: UDP
+            - name: gdm-2
+              containerPort: 32412
+              protocol: UDP
+            - name: gdm-3
+              containerPort: 32413
+              protocol: UDP
+            - name: gdm-4
+              containerPort: 32414
+              protocol: UDP
+          env:
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+            - name: TZ
+              value: "Europe/Prague"
+            - name: HOSTNAME
+              value: "PlexServer"
+            - name: PLEX_CLAIM
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.secret.name }}
+                  key: PLEX_CLAIM
+      volumes:
+        - name: plex-config
+          persistentVolumeClaim:
+            claimName: {{ .Values.configVolume.pvc.name }}
+        - name: plex-transcode
+          persistentVolumeClaim:
+            claimName: {{ .Values.transcodeVolume.pvc.name }}
+        - name: plex-media
+          persistentVolumeClaim:
+            claimName: {{ .Values.mediaVolume.pvc.name }}
