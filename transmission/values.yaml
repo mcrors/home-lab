@@ -47,8 +47,8 @@ container:
 
 secret:
   name: "openvpn-credentials"
-  username: "not-real-username"
-  password: "not-real-password"
+  username: "not-real-username" # get these from PROTONVPN
+  password: "not-real-password" # get these from PROTONVPN
 
 service:
   name: "transmission-service"
