@@ -49,8 +49,8 @@ pod:
 
 container:
   name: sonarr
-  image: ghcr.io/hotio/sonarr
-  tag: release-eea8743-289-linux-arm64
+  image: lscr.io/linuxserver/sonarr
+  tag: latest
 
 service:
   name: sonarr-service

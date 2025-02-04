@@ -1,4 +1,4 @@
-clusterType: kind
+clusterType: k3s
 
 namespace:
   name: prowlarr
@@ -31,7 +31,7 @@ pod:
 
 container:
   name: prowlarr
-  image: ghcr.io/hotio/prowlarr
+  image: lscr.io/linuxserver/prowlarr
   tag: latest
 
 service:
