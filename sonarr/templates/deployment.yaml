@@ -22,7 +22,7 @@ spec:
       containers:
         - name: {{ .Values.container.name }}
           image: {{ .Values.container.image }}:{{ .Values.container.tag }}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           securityContext:
             runAsUser: {{ .Values.pod.securityContext.runAsUser }}
           volumeMounts:
