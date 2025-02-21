@@ -1,0 +1,41 @@
+- name: Install required packages
+  apt:
+    name:
+      - targetcli-fb
+      - lvm2
+    state: present
+    update_cache: yes
+
+
+- name: Check if physical volume exists
+  command:
+    pvs --noheadings -o pv_name /dev/sda1
+  register: pv_check
+  changed_when: false
+  failed_when: pv_check.rc > 1  # Only fail if rc > 1 (rc=5 just means PV doesn't exist)
+  ignore_errors: yes  # Prevent fatal failure, allowing the playbook to continue
+
+- name: Create physical volume if not exists
+  command:
+    pvcreate /dev/sda1
+  when: pv_check.rc == 5  # Only create PV if it doesn't exist
+  become: yes
+
+- name: Create volume group
+  lvg:
+    vg: vg_k3s_iscsi
+    pvs: /dev/sda1
+    state: present
+
+- name: Create logical volume
+  lvol:
+    vg: vg_k3s_iscsi
+    lv: lv_iscsi_test
+    size: 1G
+    state: present
+
+- name: Enable and start iSCSI target service
+  systemd:
+    name: target
+    enabled: yes
+    state: restarted

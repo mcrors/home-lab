@@ -11,6 +11,7 @@
 # lib-pi-03.home      192.168.1.24
 # lib-pi-04.home      192.168.1.15
 # lib-pi-05.home      192.168.1.133
+# lib-pi-06.home      192.168.1.72
 
 nginx:
   hosts:
@@ -20,10 +21,19 @@ pihole:
   hosts:
     lib-pi-04.home:
 
+iscsi:
+  hosts:
+    lib-pi-06.local:
+
+monitor:
+  hosts:
+    lib-pi-06.local:
+
 docker:
   children:
     nginx:
     pihole:
+    monitor:
 
 k3smaster:
   hosts:
@@ -56,3 +66,6 @@ raspbian:
     lib-potato-03.home:
     lib-potato-04.home:
 
+ubuntu:
+  hosts:
+    lib-pi-06.local:
