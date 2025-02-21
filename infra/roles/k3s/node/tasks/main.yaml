@@ -14,3 +14,23 @@
     daemon_reload: yes
     state: restarted
     enabled: yes
+
+- name: Check if memory label is already set
+  delegate_to: localhost
+  become: false
+  command: >
+    kubectl get node {{ inventory_hostname | regex_replace('\.home$', '') }} -o jsonpath='{.metadata.labels.memory}'
+  register: current_label
+  changed_when: false
+  ignore_errors: true
+
+- name: Calculate memory rounded to nearest 2GB
+  set_fact:
+    rounded_memory: "{{ ((ansible_memtotal_mb / 1024) + 2) // 2 * 2 }}"
+
+- name: Set memory label for node if not set
+  delegate_to: localhost
+  become: false
+  command: >
+    kubectl label node {{ inventory_hostname | regex_replace('\.home$', '') }} memory={{ rounded_memory }}GB --overwrite
+  when: current_label.stdout | default('') != ansible_memtotal_mb
