@@ -11,18 +11,14 @@
     repo: "deb [arch=armhf] https://download.docker.com/linux/{{ ansible_distribution|lower }} {{ ansible_distribution_release }} stable"
     state: present
 
-- name: Update apt cache
-  apt:
-    update_cache: yes
-
 - name: Install required packages
   apt:
-    name: "{{ item }}"
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - software-properties-common
     state: present
-  loop:
-    - apt-transport-https
-    - ca-certificates
-    - software-properties-common
+    update_cache: yes
 
 # not working for now and did this manually
 # - name: Install Docker

@@ -1,8 +1,3 @@
-- name: Update apt cache
-  apt:
-    update_cache: yes
-    cache_valid_time: 3600
-
 - name: Install apt packages
   apt:
     pkg:
@@ -11,6 +6,7 @@
       - lm-sensors
       - python3-pip
     state: present
+    update_cache: yes
 
 - name: Disable ssh Password login
   lineinfile:

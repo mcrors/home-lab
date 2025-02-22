@@ -35,13 +35,9 @@
     kubectl label node {{ inventory_hostname | regex_replace('\.home$', '') }} memory={{ rounded_memory }}GB --overwrite
   when: current_label.stdout | default('') != ansible_memtotal_mb
 
-- name: Update apt cache
-  apt:
-    update_cache: yes
-    cache_valid_time: 3600
-
 - name: Install iscsi client packages
   apt:
     pkg:
       - open-iscsi
     state: present
+    update_cache: yes
