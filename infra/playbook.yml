@@ -44,9 +44,16 @@
     - role: docker
   tags: docker
 
-- hosts: iscsi
+- hosts: iscsi_initiators
   become: true
   remote_user: hla
   roles:
-    - role: iscsi
-  tags: iscsi
+    - role: iscsi_initiator
+  tags: iscsi_initiator
+
+- hosts: iscsi_targets
+  become: true
+  remote_user: hla
+  roles:
+    - role: iscsi_target
+  tags: iscsi_target

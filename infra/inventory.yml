@@ -21,13 +21,21 @@ pihole:
   hosts:
     lib-pi-04.home:
 
-iscsi:
+iscsi_targets:
   hosts:
-    lib-pi-06.local:
+    lib-pi-06.home:
+
+iscsi_initiators:
+  hosts:
+    lib-pi-01.home:
+    lib-pi-02.home:
+    lib-pi-03.home:
+    lib-pi-04.home:
+    lib-pi-05.home:
 
 monitor:
   hosts:
-    lib-pi-06.local:
+    lib-pi-06.home:
 
 docker:
   children:
@@ -68,4 +76,4 @@ raspbian:
 
 ubuntu:
   hosts:
-    lib-pi-06.local:
+    lib-pi-06.home:

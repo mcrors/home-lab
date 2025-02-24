@@ -35,9 +35,9 @@
     kubectl label node {{ inventory_hostname | regex_replace('\.home$', '') }} memory={{ rounded_memory }}GB --overwrite
   when: current_label.stdout | default('') != ansible_memtotal_mb
 
-- name: Install iscsi client packages
-  apt:
-    pkg:
-      - open-iscsi
-    state: present
-    update_cache: yes
+- name: Set iscsi initiator label for nodes > 4GB MEM
+  delegate_to: localhost
+  become: false
+  command: >
+    kubectl label node {{ inventory_hostname | regex_replace('\.home$', '') }} iscsi_initiator=true --overwrite
+  when: (rounded_memory | int) > 3

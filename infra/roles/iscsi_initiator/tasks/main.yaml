@@ -1,0 +1,6 @@
+- name: Install required packages
+  apt:
+    name:
+      - open-iscsi
+    state: present
+    update_cache: yes
