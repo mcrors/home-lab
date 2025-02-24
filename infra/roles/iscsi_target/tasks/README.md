@@ -56,3 +56,7 @@ sudo iscsiadm -m node --login
 ```bash
 lsblk
 ```
+
+
+
+

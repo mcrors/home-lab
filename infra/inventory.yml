@@ -30,7 +30,7 @@ iscsi_initiators:
     lib-pi-01.home:
     lib-pi-02.home:
     lib-pi-03.home:
-    lib-pi-04.home:
+    # lib-pi-04.home:
     lib-pi-05.home:
 
 monitor:
