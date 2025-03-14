@@ -55,3 +55,12 @@ spec:
         - name: sonarr-downloads
           persistentVolumeClaim:
             claimName: {{ .Values.downloadsVolume.pvc.name }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: iscsi_initiator
+                    operator: In
+                    values:
+                      - "true"

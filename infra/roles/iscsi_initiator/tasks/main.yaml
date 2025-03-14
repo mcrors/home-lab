@@ -19,3 +19,26 @@
     owner: root
     group: root
     mode: '0644'
+
+- name: Enable and start iSCSI target service
+  systemd:
+    name: iscsid
+    enabled: yes
+    state: restarted
+
+- name: Enable and start iSCSI target service
+  systemd:
+    name: open-iscsi
+    enabled: yes
+    state: restarted
+
+- name: Discover and login to iSCSI target
+  become: true
+  community.general.open_iscsi:
+    auto_node_startup: true
+    auto_portal_startup: true
+    discover: true
+    login: true
+    portal: 192.168.1.74
+    target: iqn.2025-02.home.lib-pi-06:lib-pi-06-target
+    rescan: true

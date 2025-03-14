@@ -4,6 +4,6 @@ description: A Helm chart for my sonarr home lab setup
 
 type: application
 
-version: 0.1.0
+version: 0.2.0
 
-appVersion: 4.0.2.1183
+appVersion: 4.0.13.2932

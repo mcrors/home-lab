@@ -6,15 +6,18 @@ serviceAccount:
 
 nfsServerIP: 192.168.1.96
 
+iscsi:
+  targetIP: 192.168.1.74:3260
+  iqn: iqn.2025-02.home.lib-pi-06:lib-pi-06-target
+  lun: 0
+
 configVolume:
   accessMode: ReadWriteOnce
   pv:
     name: sonarr-config-pv
   pvc:
     name: sonarr-config-pvc
-  nfs:
-    path: /sonarr
-    capacity: 1Gi
+  capacity: 1Gi
 
 mediaVolume:
   accessMode: ReadWriteMany

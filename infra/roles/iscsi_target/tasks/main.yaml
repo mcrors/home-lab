@@ -6,10 +6,9 @@
     state: present
     update_cache: yes
 
-
 - name: Check if physical volume exists
   command:
-    pvs --noheadings -o pv_name /dev/sda1
+    pvs --noheadings -o pv_name /dev/sda
   register: pv_check
   changed_when: false
   failed_when: pv_check.rc > 1  # Only fail if rc > 1 (rc=5 just means PV doesn't exist)
@@ -17,22 +16,26 @@
 
 - name: Create physical volume if not exists
   command:
-    pvcreate /dev/sda1
+    pvcreate /dev/sda
   when: pv_check.rc == 5  # Only create PV if it doesn't exist
-  become: yes
 
 - name: Create volume group
   lvg:
     vg: vg_k3s_iscsi
-    pvs: /dev/sda1
+    pvs: /dev/sda
     state: present
 
 - name: Create logical volume
   lvol:
     vg: vg_k3s_iscsi
-    lv: lv_iscsi_test
-    size: 1G
+    lv: "{{ item.name }}"
+    size: "{{ item.size }}"
     state: present
+  with_items:
+    - { name: lv_iscsi_test, size: 1G }
+    - { name: lv_sonarr_config, size: 1G }
+    - { name: lv_prowlar_config, size: 1G }
+    - { name: lv_manual_test, size: 1G }
 
 - name: Enable and start iSCSI target service
   systemd:
@@ -40,3 +43,49 @@
     enabled: yes
     state: restarted
 
+- name: Get output from targetcli ls
+  command:
+    targetcli ls
+  register: targetcli_output
+  changed_when: false
+
+- name: Create iSCSI backstore if it does not exist
+  command:
+    targetcli /backstores/block create name={{ item.name }}  dev={{ item.device }}
+  loop:
+    - { name: test_lvl_block, device: /dev/vg_k3s_iscsi/lv_iscsi_test }
+    - { name: sonarr_config_block, device: /dev/vg_k3s_iscsi/lv_sonarr_config }
+    - { name: prowlarr_config_block, device: /dev/vg_k3s_iscsi/lv_prowlar_config }
+    - { name: manual_test_block, device: /dev/vg_k3s_iscsi/lv_manual_test }
+  when: "item.name not in targetcli_output.stdout"
+
+- name: Create iSCSI Target if it does not exist
+  command:
+    targetcli /iscsi create iqn.2025-02.home.lib-pi-06:lib-pi-06-target
+  when: "'iqn.2025-02.home.lib-pi-06:lib-pi-06-target' not in targetcli_output.stdout"
+
+- name: Create ACLS's if it does not exist
+  command:
+    targetcli /iscsi/iqn.2025-02.home.lib-pi-06:lib-pi-06-target/tpg1/acls create {{ item.name }}
+  loop:
+    - { name: iqn.1993-08.home.lib-pi-01:01:initiator01 }
+    - { name: iqn.1993-08.home.lib-pi-02:01:initiator01 }
+    - { name: iqn.1993-08.home.lib-pi-03:01:initiator01 }
+    - { name: iqn.1993-08.home.lib-pi-05:01:initiator01 }
+  when: "item.name not in targetcli_output.stdout"
+
+- name: Get list of luns
+  command:
+    targetcli ls /iscsi/iqn.2025-02.home.lib-pi-06:lib-pi-06-target/tpg1/luns
+  register: targetcli_luns_output
+  changed_when: false
+
+- name: Create LUNS if it does not exist
+  command:
+    targetcli /iscsi/iqn.2025-02.home.lib-pi-06:lib-pi-06-target/tpg1/luns create /backstores/block/{{ item.name }}
+  loop:
+    - { name: sonarr_config_block }
+    - { name: prowlarr_config_block }
+    - { name: test_lvl_block }
+    - { name: manual_test_block }
+  when: "item.name not in targetcli_luns_output.stdout"

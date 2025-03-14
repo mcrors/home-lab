@@ -5,18 +5,18 @@ metadata:
   name: {{ .Values.configVolume.pv.name }}
 spec:
   capacity:
-    storage: {{ .Values.configVolume.nfs.capacity }}
-  volumeMode: Filesystem
+    storage: {{ .Values.configVolume.capacity }}
   accessModes:
-    - {{ .Values.configVolume.accessMode }}
+    - ReadWriteOnce
+  storageClassName: ""
+  iscsi:
+    targetPortal: {{ .Values.iscsi.targetIP }}
+    iqn: {{ .Values.iscsi.iqn }}
+    lun: {{ .Values.iscsi.lun }}
+    fsType: ext4
+    readOnly: false
+    chapAuthSession: false
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: nfs
-  mountOptions:
-    - hard
-    - nfsvers=4.1
-  nfs:
-    path: {{ .Values.configVolume.nfs.path }}
-    server: {{ .Values.nfsServerIP }}
 
 ---
 apiVersion: v1
@@ -25,9 +25,11 @@ metadata:
   name: {{ .Values.configVolume.pvc.name }}
   namespace: {{ .Values.namespace.name }}
 spec:
-  storageClassName: nfs
+  storageClassName: ""
   accessModes:
-    - {{ .Values.configVolume.accessMode }}
+    - ReadWriteOnce
   resources:
     requests:
-      storage: {{ .Values.configVolume.nfs.capacity }}
+      storage: {{ .Values.configVolume.capacity }}
+  volumeName: {{ .Values.configVolume.pv.name }}
+
