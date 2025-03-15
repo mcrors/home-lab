@@ -22,7 +22,7 @@ spec:
       containers:
         - name: {{ .Values.container.name }}
           image: {{ .Values.container.image }}:{{ .Values.container.tag }}
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           volumeMounts:
             - name: prowlarr-config
               mountPath: /config
@@ -43,3 +43,12 @@ spec:
         - name: prowlarr-config
           persistentVolumeClaim:
             claimName: {{ .Values.configVolume.pvc.name }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: iscsi_initiator
+                    operator: In
+                    values:
+                      - "true"

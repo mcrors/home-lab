@@ -6,15 +6,13 @@ namespace:
 serviceAccount:
   name: "prowlarr-admin"
 
-nfsServerIP: 192.168.1.96
+iscsi:
+  targetIP: 192.168.1.74:3260
+  iqn: iqn.2025-02.home.lib-pi-06:lib-pi-06-target
+  lun: 1
 
 configVolume:
-  nfs:
-    path: /prowlarr
-    capacity: 1Gi
-  local:
-    path: /mnt/prowlarr
-    capacity: 1Gi
+  capacity: 1Gi
   pv:
     name: "prowlarr-pv"
   pvc:
