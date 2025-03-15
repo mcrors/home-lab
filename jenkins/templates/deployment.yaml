@@ -36,22 +36,6 @@ spec:
               containerPort: 8080
             - name: jnlpport
               containerPort: 50000
-          # livenessProbe:
-            # httpGet:
-              # path: "/login"
-              # port: 8080
-            # initialDelaySeconds: 300
-            # periodSeconds: 10
-            # timeoutSeconds: 5
-            # failureThreshold: 5
-          # readinessProbe:
-            # httpGet:
-              # path: "/login"
-              # port: 8080
-            # initialDelaySeconds: 200
-            # periodSeconds: 10
-            # timeoutSeconds: 5
-            # failureThreshold: 3
           volumeMounts:
             - name: jenkins-data
               mountPath: /var/jenkins_home
@@ -59,3 +43,12 @@ spec:
         - name: jenkins-data
           persistentVolumeClaim:
               claimName: {{ .Values.volume.pvc.name }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: iscsi_initiator
+                    operator: NotIn
+                    values:
+                      - "true"

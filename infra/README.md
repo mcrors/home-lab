@@ -50,3 +50,6 @@ helm upgrade --install ingress-nginx ingress-nginx --set controller.service.type
 ```
 * prometheus & grafana
 https://devopscube.com/setup-prometheus-monitoring-on-kubernetes/
+
+* Ensure that workloads do not get scheuled on the master node
+kubectl taint nodes lib-potato-02 node-role.kubernetes.io/master=true:NoSchedule --overwrite
