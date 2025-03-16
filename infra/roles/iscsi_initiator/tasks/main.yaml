@@ -6,7 +6,6 @@
     update_cache: yes
 
 - name: Set iSCSI InitiatorName dynamically
-  become: true
   copy:
     dest: /etc/iscsi/initiatorname.iscsi
     content: |
@@ -24,16 +23,15 @@
   systemd:
     name: iscsid
     enabled: yes
-    state: restarted
+    state: started
 
 - name: Enable and start iSCSI target service
   systemd:
     name: open-iscsi
     enabled: yes
-    state: restarted
+    state: started
 
-- name: Discover and login to iSCSI target
-  become: true
+- name: Discover and login to iSCSI target if no session exists
   community.general.open_iscsi:
     auto_node_startup: true
     auto_portal_startup: true

@@ -32,10 +32,10 @@
     size: "{{ item.size }}"
     state: present
   with_items:
-    - { name: lv_iscsi_test, size: 1G }
     - { name: lv_sonarr_config, size: 1G }
     - { name: lv_prowlar_config, size: 1G }
-    - { name: lv_manual_test, size: 1G }
+    - { name: lv_plex_config, size: 1G }
+    - { name: lv_plex_transcode, size: 1G }
 
 - name: Enable and start iSCSI target service
   systemd:
@@ -53,10 +53,10 @@
   command:
     targetcli /backstores/block create name={{ item.name }}  dev={{ item.device }}
   loop:
-    - { name: test_lvl_block, device: /dev/vg_k3s_iscsi/lv_iscsi_test }
     - { name: sonarr_config_block, device: /dev/vg_k3s_iscsi/lv_sonarr_config }
     - { name: prowlarr_config_block, device: /dev/vg_k3s_iscsi/lv_prowlar_config }
-    - { name: manual_test_block, device: /dev/vg_k3s_iscsi/lv_manual_test }
+    - { name: plex_config_block, device: /dev/vg_k3s_iscsi/lv_plex_config }
+    - { name: plex_transcode_block, device: /dev/vg_k3s_iscsi/lv_plex_transcode }
   when: "item.name not in targetcli_output.stdout"
 
 - name: Create iSCSI Target if it does not exist
@@ -86,6 +86,6 @@
   loop:
     - { name: sonarr_config_block }
     - { name: prowlarr_config_block }
-    - { name: test_lvl_block }
-    - { name: manual_test_block }
+    - { name: plex_config_block }
+    - { name: plex_transcode_block }
   when: "item.name not in targetcli_luns_output.stdout"
