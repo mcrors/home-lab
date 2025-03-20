@@ -20,7 +20,7 @@
 * Add node exporter to all homelab machines
 * Add cron exporter to iscsi target
 * Setup prometheus for metric scraping and storage
-* Setup up Loki for log storage
 * Setup Grafana for visualization
 * Create Temperature monitoring and fan management app
+* Setup up Loki for log storage
 
