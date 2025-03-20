@@ -7,7 +7,6 @@
 
 # iscsi
 * Backup volumes on iscsi Target
-* restart iscsi initator and target on system restart
 * periodic rescan on iscsi initator
     * this is so that we can see new luns if they are created on the target
 * do login and discovery on iscsi initator on restart
@@ -19,6 +18,7 @@
 
 # Monitoring
 * Add node exporter to all homelab machines
+* Add cron exporter to iscsi target
 * Setup prometheus for metric scraping and storage
 * Setup up Loki for log storage
 * Setup Grafana for visualization
