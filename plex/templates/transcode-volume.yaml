@@ -5,18 +5,18 @@ metadata:
   name: {{ .Values.transcodeVolume.pv.name }}
 spec:
   capacity:
-    storage: {{ .Values.transcodeVolume.nfs.capacity }}
-  volumeMode: Filesystem
+    storage: {{ .Values.transcodeVolume.capacity }}
   accessModes:
-    - {{ .Values.transcodeVolume.accessMode }}
+    - ReadWriteOnce
+  storageClassName: ""
+  iscsi:
+    targetPortal: {{ .Values.iscsi.targetIP }}
+    iqn: {{ .Values.iscsi.iqn }}
+    lun: {{ .Values.transcodeVolume.lun }}
+    fsType: ext4
+    readOnly: false
+    chapAuthSession: false
   persistentVolumeReclaimPolicy: Retain
-  storageClassName: nfs
-  mountOptions:
-    - hard
-    - nfsvers=4.1
-  nfs:
-    path: {{ .Values.transcodeVolume.nfs.path }}
-    server: {{ .Values.nfsServerIP }}
 
 ---
 apiVersion: v1
@@ -25,9 +25,10 @@ metadata:
   name: {{ .Values.transcodeVolume.pvc.name }}
   namespace: {{ .Values.namespace.name }}
 spec:
-  storageClassName: nfs
+  storageClassName: ""
   accessModes:
-    - {{ .Values.transcodeVolume.accessMode }}
+    - ReadWriteOnce
   resources:
     requests:
-      storage: {{ .Values.transcodeVolume.nfs.capacity }}
+      storage: {{ .Values.transcodeVolume.capacity }}
+  volumeName: {{ .Values.transcodeVolume.pv.name }}

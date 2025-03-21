@@ -6,25 +6,25 @@ serviceAccount:
 
 nfsServerIP: 192.168.1.96
 
+iscsi:
+  targetIP: 192.168.1.74:3260
+  iqn: iqn.2025-02.home.lib-pi-06:lib-pi-06-target
+
 configVolume:
-  accessMode: ReadWriteOnce
+  lun: 2
   pv:
     name: plex-config
   pvc:
     name: plex-config
-  nfs:
-    path: /plex
-    capacity: 1Gi
+  capacity: 1Gi
 
 transcodeVolume:
-  accessMode: ReadWriteOnce
+  lun: 3
   pv:
     name: plex-transcode
   pvc:
     name: plex-transcode
-  nfs:
-    path: /transcode
-    capacity: 1Gi
+  capacity: 1Gi
 
 mediaVolume:
   accessMode: ReadWriteMany
@@ -38,7 +38,7 @@ mediaVolume:
 
 secret:
   name: plex-secret
-  plexClaimToken: claim-xxxxx
+  plexClaimToken: claim-XXXXXXX
 
 deployment:
   name: plex-deployment
