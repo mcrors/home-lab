@@ -52,3 +52,7 @@ spec:
                     operator: In
                     values:
                       - "true"
+                  - key: memory
+                    operator: In
+                    values:
+                      - "4.0GB"
