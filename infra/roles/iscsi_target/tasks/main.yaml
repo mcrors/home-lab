@@ -3,6 +3,7 @@
     name:
       - targetcli-fb
       - lvm2
+      - nfs-common
     state: present
     update_cache: yes
 
@@ -34,14 +35,15 @@
   with_items:
     - { name: lv_sonarr_config, size: 1G }
     - { name: lv_prowlar_config, size: 1G }
-    - { name: lv_plex_config, size: 1G }
-    - { name: lv_plex_transcode, size: 1G }
+    - { name: lv_plex_config, size: 2G }
+    - { name: lv_plex_transcode, size: 11G }
+    - { name: lv_test, size: 1G }
 
 - name: Enable and start iSCSI target service
   systemd:
     name: target
     enabled: yes
-    state: restarted
+    state: started
 
 - name: Get output from targetcli ls
   command:
@@ -89,3 +91,44 @@
     - { name: plex_config_block }
     - { name: plex_transcode_block }
   when: "item.name not in targetcli_luns_output.stdout"
+
+- name: Create directory for backups
+  file:
+    path: /mnt/lvm-backups
+    state: directory
+    mode: '0755'
+
+- name: Mount an Backup volume from NFS
+  ansible.posix.mount:
+    src: 192.168.1.96:/lvm-backups
+    path: /mnt/lvm-backups
+    state: mounted
+    fstype: nfs
+
+- name: Create a directory of backup scripts
+  file:
+    path: /opt/backup-scripts
+    state: directory
+    mode: '0755'
+
+- name: Copy over scripts
+  copy:
+    src: "./src_files/{{ item }}"
+    dest: "/opt/backup-scripts/{{ item }}"
+  with_items:
+    - backup_volumes.py
+
+- name: Create a directory for backup logs
+  file:
+    path: /var/log/backup-scripts
+    state: directory
+    mode: '0755'
+
+- name: Create cron job for backup script
+  ansible.builtin.cron:
+    name: "Run backup_volumes.py daily at 11 PM"
+    minute: "0"
+    hour: "23"
+    job: "/usr/bin/python3 /opt/backup-scripts/backup_volumes.py"
+    state: present
+

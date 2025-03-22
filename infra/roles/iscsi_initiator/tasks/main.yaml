@@ -40,3 +40,11 @@
     portal: 192.168.1.74
     target: iqn.2025-02.home.lib-pi-06:lib-pi-06-target
     rescan: true
+
+- name: Set up periodic iSCSI discovery, login, and rescan cron job
+  ansible.builtin.cron:
+    name: "iSCSI discovery, login and rescan"
+    minute: "0"  # This makes it run on the hour
+    hour: "*"    # Every hour
+    job: "/usr/bin/iscsiadm -m discovery -t sendtargets -p 192.168.1.74 && /usr/bin/iscsiadm -m node --login && /usr/bin/iscsiadm -m node --rescan"
+    state: present

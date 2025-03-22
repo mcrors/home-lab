@@ -16,7 +16,7 @@ configVolume:
     name: plex-config
   pvc:
     name: plex-config
-  capacity: 1Gi
+  capacity: 2Gi
 
 transcodeVolume:
   lun: 3
@@ -24,7 +24,7 @@ transcodeVolume:
     name: plex-transcode
   pvc:
     name: plex-transcode
-  capacity: 1Gi
+  capacity: 11Gi
 
 mediaVolume:
   accessMode: ReadWriteMany
