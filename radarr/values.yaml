@@ -1,0 +1,66 @@
+namespace:
+  name: radarr
+
+serviceAccount:
+  name: radarr-admin
+
+nfsServerIP: 192.168.1.96
+
+iscsi:
+  targetIP: 192.168.1.74:3260
+  iqn: iqn.2025-02.home.lib-pi-06:lib-pi-06-target
+  lun: 4
+
+configVolume:
+  accessMode: ReadWriteOnce
+  pv:
+    name: radarr-config-pv
+  pvc:
+    name: radarr-config-pvc
+  capacity: 1Gi
+
+mediaVolume:
+  accessMode: ReadWriteMany
+  pv:
+    name: radarr-media-pv
+  pvc:
+    name: radarr-media-pvc
+  nfs:
+    capacity: 4Ti
+    path: /media
+
+downloadsVolume:
+  accessMode: ReadWriteMany
+  pv:
+    name: sonarr-downloads-pv
+  pvc:
+    name: sonarr-downloads-pvc
+  nfs:
+    capacity: 100Gi
+    path: /downloads
+
+deployment:
+  name: radarr-deployment
+
+labels:
+  app: radarr-app
+
+pod:
+  name: radarr-pod
+  securityContext:
+    runAsUser: 0
+
+container:
+  name: radarr
+  image: lscr.io/linuxserver/radarr
+  tag: latest
+
+service:
+  name: radarr-service
+  portName: http-port
+  port: 7878
+  targetPort: 7878
+
+ingress:
+  name: radarr-ingress
+  hostName: radarr.home

@@ -1,0 +1,35 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ .Values.configVolume.pv.name }}
+spec:
+  capacity:
+    storage: {{ .Values.configVolume.capacity }}
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: ""
+  iscsi:
+    targetPortal: {{ .Values.iscsi.targetIP }}
+    iqn: {{ .Values.iscsi.iqn }}
+    lun: {{ .Values.iscsi.lun }}
+    fsType: ext4
+    readOnly: false
+    chapAuthSession: false
+  persistentVolumeReclaimPolicy: Retain
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.configVolume.pvc.name }}
+  namespace: {{ .Values.namespace.name }}
+spec:
+  storageClassName: ""
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.configVolume.capacity }}
+  volumeName: {{ .Values.configVolume.pv.name }}
+
