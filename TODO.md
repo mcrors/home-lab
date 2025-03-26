@@ -1,20 +1,9 @@
 # Media Setup
-* Expand the volume for transmission
-    * Grab the claim id
-    * delete the config file which holds the claim info
-    * update the pv and pvc for this volume in the helm chart
-    * re-deploy the helm chart
 * Create helm chart for radarr and install onto cluster
 * Install and configer homarr
 * Install and configer JellyFin
     * Once this is working, it will require side loading the client to the TV
-
-
-# iscsi
-* periodic rescan on iscsi initator
-    * this is so that we can see new luns if they are created on the target
-* do login and discovery on iscsi initator on restart
-
+* Move prowlarr, sonarr and radarr to a single helm chart with 3 different value files
 
 # Security
 * Add ssl certs to cluster workloads
@@ -35,7 +24,6 @@
 * Create Temperature monitoring and fan management app
 * Setup up Loki for log storage
 
-
 # Backup volumes on iscsi Target
 * Clean up log file
     * Log to the same file for a week, then truncate the file
@@ -44,4 +32,9 @@
     * delete files older that 3 weeks
     * maybe do this in a cron job
 
+# Self hosted container registry
+* Determine which registry to use
+* Set up automated vendoring of specific images
+    * This should include periodic checks for updates
 
+# Clean up ansible playbooks

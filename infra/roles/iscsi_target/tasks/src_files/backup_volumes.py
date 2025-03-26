@@ -47,6 +47,7 @@ class JsonFormatter(logging.Formatter):
 
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 handler =logging.StreamHandler(sys.stdout)
 log_file_path = "/var/log/backup-scripts/backup.log"
 file_handler = logging.FileHandler(log_file_path)
