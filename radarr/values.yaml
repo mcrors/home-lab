@@ -32,9 +32,9 @@ mediaVolume:
 downloadsVolume:
   accessMode: ReadWriteMany
   pv:
-    name: sonarr-downloads-pv
+    name: radarr-downloads-pv
   pvc:
-    name: sonarr-downloads-pvc
+    name: radarr-downloads-pvc
   nfs:
     capacity: 100Gi
     path: /downloads
