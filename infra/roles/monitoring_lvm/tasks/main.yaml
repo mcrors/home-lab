@@ -1,0 +1,45 @@
+---
+- name: Ensure LVM tools are installed
+  package:
+    name: lvm2
+    state: present
+
+- name: Create physical volume
+  command: pvcreate {{ monitoring_disk }}
+  args:
+    creates: "/dev/{{ monitoring_vg }}/{{ monitoring_lvs[0].name }}"  # Check if first LV exists
+
+- name: Create volume group if not exists
+  command: vgcreate {{ monitoring_vg }} {{ monitoring_disk }}
+  args:
+    creates: "/dev/{{ monitoring_vg }}/{{ monitoring_lvs[0].name }}"  # Check if first LV exists
+
+- name: Create logical volumes
+  lvol:
+    vg: "{{ monitoring_vg }}"
+    lv: "{{ item.name }}"
+    size: "{{ item.size }}"
+  loop: "{{ monitoring_lvs }}"
+
+- name: Format the logical volumes
+  filesystem:
+    fstype: ext4
+    dev: "/dev/{{ monitoring_vg }}/{{ item.name }}"
+  loop: "{{ monitoring_lvs }}"
+
+- name: Ensure mount points exist
+  file:
+    path: "{{ item.mount }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ monitoring_lvs }}"
+
+- name: Ensure logical volumes are mounted and persist in fstab
+  mount:
+    path: "{{ item.mount }}"
+    src: "/dev/{{ monitoring_vg }}/{{ item.name }}"
+    fstype: ext4
+    state: mounted
+    opts: defaults
+  loop: "{{ monitoring_lvs }}"
+

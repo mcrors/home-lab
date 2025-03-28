@@ -1,5 +1,4 @@
 # Media Setup
-* Create helm chart for radarr and install onto cluster
 * Install and configer homarr
 * Install and configer JellyFin
     * Once this is working, it will require side loading the client to the TV
@@ -12,17 +11,13 @@
 * Is there a way to add TLS to the exporters to prometheus
 
 # Monitoring
-* Add node exporter to all homelab machines
 * Add cron exporter to iscsi target
 * Add cron exporter to iscsi initator
 * Add lvm exporter to iscsi target
-* Setup prometheus for metric scraping and storage
-    * This will go on the iscsi server
-    * We will have a seperate physical drive for this data
-* Setup Grafana for visualization
-    * This may as well go on the iscsi server too
 * Create Temperature monitoring and fan management app
 * Setup up Loki for log storage
+
+* Check that the volumes are mounted on fstab
 
 # Backup volumes on iscsi Target
 * Clean up log file

@@ -1,0 +1,11 @@
+# Default disk for LVM (change as needed)
+monitoring_disk: "/dev/sdb1"  # Change this to your actual disk
+
+# Volume group name
+monitoring_vg: "monitoring_vg"
+
+# Logical volumes and mount points
+monitoring_lvs:
+  - { name: "prometheus", size: "200G", mount: "/mnt/prometheus" }
+  - { name: "grafana", size: "1G", mount: "/mnt/grafana" }
+  - { name: "nginx", size: "512M", mount: "/mnt/nginx" }

@@ -36,3 +36,9 @@
   service:
     name: docker
     state: started
+
+- name: Install Docker Compose
+  get_url:
+    url: "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-{{ ansible_architecture }}"
+    dest: "/usr/local/bin/docker-compose"
+    mode: '0755'

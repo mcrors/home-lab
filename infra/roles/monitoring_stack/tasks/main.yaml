@@ -1,0 +1,90 @@
+---
+- name: Ensure Prometheus config directory exists
+  file:
+    path: /mnt/prometheus/config
+    state: directory
+    owner: 65534  # Nobody user (or change to match container UID)
+    group: 65534
+    mode: "0755"
+
+- name: Copy Prometheus config to LVM volume
+  template:
+    src: prometheus.yaml.j2
+    dest: /mnt/prometheus/config/prometheus.yml
+
+- name: Ensure Grafana config directory exists
+  file:
+    path: /mnt/grafana/config
+    state: directory
+    mode: "0755"
+
+- name: Ensure Grafana dashboards directory exists
+  file:
+    path: /mnt/grafana/dashboards
+    state: directory
+    mode: "0755"
+
+- name: Download Grafana dashboard from public library
+  get_url:
+    url: "https://grafana.com/api/dashboards/{{ grafana_dashboard_id }}/revisions/latest/download"
+    dest: "/mnt/grafana/dashboards/dashboard-{{ grafana_dashboard_id }}.json"
+    mode: "0644"
+
+- name: Ensure Grafana dashboards provisioning directory exists
+  file:
+    path: /mnt/grafana/provisioning/dashboards
+    state: directory
+    mode: "0755"
+
+- name: Copy Grafana dashboard provisioning config
+  template:
+    src: dashboards.yml.j2
+    dest: /mnt/grafana/provisioning/dashboards/dashboards.yml"
+
+# Ensure Grafana directories have the correct permissions (owner UID 472)
+- name: Ensure Grafana directory has correct ownership
+  file:
+    path: /mnt/grafana
+    owner: 472
+    group: 472
+    recurse: yes
+
+# Ensure Prometheus directories have the correct permissions (owner UID 65534)
+- name: Ensure Prometheus directory has correct ownership
+  file:
+    path: /mnt/prometheus
+    owner: 65534
+    group: 65534
+    recurse: yes
+
+- name: Move dashboard to Grafana volume
+  copy:
+    src: "/mnt/grafana/dashboards/dashboard-{{ grafana_dashboard_id }}.json"
+    dest: "/mnt/grafana/dashboards/dashboard.json"
+    remote_src: yes
+
+- name: Ensure Nginx config directory exists
+  file:
+    path: /mnt/nginx
+    state: directory
+    mode: "0755"
+
+- name: Copy Nginx config to LVM volume
+  template:
+    src: nginx.conf.j2
+    dest: /mnt/nginx/nginx.conf
+
+- name: Ensure monitoring compose directory exists
+  file:
+    path: "{{ compose_file_dir }}"
+    state: directory
+
+- name: Copy Docker Compose file
+  copy:
+    src: docker-compose.yaml
+    dest: "{{ compose_file_dir }}/docker-compose.yaml"
+
+- name: Run Docker Compose
+  command:
+    cmd: docker-compose up --force-recreate -d
+    chdir: "{{ compose_file_dir }}"

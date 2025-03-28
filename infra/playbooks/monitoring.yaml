@@ -1,0 +1,43 @@
+- name: Pre tasks
+  hosts: node_exporters, monitoring_server
+  become: true
+  roles:
+    - common
+  vars_files:
+      - ../vars/main.yaml
+
+- name: Install Node Exporter on all nodes
+  hosts: node_exporters
+  become: true
+  roles:
+    - node_exporter
+  vars_files:
+      - ../vars/main.yaml
+
+- name: Install docker
+  hosts: monitoring_server
+  become: true
+  roles:
+    - docker
+  vars_files:
+    - ../vars/main.yaml
+
+# This just creates the volumes,
+  # makes an fs
+  # and mounts the volumes to prom, graf and nginx
+- name: Setup Monitoring LVM
+  hosts: monitoring_server
+  become: true
+  roles:
+    - monitoring_lvm
+  vars_files:
+    ../vars/main.yaml
+
+# This is for the config files and docker compose files
+- name: Install & Setup Prometheus & Grafana (Monitoring Stack)
+  hosts: monitoring_server  # Only one or a few hosts
+  become: true
+  roles:
+    - monitoring_stack
+  vars_files:
+    - ../vars/main.yaml

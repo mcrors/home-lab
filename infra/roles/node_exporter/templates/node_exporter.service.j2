@@ -1,0 +1,15 @@
+[Unit]
+Description=Node Exporter for {{ ansible_architecture  }}
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User={{ node_exporter_user }}
+Group={{ node_exporter_group }}
+Type=simple
+ExecStart={{ node_exporter_bin_path }}/node_exporter --web.listen-address=:{{ node_exporter_port }}
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
