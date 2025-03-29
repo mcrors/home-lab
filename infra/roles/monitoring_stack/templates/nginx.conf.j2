@@ -1,6 +1,19 @@
+# HTTP server block for Grafana
 server {
     listen 80;
-    server_name grafana.home;
+    server_name grafana.houli.eu;  # Use grafana domain
+
+    # Redirect all HTTP traffic to HTTPS
+    return 301 https://$host$request_uri;
+}
+
+# HTTPS server block for Grafana
+server {
+    listen 443 ssl;
+    server_name grafana.houli.eu;  # Use grafana domain
+
+    ssl_certificate /etc/nginx/certs/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/privkey.pem;
 
     location / {
         proxy_pass http://grafana:3000;  # Proxy traffic to Grafana container
@@ -11,9 +24,22 @@ server {
     }
 }
 
+# HTTP server block for Prometheus
 server {
     listen 80;
-    server_name prometheus.home;
+    server_name prometheus.houli.eu;  # Use prometheus domain
+
+    # Redirect all HTTP traffic to HTTPS
+    return 301 https://$host$request_uri;
+}
+
+# HTTPS server block for Prometheus
+server {
+    listen 443 ssl;
+    server_name prometheus.houli.eu;  # Use prometheus domain
+
+    ssl_certificate /etc/nginx/certs/fullchain.pem;
+    ssl_certificate_key /etc/nginx/certs/privkey.pem;
 
     location / {
         proxy_pass http://prometheus:9090;  # Proxy traffic to Prometheus container

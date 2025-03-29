@@ -13,6 +13,10 @@
 # lib-pi-05.home      192.168.1.133
 # lib-pi-06.home      192.168.1.72
 
+certbot:
+  hosts:
+    lib-pi-06.home:
+
 monitoring_server:
   hosts:
     lib-pi-06.home:
@@ -29,7 +33,6 @@ node_exporters:
     lib-potato-02:
     lib-potato-03:
     lib-potato-04:
-    lib-hp-01:
 
 nginx:
   hosts:

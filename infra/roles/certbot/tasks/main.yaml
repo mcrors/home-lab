@@ -1,0 +1,40 @@
+# This is for hosts that use certbot to renew certificates for nginx
+- name: Install certbot packages
+  apt:
+    pkg:
+      - certbot
+      - python3-certbot-dns-cloudflare
+    state: present
+    update_cache: yes
+
+# create a cloudflare api token and put it into the below locations
+    # sudo mkdir -p /etc/letsencrypt
+    # sudo viw /etc/letsencrypt/cloudflare.
+# add content
+    # dns_cloudflare_api_token = YOUR_CLOUDFLARE_API_TOKEN
+# update access
+    # sudo chmod 600 /etc/letsencrypt/cloudflare.ini
+# run this manually when setting up certbot for the first time on a machine
+    # sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini -d "*.houli.eu"
+
+- name: Ensure certbot.timer is enabled and active
+  ansible.builtin.systemd:
+    name: certbot.timer
+    enabled: yes
+    state: started
+
+- name: Add deploy-hook to certbot renewal configuration
+  ansible.builtin.lineinfile:
+    path: "/etc/letsencrypt/renewal/houli.eu.conf"  # Replace with the correct renewal config file
+    regexp: '^deploy-hook'
+    line: 'deploy-hook = /usr/local/bin/reload_nginx.sh'
+    state: present
+
+- name: Create the restart_docker_compose.sh script
+  ansible.builtin.copy:
+    dest: /usr/local/bin/reload_nginx.sh
+    content: |
+      #!/bin/bash
+      # Reload Nginx to use the new certificates
+      docker exec nginx_reverse_proxy nginx -s reload
+    mode: '0755'

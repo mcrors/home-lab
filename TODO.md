@@ -11,11 +11,18 @@
 * Is there a way to add TLS to the exporters to prometheus
 
 # Monitoring
-* Add cron exporter to iscsi target
-* Add cron exporter to iscsi initator
+* add lib-hp-01 to monitoring
+* Add cron exporter to all hosts
 * Add lvm exporter to iscsi target
 * Create Temperature monitoring and fan management app
 * Setup up Loki for log storage
+* Create grafana dashboards for:
+    * host health -> green or red depending on if the host is reachable
+    * Cron jobs -> List of cron jobs with last 10 run results
+* Set up alerting for specific metrics
+* add cAdvisor:
+    * exporter
+    * dashboard
 
 * Check that the volumes are mounted on fstab
 
