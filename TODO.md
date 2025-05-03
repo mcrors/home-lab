@@ -23,6 +23,7 @@
 * add cAdvisor:
     * exporter
     * dashboard
+* Setup Uptime Kuma for service and host monitoring and notification
 
 * Check that the volumes are mounted on fstab
 
@@ -40,3 +41,6 @@
     * This should include periodic checks for updates
 
 # Clean up ansible playbooks
+
+# Other Services
+* Look into paperless service
