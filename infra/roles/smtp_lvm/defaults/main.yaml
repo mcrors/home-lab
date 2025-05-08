@@ -1,0 +1,9 @@
+# Default disk for LVM (change as needed)
+smtp_disk: "/dev/sdb1"  # Change this to your actual disk
+
+# Volume group name
+smtp_vg: "smtp_vg"
+
+# Logical volumes and mount points
+smtp_lvs:
+  - { name: "smtp", size: "1G", mount: "/mnt/smtp" }

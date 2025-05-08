@@ -17,6 +17,10 @@ certbot:
   hosts:
     lib-pi-06.home:
 
+smtp_server:
+  hosts:
+    lib-pi-04.home:
+
 monitoring_server:
   hosts:
     lib-pi-06.home:

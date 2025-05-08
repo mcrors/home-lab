@@ -1,0 +1,51 @@
+- name: Add ProtonMail APT repository
+  apt_repository:
+    repo: "deb https://apt.proton.me/debian stable main"
+    filename: protonmail
+    state: present
+
+- name: Import ProtonMail GPG key
+  get_url:
+    url: https://proton.me/keys/protonmail-bridge.asc
+    dest: /etc/apt/trusted.gpg.d/protonmail.asc
+    mode: '0644'
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install protonmail-bridge package
+  apt:
+    name: protonmail-bridge
+    state: present
+
+# AFTER install protonmail-bridge
+# Run:
+# protonmail-bridge --cli
+# to:
+# Log in to your Proton account
+# Generate the SMTP credentials you'll use in your Postfix container
+
+# Ensure Postfix directories have the correct permissions (owner UID 1000)
+- name: Ensure Postfix directory has correct ownership
+  file:
+    path: /mnt/smtp
+    owner: 1000
+    group: 1000
+    recurse: yes
+
+- name: Ensure monitoring compose directory exists
+  file:
+    path: "{{ compose_file_dir }}"
+    state: directory
+
+- name: Copy Docker Compose file
+  copy:
+    src: docker-compose.yaml
+    dest: "{{ compose_file_dir }}/docker-compose.yaml"
+
+- name: Run Docker Compose
+  command:
+    cmd: docker-compose up --force-recreate -d
+    chdir: "{{ compose_file_dir }}"

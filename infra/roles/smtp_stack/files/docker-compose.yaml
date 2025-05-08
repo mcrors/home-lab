@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  smtp-relay:
+    image: boky/postfix
+    container_name: smtp-relay
+    restart: unless-stopped
+    ports:
+      - "1025:25"  # host port 1025 → container port 25
+    environment:
+      - MAILNAME=houli.eu
+      - RELAYHOST=host.docker.internal:1025  # points to ProtonMail Bridge on the host
+      - SMTP_USERNAME=your-bridge-username
+      - SMTP_PASSWORD=your-bridge-password
+      - SENDER_DOMAIN=houli.eu
+      - ALLOWED_SENDER_DOMAINS=houli.eu
+    volumes:
+      - /mnt/smtp:/var/log/postfix

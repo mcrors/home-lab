@@ -1,0 +1,35 @@
+- name: Pre tasks
+  hosts: smtp_server
+  become: true
+  roles:
+    - common
+  vars_files:
+      - ../vars/main.yaml
+
+- name: Install docker
+  hosts: smtp_server
+  become: true
+  roles:
+    - docker
+  vars_files:
+    - ../vars/main.yaml
+
+# This just creates the volumes,
+# makes an fs
+# and mounts the volumes to prom, graf and nginx
+- name: Setup SMTP LVM
+  hosts: smtp_server
+  become: true
+  roles:
+    - smtp_lvm
+  vars_files:
+    ../vars/main.yaml
+
+# This is for the config files and docker compose files
+- name: Install & Setup Postfix & ProtonBridge (SMTP Stack)
+  hosts: smtp_server  # Only one or a few hosts
+  become: true
+  roles:
+    - smtp_stack
+  vars_files:
+    - ../vars/main.yaml

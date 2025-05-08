@@ -1,0 +1,43 @@
+---
+- name: Ensure LVM tools are installed
+  package:
+    name: lvm2
+    state: present
+
+- name: Create physical volume
+  lvg:
+    vg: "{{ smtp_vg }}"
+    pvs: "{{ smtp_disk }}"
+
+- name: Create logical volumes
+  lvol:
+    vg: "{{ smtp_vg }}"
+    lv: "{{ item.name }}"
+    size: "{{ item.size }}"
+  loop: "{{ smtp_lvs }}"
+
+- name: Format the logical volumes
+  filesystem:
+    fstype: ext4
+    dev: "/dev/{{ smtp_vg }}/{{ item.name }}"
+  loop: "{{ smtp_lvs }}"
+
+- name: Ensure mount points exist
+  file:
+    path: "{{ item.mount }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ smtp_lvs }}"
+
+- name: Mount and persist logical volumes
+  mount:
+    path: "{{ item.mount }}"
+    src: "/dev/{{ smtp_vg }}/{{ item.name }}"
+    fstype: ext4
+    fstab: yes
+    opts: defaults
+    state: mounted
+    dump: 0
+    passno: 2
+  loop: "{{ smtp_lvs }}"
+
