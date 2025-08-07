@@ -13,10 +13,12 @@
 # lib-pi-05.home      192.168.1.133
 # lib-pi-06.home      192.168.1.72
 
+# These are the non k8s nodes that have certbot installed
 certbot:
   hosts:
     lib-pi-06.home:
 
+# for Alerts, we need to have an smtp server. It lives on these nodes
 smtp_server:
   hosts:
     lib-pi-04.home:
