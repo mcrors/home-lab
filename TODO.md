@@ -40,11 +40,14 @@
 * Set up automated vendoring of specific images
     * This should include periodic checks for updates
 
+# automated security updates
+
 # Clean up ansible playbooks
 
 # Redundancy
 * Install MetalLB as a daemon set to prevent relying on a single ip for service discovery
     * the ip that all the k3s services were assigned to in pihole no longer worked
       and I was unable to reach any of my services
+
 # Other Services
 * Look into paperless service

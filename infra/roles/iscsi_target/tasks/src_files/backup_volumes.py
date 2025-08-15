@@ -1,13 +1,15 @@
 import datetime
 import json
 import logging
+import os
 import shutil
 import subprocess
 import sys
+import time
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 
 BACKUP_DIR = Path("/mnt/lvm-backups")
@@ -27,10 +29,10 @@ class LvmItem():
 
 
 @dataclass
-class BackupResult():
+class BackupResult:
     lv: LvmItem
     passed: bool = False
-    error: BackupException = None
+    error: Optional[BackupException] = None
 
 
 class JsonFormatter(logging.Formatter):
@@ -48,7 +50,6 @@ class JsonFormatter(logging.Formatter):
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-handler =logging.StreamHandler(sys.stdout)
 log_file_path = "/var/log/backup-scripts/backup.log"
 file_handler = logging.FileHandler(log_file_path)
 file_handler.setFormatter(JsonFormatter())  # JSON format
@@ -157,6 +158,8 @@ def create_dir(dir: Path, recreate=False) -> None:
 
 def backup_lvs(vg: LvmItem, results: List[BackupResult]) -> None:
     lvs = get_all_lvs(vg)
+    lv_snap_mnt_path = None
+    snapshot_dev = None
     for lv in lvs:
         result = BackupResult(lv=lv)
         logger.info(f"backing up vg: {vg.name} - lv: {lv.name}")
@@ -180,9 +183,13 @@ def backup_lvs(vg: LvmItem, results: List[BackupResult]) -> None:
             result.error = exc
             result.passed = False
         finally:
-            unmount(lv_snap_mnt_path)
-            remove_snapshot_vol(snapshot_dev)
-            delete_dir(lv_snap_mnt_path)
+            if lv_snap_mnt_path:
+                unmount(lv_snap_mnt_path)
+            if snapshot_dev:
+                remove_snapshot_vol(snapshot_dev)
+            if lv_snap_mnt_path:
+                delete_dir(lv_snap_mnt_path)
+
 
         results.append(result)
 
@@ -192,6 +199,27 @@ def get_all_vgs() -> List[LvmItem]:
     return _get_lvm_data(cmd, "vg")
 
 
+def delete_old_files(days: int=30) -> None:
+    now = time.time()
+    cutoff = now - (days * 86400)  # 86400 seconds in a day
+
+    deleted_files = 0
+
+    for root, _, files in os.walk(BACKUP_DIR):
+        for filename in files:
+            filepath = os.path.join(root, filename)
+            try:
+                file_mtime = os.path.getmtime(filepath)
+                if file_mtime < cutoff:
+                    os.remove(filepath)
+                    logger.info(f"Deleted: {filepath}")
+                    deleted_files += 1
+            except Exception as e:
+                print(f"Failed to delete {filepath}: {e}")
+
+    logger.info(f"\nTotal files deleted: {deleted_files}")
+
+
 def main():
     logger.info("backing up logical volumes")
     vgs = get_all_vgs()
@@ -199,6 +227,8 @@ def main():
     for vg in vgs:
         backup_lvs(vg, results)
     logger.info(f"RESULTS: {results}")
+    logger.info("cleaning up old backups")
+    delete_old_files()
 
 
 if __name__ == "__main__":
