@@ -11,4 +11,6 @@ networkmanager_connection_name: ansible-managed
 interface: eth0
 gateway: 192.168.1.1
 dns: 192.168.1.15
-
+journald_system_max_use: "200M"
+journald_system_max_file_size: "50M"
+journald_max_retention: "7day"
