@@ -14,3 +14,6 @@ dns: 192.168.1.15
 journald_system_max_use: "200M"
 journald_system_max_file_size: "50M"
 journald_max_retention: "7day"
+watchdog_timeout: 15           # seconds
+watchdog_max_load1: 24         # optional extra check
+

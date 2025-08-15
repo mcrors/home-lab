@@ -1,0 +1,26 @@
+# Ensure that journald logs are retained after unplanned restarts
+- name: Ensure persistent journal directory exists
+  file:
+    path: /var/log/journal
+    state: directory
+    owner: root
+    group: systemd-journal
+    mode: "2755"
+
+- name: Ensure journald drop-in directory exists
+  file:
+    path: /etc/systemd/journald.conf.d
+    state: directory
+    mode: "0755"
+
+- name: Configure journald persistence and limits (drop-in)
+  copy:
+    dest: /etc/systemd/journald.conf.d/10-persistent-limits.conf
+    mode: "0644"
+    content: |
+      [Journal]
+      Storage=persistent
+      SystemMaxUse={{ journald_system_max_use }}
+      SystemMaxFileSize={{ journald_system_max_file_size }}
+      MaxRetentionSec={{ journald_max_retention }}
+  notify: restart journald

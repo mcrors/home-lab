@@ -13,6 +13,11 @@
 # lib-pi-05.home      192.168.1.133
 # lib-pi-06.home      192.168.1.72
 
+# These nodes sometimes stall for some reason
+unstable:
+  hosts:
+    lib-potato-03.home:
+
 # These are the non k8s nodes that have certbot installed
 certbot:
   hosts:
@@ -35,10 +40,10 @@ node_exporters:
     lib-pi-04.home:
     lib-pi-05.home:
     lib-pi-06.home:
-    lib-potato-01:
-    lib-potato-02:
-    lib-potato-03:
-    lib-potato-04:
+    lib-potato-01.home:
+    lib-potato-02.home:
+    lib-potato-03.home:
+    lib-potato-04.home:
 
 nginx:
   hosts:

@@ -1,0 +1,28 @@
+- name: Install apt packages
+  apt:
+    pkg:
+      - vim
+      - net-tools
+      - lm-sensors
+      - python3-pip
+    state: present
+    update_cache: yes
+
+- name: Disable ssh Password login
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+  notify:
+    - restart sshd
+
+- name: Copy rc files
+  copy:
+    src: "./src_files/{{ item }}"
+    dest: "/home/{{ ansible_user }}/{{ item }}"
+    mode: '0644'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+  with_items:
+    - .bashrc
+    - .vimrc

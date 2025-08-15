@@ -1,0 +1,163 @@
+---
+- name: Setup watchdog on lib-potato-03
+  hosts: lib-potato-03.home
+  become: true
+  gather_facts: true
+
+  vars:
+    # Tune as you like. Keep it conservative first.
+    wd_settings:
+      watchdog_device: "/dev/watchdog"
+      interval: 15
+      realtime: "no"
+      priority: "1"
+      max_load_1: 24           # disable by default (24 >> typical load), set lower later if you want
+      min_memory: 0            # disable memory check by default
+      # Uncomment to ping gateway instead of default
+      # ping: "192.168.1.1"
+
+    # Likely boot config candidates on Pi OS / Armbian / Debian for ARM
+    boot_cfg_candidates:
+      - /boot/efi/config.txt                 # UEFI-style boot config
+      - /boot/extlinux/extlinux.conf         # extlinux boots
+      - /boot/firmware/config.txt            # Pi OS Bookworm
+      - /boot/config.txt                     # Pi OS Bullseye
+      - /boot/armbianEnv.txt                 # Armbian
+      - /boot/uEnv.txt
+      - /boot/boot.ini
+
+    # Kernel module for Le Potato (Amlogic GXBB/GXL family)
+    watchdog_kernel_module: "meson_gxbb_wdt"
+
+  tasks:
+    - name: Ensure locales package exists (avoids perl/locale warnings in hooks)
+      apt:
+        name: locales
+        state: present
+        update_cache: yes
+
+    - name: Ensure en_GB.UTF-8 is generated (safe noop if already done)
+      lineinfile:
+        path: /etc/locale.gen
+        regexp: '^\s*#?\s*en_GB\.UTF-8\s+UTF-8\s*$'
+        line: 'en_GB.UTF-8 UTF-8'
+      register: _gb_locale_line
+
+    - name: Run locale-gen if we changed /etc/locale.gen
+      command: locale-gen
+      when: _gb_locale_line.changed
+
+    - name: Install watchdog
+      apt:
+        name: watchdog
+        state: present
+
+    - name: Check watchdog character device
+      stat:
+        path: /dev/watchdog
+      register: wd_dev
+
+    - name: Load hardware watchdog module now if /dev/watchdog missing
+      modprobe:
+        name: "{{ watchdog_kernel_module }}"
+        state: present
+      when: not wd_dev.stat.exists
+
+    - name: Persist watchdog module across reboots
+      copy:
+        dest: /etc/modules-load.d/watchdog.conf
+        content: |
+          {{ watchdog_kernel_module }}
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Re-check watchdog device after module load
+      stat:
+        path: /dev/watchdog
+      register: wd_dev_after
+
+    - name: Fail if watchdog device still missing (hardware watchdog expected)
+      fail:
+        msg: >
+          /dev/watchdog not present even after loading {{ watchdog_kernel_module }}.
+          Check kernel support for the board or switch to systemd software watchdog.
+      when: not wd_dev_after.stat.exists
+
+    # Detect boot config path (sometimes you want to set cmdline/overlays later)
+    - name: Stat boot config candidates
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop: "{{ boot_cfg_candidates }}"
+      register: boot_cfg_stats
+
+    - name: Build list of existing boot config files
+      ansible.builtin.set_fact:
+        boot_cfg_existing: >-
+          {{ boot_cfg_stats.results
+             | selectattr('stat.exists')
+             | map(attribute='item')
+             | list }}
+
+    - name: Pick the first existing path (if any)
+      ansible.builtin.set_fact:
+        boot_cfg_path: "{{ boot_cfg_existing[0] }}"
+      when: boot_cfg_existing | length > 0
+
+    - name: Fail if no boot config file found
+      ansible.builtin.fail:
+        msg: "No boot config file found in {{ boot_cfg_candidates }}"
+      when: boot_cfg_existing | length == 0
+
+    - name: Show chosen boot config path
+      ansible.builtin.debug:
+        msg: "Boot config: {{ boot_cfg_path }}"
+      when: boot_cfg_existing | length > 0
+
+    # Configure /etc/watchdog.conf safely and minimally
+    - name: Ensure /etc/watchdog.conf has sane defaults
+      blockinfile:
+        path: /etc/watchdog.conf
+        marker: "# {mark} ANSIBLE WATCHDOG"
+        block: |
+          watchdog-device = {{ wd_settings.watchdog_device }}
+          interval = {{ wd_settings.interval }}
+          realtime = {{ wd_settings.realtime }}
+          priority = {{ wd_settings.priority }}
+          max-load-1 = {{ wd_settings.max_load_1 }}
+          min-memory = {{ wd_settings.min_memory }}
+          # Uncomment to ping your gateway or a reliable host
+          # ping = {{ wd_settings.ping | default('') }}
+      notify: Restart watchdog
+
+    - name: Enable and start watchdog service
+      systemd:
+        name: watchdog
+        enabled: true
+        state: started
+
+    # Optional: if you KNOW you don’t use iSCSI on this node, uncomment to purge the troublemaker.
+    - name: Purge open-iscsi (optional)
+      apt:
+        name: open-iscsi
+        state: absent
+        purge: yes
+
+# THIS DOES NOT WORK. had to restart manuall
+  # handlers:
+  # - name: Restart watchdog (non-blocking)
+    # listen: "Restart watchdog"
+    # ansible.builtin.systemd:
+      # name: watchdog
+      # state: restarted
+      # daemon_reload: true
+      # no_block: true
+
+  # - name: Wait for watchdog to be active
+    # listen: "Restart watchdog"
+    # ansible.builtin.command: systemctl is-active watchdog
+    # register: _wd_active
+    # retries: 10
+    # delay: 1
+    # until: _wd_active.rc == 0
+    # changed_when: false

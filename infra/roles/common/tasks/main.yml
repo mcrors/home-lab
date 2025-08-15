@@ -1,55 +1,6 @@
-- name: Install apt packages
-  apt:
-    pkg:
-      - vim
-      - net-tools
-      - lm-sensors
-      - python3-pip
-    state: present
-    update_cache: yes
+- name: Basic Tasks
+  include_tasks: basic.yaml
 
-- name: Disable ssh Password login
-  lineinfile:
-    path: /etc/ssh/sshd_config
-    regexp: '^PasswordAuthentication'
-    line: 'PasswordAuthentication no'
-  notify:
-    - restart sshd
+- name: journald Log Tasks
+  include_tasks: journald.yaml
 
-- name: Copy rc files
-  copy:
-    src: "./src_files/{{ item }}"
-    dest: "/home/{{ ansible_user }}/{{ item }}"
-    mode: '0644'
-    owner: "{{ ansible_user }}"
-    group: "{{ ansible_user }}"
-  with_items:
-    - .bashrc
-    - .vimrc
-
-# The below is to ensure that journald logs are retained after unplanned restarts
-- name: Ensure persistent journal directory exists
-  file:
-    path: /var/log/journal
-    state: directory
-    owner: root
-    group: systemd-journal
-    mode: "2755"
-
-- name: Ensure journald drop-in directory exists
-  file:
-    path: /etc/systemd/journald.conf.d
-    state: directory
-    mode: "0755"
-
-- name: Configure journald persistence and limits (drop-in)
-  copy:
-    dest: /etc/systemd/journald.conf.d/10-persistent-limits.conf
-    mode: "0644"
-    content: |
-      [Journal]
-      Storage=persistent
-      SystemMaxUse={{ journald_system_max_use }}
-      SystemMaxFileSize={{ journald_system_max_file_size }}
-      MaxRetentionSec={{ journald_max_retention }}
-  notify: restart journald
