@@ -53,7 +53,7 @@ pod:
 container:
   name: radarr
   image: lscr.io/linuxserver/radarr
-  tag: latest
+  tag: arm64v8-5.26.2
 
 service:
   name: radarr-service
@@ -63,4 +63,4 @@ service:
 
 ingress:
   name: radarr-ingress
-  hostName: radarr.home
+  hostName: radarr.houli.eu
