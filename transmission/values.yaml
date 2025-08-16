@@ -47,8 +47,8 @@ container:
 
 secret:
   name: "openvpn-credentials"
-  username: "not-real-username" # get these from PROTONVPN
-  password: "not-real-password" # get these from PROTONVPN
+  username: "not-a-real-username" # get these from PROTONVPN
+  password: "not-a-real-password" # get these from PROTONVPN
 
 service:
   name: "transmission-service"
@@ -58,4 +58,4 @@ service:
 
 ingress:
   name: transmission-ingress
-  hostName: transmission.home
+  hostName: transmission.houli.eu

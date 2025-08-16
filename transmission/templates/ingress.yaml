@@ -5,7 +5,7 @@ metadata:
   name: {{ .Values.ingress.name }}
   namespace: {{ .Values.namespace.name }}
   annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ingress.class: "traefik"
 spec:
   rules:
     - host: {{ .Values.ingress.hostName }}
