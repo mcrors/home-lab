@@ -1,0 +1,14 @@
+
+# Intentionally minimal: rely on sane chart defaults.
+# Add tuning here if you want to override (replicas, resources, metrics, etc).
+
+# controller:
+#   replicaCount: 1
+
+# speaker:
+#   # hostNetwork, tolerations, etc can be customized if needed
+#   tolerations: []
+#   nodeSelector: {}
+
+# metrics:
+#   enabled: false         # flip to true + add ServiceMonitor if you have Prometheus

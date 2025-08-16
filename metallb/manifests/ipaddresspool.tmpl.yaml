@@ -1,0 +1,8 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: ${POOL_NAME}
+  namespace: ${NAMESPACE}
+spec:
+  addresses:
+    - ${POOL_ADDRESSES}
