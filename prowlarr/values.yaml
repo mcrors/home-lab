@@ -30,7 +30,7 @@ pod:
 container:
   name: prowlarr
   image: lscr.io/linuxserver/prowlarr
-  tag: latest
+  tag: arm64v8-1.37.0
 
 service:
   name: "prowlarr-service"
@@ -40,4 +40,4 @@ service:
 
 ingress:
   name: "prowlarr-ingress"
-  hostName: "prowlarr.home"
+  hostName: "prowlarr.houli.eu"
