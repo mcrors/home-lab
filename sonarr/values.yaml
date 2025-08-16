@@ -53,7 +53,7 @@ pod:
 container:
   name: sonarr
   image: lscr.io/linuxserver/sonarr
-  tag: latest
+  tag: arm64v8-4.0.15
 
 service:
   name: sonarr-service
@@ -63,4 +63,4 @@ service:
 
 ingress:
   name: sonarr-ingress
-  hostName: sonarr.home
+  hostName: sonarr.houli.eu
