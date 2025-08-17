@@ -1,0 +1,8 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: TLSStore
+metadata:
+  name: default           # must be "default"
+  namespace: kube-system  # Traefik's namespace
+spec:
+  defaultCertificate:
+    secretName: houli-eu-wildcard
