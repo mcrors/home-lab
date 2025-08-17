@@ -31,23 +31,21 @@
 * Clean up log file
     * Log to the same file for a week, then truncate the file
     * maybe do this in a cron job
-* Clean up the backup files
-    * delete files older that 3 weeks
-    * maybe do this in a cron job
 
 # Self hosted container registry
 * Determine which registry to use
 * Set up automated vendoring of specific images
     * This should include periodic checks for updates
 
-# automated security updates
+# Updates
+* automated security updates
+* debian bookworm update
+* k3s update
+
 
 # Clean up ansible playbooks
 
-# Redundancy
-* Install MetalLB as a daemon set to prevent relying on a single ip for service discovery
-    * the ip that all the k3s services were assigned to in pihole no longer worked
-      and I was unable to reach any of my services
-
 # Other Services
 * Look into paperless service
+* Add smpt server
+* Add alert manager
