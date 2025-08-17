@@ -1,0 +1,47 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cert-sync
+  namespace: kube-system
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cert-sync-secrets
+  namespace: kube-system
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "create", "update", "patch"]
+  - apiGroups: ["traefik.containo.us"]   # optional: read TLSStore/IngressRoute for sanity checks
+    resources: ["tlsstores", "ingressroutes"]
+    verbs: ["get", "list"]
+  - apiGroups: ["networking.k8s.io"]     # optional: read Ingress for sanity checks
+    resources: ["ingresses"]
+    verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cert-sync-secrets-binding
+  namespace: kube-system
+subjects:
+  - kind: ServiceAccount
+    name: cert-sync
+    namespace: kube-system
+roleRef:
+  kind: Role
+  name: cert-sync-secrets
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cert-sync-token
+  namespace: kube-system
+  annotations:
+    kubernetes.io/service-account.name: cert-sync
+type: kubernetes.io/service-account-token
