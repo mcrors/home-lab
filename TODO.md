@@ -5,9 +5,7 @@
 * Move prowlarr, sonarr and radarr to a single helm chart with 3 different value files
 
 # Security
-* Add ssl certs to cluster workloads
-    * This should be done via certmanager and letsEncrypts
-    * For all interal services we will use *.houli.eu
+* move plex to metallb and https (maybe)
 * Is there a way to add TLS to the exporters to prometheus
 
 # Monitoring
