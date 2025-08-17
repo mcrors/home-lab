@@ -1,0 +1,4 @@
+- name: run-deploy-hook
+  command: "{{ deploy_hook_path }}"
+  changed_when: false
+  failed_when: false

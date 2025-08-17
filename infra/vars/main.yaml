@@ -1,19 +1,26 @@
 ---
 
+# Basic vars
 ansible_user: hla
 systemd_dir: /etc/systemd/system
+networkmanager_connection_name: ansible-managed
+interface: eth0
+gateway: 192.168.1.1
+dns: 192.168.1.15
+
+# k3 vars
 k3s_version: v1.24.17+k3s1
 k3s_download_path: /usr/local/bin
 master_ip: "{{ hostvars[groups['k3smaster'][0]]['ansible_host'] | default(groups['k3smaster'][0]) }}"
 extra_server_args: ""
 extra_agent_args: ""
-networkmanager_connection_name: ansible-managed
-interface: eth0
-gateway: 192.168.1.1
-dns: 192.168.1.15
+
+# Journald vars
 journald_system_max_use: "200M"
 journald_system_max_file_size: "50M"
 journald_max_retention: "7day"
+
+# watchdog vars
 watchdog_timeout: 15           # seconds
 watchdog_max_load1: 24         # optional extra check
 

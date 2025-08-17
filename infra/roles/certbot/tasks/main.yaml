@@ -9,7 +9,7 @@
 
 # create a cloudflare api token and put it into the below locations
     # sudo mkdir -p /etc/letsencrypt
-    # sudo viw /etc/letsencrypt/cloudflare.
+    # sudo vim /etc/letsencrypt/cloudflare.ini
 # add content
     # dns_cloudflare_api_token = YOUR_CLOUDFLARE_API_TOKEN
 # update access
@@ -18,23 +18,46 @@
     # sudo certbot certonly --dns-cloudflare --dns-cloudflare-credentials /etc/letsencrypt/cloudflare.ini -d "*.houli.eu"
 
 - name: Ensure certbot.timer is enabled and active
-  ansible.builtin.systemd:
+  systemd:
     name: certbot.timer
     enabled: yes
     state: started
 
-- name: Add deploy-hook to certbot renewal configuration
-  ansible.builtin.lineinfile:
-    path: "/etc/letsencrypt/renewal/houli.eu.conf"  # Replace with the correct renewal config file
-    regexp: '^deploy-hook'
-    line: 'deploy-hook = /usr/local/bin/reload_nginx.sh'
-    state: present
+# --- Copy scripts from your git repo to the target (only when changed) ---
+- name: Copy reload_nginx.sh
+  copy:
+    src: "reload_nginx.sh"
+    dest: "{{ reload_nginx_path }}"
+    mode: "0755"
+  notify: run-deploy-hook
 
-- name: Create the restart_docker_compose.sh script
-  ansible.builtin.copy:
-    dest: /usr/local/bin/reload_nginx.sh
-    content: |
-      #!/bin/bash
-      # Reload Nginx to use the new certificates
-      docker exec nginx_reverse_proxy nginx -s reload
-    mode: '0755'
+- name: Copy push-wildcard-to-traefik.sh
+  copy:
+    src: "push-wildcard-to-traefik.sh"
+    dest: "{{ push_k8s_path }}"
+    mode: "0755"
+  notify: run-deploy-hook
+
+- name: Copy unified deploy hook (calls both)
+  copy:
+    src: "cert_renew_deploy.sh"
+    dest: "{{ deploy_hook_path }}"
+    mode: "0755"
+
+# Point Certbot renewal for this cert at the unified deploy hook
+- name: Ensure deploy-hook is set for {{ cert_domain }}
+  lineinfile:
+    path: "/etc/letsencrypt/renewal/{{ cert_domain }}.conf"
+    regexp: '^deploy-hook\s*='
+    line: "deploy-hook = {{ deploy_hook_path }}"
+    state: present
+    create: no
+
+# Make sure the kubeconfig used by the hook exists and is readable
+- name: Ensure kubeconfig path exists
+  ansible.builtin.file:
+    path: "{{ kubeconfig_path }}"
+    state: file
+    mode: "0600"
+  changed_when: false
+  failed_when: false
