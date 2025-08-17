@@ -5,8 +5,12 @@ metadata:
   name: {{ .Values.ingress.name }}
   namespace: {{ .Values.namespace.name }}
   annotations:
-    kubernetes.io/ingress.class: "traefik"
+    traefik.ingress.kubernetes.io/router.tls: "true"
 spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - {{ .Values.ingress.hostName }}
   rules:
     - host: {{ .Values.ingress.hostName }}
       http:

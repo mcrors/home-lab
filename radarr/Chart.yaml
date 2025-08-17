@@ -4,6 +4,6 @@ description: A Helm chart for my radarr home lab setup
 
 type: application
 
-version: 0.2.0
+version: 0.3.0
 
 appVersion: 5.26.2
