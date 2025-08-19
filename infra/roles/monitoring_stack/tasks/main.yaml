@@ -9,8 +9,21 @@
 
 - name: Copy Prometheus config to LVM volume
   template:
-    src: prometheus.yaml.j2
+    src: prometheus.yml.j2
     dest: /mnt/prometheus/config/prometheus.yml
+
+- name: Ensure Prometheus rules directory exists
+  file:
+    path: /mnt/prometheus/config/rules
+    state: directory
+    owner: 65534
+    group: 65534
+    mode: "0755"
+
+- name: Copy alerts config to rules dir in LVM volume
+  copy:
+    src: alerts.yaml
+    dest: /mnt/prometheus/config/rules/alerts.yml
 
 - name: Ensure Grafana config directory exists
   file:

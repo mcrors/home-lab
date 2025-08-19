@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   prometheus:
-    image: prom/prometheus:v2.37.0
+    image: prom/prometheus:v3.5.0
     container_name: prometheus
     volumes:
       - /mnt/prometheus/data:/prometheus
@@ -14,7 +14,7 @@ services:
     restart: unless-stopped
 
   grafana:
-    image: grafana/grafana:8.5.0
+    image: grafana/grafana:12.2.0-17027759091
     container_name: grafana
     environment:
       GF_SECURITY_ADMIN_PASSWORD: "admin"
