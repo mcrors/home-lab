@@ -34,6 +34,7 @@ monitoring_server:
 
 node_exporters:
   hosts:
+    # lib-hp-o1.home This didn't work so installed manually with apt
     lib-pi-01.home:
     lib-pi-02.home:
     lib-pi-03.home:

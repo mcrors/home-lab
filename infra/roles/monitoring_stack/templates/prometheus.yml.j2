@@ -9,6 +9,7 @@ scrape_configs:
           {% for host in groups['node_exporters'] %}
           - '{{ host }}:9100'  # Use the hostname instead of the IP
           {% endfor %}
+          - 'lib-hp-01.home:9100'  # manually adding this node as it doesn't play well with the ansible role
 
   - job_name: 'prometheus'
     static_configs:
