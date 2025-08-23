@@ -39,6 +39,7 @@
     - { name: lv_plex_transcode, size: 11G }
     - { name: lv_test, size: 1G }
     - { name: lv_radarr_config, size: 1G }
+    - { name: lv_grafana_config, size: 1G }
 
 - name: Enable and start iSCSI target service
   systemd:
@@ -61,6 +62,7 @@
     - { name: plex_config_block, device: /dev/vg_k3s_iscsi/lv_plex_config }
     - { name: plex_transcode_block, device: /dev/vg_k3s_iscsi/lv_plex_transcode }
     - { name: radarr_config_block, device: /dev/vg_k3s_iscsi/lv_radarr_config }
+    - { name: grafana_config_block, device: /dev/vg_k3s_iscsi/lv_grafana_config }
   when: "item.name not in targetcli_output.stdout"
 
 - name: Create iSCSI Target if it does not exist
@@ -93,6 +95,7 @@
     - { name: plex_config_block }
     - { name: plex_transcode_block }
     - { name: radarr_config_block }
+    - { name: grafana_config_block }
   when: "item.name not in targetcli_luns_output.stdout"
 
 - name: Create directory for backups
