@@ -1,7 +1,7 @@
 ---
 
 - name: Ensure download directory exists
-  ansible.builtin.file:
+  file:
     path: "{{ k3s_download_path }}"
     state: directory
     owner: root
