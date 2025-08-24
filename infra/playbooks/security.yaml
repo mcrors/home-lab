@@ -1,3 +1,11 @@
+- name: Pre tasks
+  hosts: cerbot
+  become: true
+  roles:
+    - common
+  vars_files:
+      - ../vars/main.yaml
+
 - name: Certbot
   hosts: certbot
   become: true
