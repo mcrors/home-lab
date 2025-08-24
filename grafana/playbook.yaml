@@ -1,0 +1,9 @@
+---
+
+# Create storage - call role / function from infra
+
+# create the persistent volume
+
+# Ensure the helm repo is added and updated
+
+# Create the Helm release with the values.yaml file
