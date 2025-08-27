@@ -1,9 +1,29 @@
 ---
 
-# Create storage - call role / function from infra
+# This sets storage_provisioner_result as the output
+- hosts: iscsi_target
+  remote_user: hla
+  become: true
+  gather_facts: false
+  vars:
+    app_name: "grafana"
+    size: "1G"
+  roles:
+    - role: ../infra/roles/storage_provisioner
 
-# create the persistent volume
+- name: Deploy Grafana using returned storage facts
+  hosts: localhost
+  gather_facts: false
+  vars:
+    storage: "{{ hostvars[ groups['iscsi_target'][0] ].storage_provisioner_result }}"
+  tasks:
+    - name: Show storage details (sanity check)
+      debug:
+        var: storage
 
-# Ensure the helm repo is added and updated
-
-# Create the Helm release with the values.yaml file
+# (Typical next steps)
+    # - Template & apply a static PV that uses:
+    #     storage.target_portal, storage.iqn, storage.lun
+    # - Apply a PVC that binds to that PV (Retain policy)
+    # - Ensure Helm repo present/updated
+    # - Install/upgrade Grafana with values.yaml

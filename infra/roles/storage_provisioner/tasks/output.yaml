@@ -1,0 +1,12 @@
+- name: Publish storage connection details
+  set_fact:
+    storage_provisioner_result:
+      app_name: "{{ app_name }}"
+      lv_path: "{{ lv_path }}"
+      iqn: "{{ iqn_full }}"
+      tpg: "{{ tpg }}"
+      target_portal: "{{ target_portal }}"
+      lun: "{{ provisioned_lun_id | int }}"
+      reclaim_policy: "{{ reclaim_policy }}"
+      size: "{{ _normalized_size }}"
+      fs_type: "{{ fs_type }}"

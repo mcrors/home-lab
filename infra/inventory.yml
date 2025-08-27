@@ -11,7 +11,7 @@
 # lib-pi-03.home      192.168.1.24
 # lib-pi-04.home      192.168.1.15
 # lib-pi-05.home      192.168.1.133
-# lib-pi-06.home      192.168.1.72
+# lib-pi-06.home      192.168.1.74
 
 # These nodes sometimes stall for some reason
 unstable:

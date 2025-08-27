@@ -7,9 +7,9 @@
 # Security
 * move plex to metallb and https (maybe)
 * Is there a way to add TLS to the exporters to prometheus
+* Update helm chart ClusterRoles to Roles
 
 # Monitoring
-* add lib-hp-01 to monitoring
 * Add cron exporter to all hosts
 * Add lvm exporter to iscsi target
 * Create Temperature monitoring and fan management app

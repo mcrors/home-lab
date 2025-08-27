@@ -1,0 +1,29 @@
+- name: Create/extend logical volume for app
+  community.general.lvol:
+    vg: "{{ vg_name }}"
+    lv: "{{ lv_name }}"
+    size: "{{ _normalized_size }}"
+    shrink: false
+    force: false
+  register: lvol_result
+
+- name: Gather LV facts
+  command: "lvs --noheadings -o lv_size --units g --nosuffix {{ vg_name }}/{{ lv_name }}"
+  register: lv_size_out
+  changed_when: false
+
+# fs_type defaults to none, so this shouldn't run unless forced
+- name: Optionally make filesystem on first creation
+  when: fs_type != "none" and lvol_result.changed
+  block:
+    - name: Check if filesystem exists
+      ansible.builtin.command: "blkid -o value -s TYPE {{ lv_path }}"
+      register: fs_probe
+      failed_when: false
+      changed_when: false
+
+    - name: Create filesystem
+      when: fs_probe.rc != 0
+      ansible.builtin.command: "mkfs.{{ fs_type }} {{ mkfs_args }} {{ lv_path }}"
+      register: mkfs_out
+      changed_when: true
