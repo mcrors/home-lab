@@ -135,10 +135,7 @@ service:
 
 ingress:
   enabled: true
-  # For Kubernetes >= 1.18 you should specify the ingress-controller via the field ingressClassName
-  # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
   ingressClassName: traefik
-  # Values can be templated
   annotations: {
     traefik.ingress.kubernetes.io/router.tls: "true"
   }
@@ -149,19 +146,19 @@ ingress:
   pathType: Prefix
 
   hosts:
-    - grafana2.houli.eu
+    - grafana.houli.eu
 
   tls:
   - hosts:
-    - grafana2.houli.eu
+    - grafana.houli.eu
 
 resources:
- limits:
-   cpu: 100m
-   memory: 128Mi
- requests:
-   cpu: 100m
-   memory: 128Mi
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: "1"        # or omit to avoid CPU throttling
+    memory: 1Gi
 
 ## Node labels for pod assignment
 ## ref: https://kubernetes.io/docs/user-guide/node-selection/
@@ -169,8 +166,6 @@ resources:
 nodeSelector: {}
 
 ## Affinity for pod assignment (evaluated as template)
-## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
-##
 affinity:
   nodeAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
@@ -187,43 +182,17 @@ affinity:
 
 
 ## Enable persistence using Persistent Volume Claims
-## ref: https://kubernetes.io/docs/concepts/storage/persistent-volumes/
-##
 persistence:
   type: pvc
-  enabled: false
-  # storageClassName: default
-  ## (Optional) Use this to bind the claim to an existing PersistentVolume (PV) by name.
-  volumeName: ""
+  enabled: true
+  storageClassName: ""
+  volumeName: "pv-grafana"
+  lookupVolumeName: true
   accessModes:
     - ReadWriteOnce
   size: 1Gi
-  # annotations: {}
   finalizers:
     - kubernetes.io/pvc-protection
-  # selectorLabels: {}
-  ## Sub-directory of the PV to mount. Can be templated.
-  # subPath: ""
-  ## Name of an existing PVC. Can be templated.
-  # existingClaim:
-  ## Extra labels to apply to a PVC.
-  extraPvcLabels: {}
-  disableWarning: false
-
-  ## If persistence is not enabled, this allows to mount the
-  ## local storage in-memory to improve performance
-  ##
-  inMemory:
-    enabled: false
-    ## The maximum usage on memory medium EmptyDir would be
-    ## the minimum value between the SizeLimit specified
-    ## here and the sum of memory limits of all containers in a pod
-    ##
-    # sizeLimit: 300Mi
-
-  ## If 'lookupVolumeName' is set to true, Helm will attempt to retrieve
-  ## the current value of 'spec.volumeName' and incorporate it into the template.
-  lookupVolumeName: true
 
 initChownData:
   ## If false, data ownership will not be reset at startup
@@ -244,13 +213,13 @@ initChownData:
   ## initChownData resource requests and limits
   ## Ref: http://kubernetes.io/docs/user-guide/compute-resources/
   ##
-  resources: {}
-  #  limits:
-  #    cpu: 100m
-  #    memory: 128Mi
-  #  requests:
-  #    cpu: 100m
-  #    memory: 128Mi
+  resources:
+   limits:
+     cpu: 100m
+     memory: 128Mi
+   requests:
+     cpu: 100m
+     memory: 128Mi
   securityContext:
     readOnlyRootFilesystem: false
     runAsNonRoot: false
@@ -265,12 +234,11 @@ initChownData:
 
 # Administrator credentials when not using an existing secret (see below)
 adminUser: admin
-# adminPassword: strongpassword
+adminPassword: ""
 
 # Use an existing secret for the admin user.
 admin:
-  ## Name of the secret. Can be templated.
-  existingSecret: ""
+  existingSecret: grafana-admin
   userKey: admin-user
   passwordKey: admin-password
 
@@ -283,47 +251,6 @@ admin:
 # - "secret/grafana"
 # - "./grafana"
 
-## Extra environment variables that will be pass onto deployment pods
-##
-## to provide grafana with access to CloudWatch on AWS EKS:
-## 1. create an iam role of type "Web identity" with provider oidc.eks.* (note the provider for later)
-## 2. edit the "Trust relationships" of the role, add a line inside the StringEquals clause using the
-## same oidc eks provider as noted before (same as the existing line)
-## also, replace NAMESPACE and prometheus-operator-grafana with the service account namespace and name
-##
-##  "oidc.eks.us-east-1.amazonaws.com/id/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX:sub": "system:serviceaccount:NAMESPACE:prometheus-operator-grafana",
-##
-## 3. attach a policy to the role, you can use a built in policy called CloudWatchReadOnlyAccess
-## 4. use the following env: (replace 123456789000 and iam-role-name-here with your aws account number and role name)
-##
-## env:
-##   AWS_ROLE_ARN: arn:aws:iam::123456789000:role/iam-role-name-here
-##   AWS_WEB_IDENTITY_TOKEN_FILE: /var/run/secrets/eks.amazonaws.com/serviceaccount/token
-##   AWS_REGION: us-east-1
-##
-## 5. uncomment the EKS section in extraSecretMounts: below
-## 6. uncomment the annotation section in the serviceAccount: above
-## make sure to replace arn:aws:iam::123456789000:role/iam-role-name-here with your role arn
-
-env: {}
-
-## "valueFrom" environment variable references that will be added to deployment pods. Name is templated.
-## ref: https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.19/#envvarsource-v1-core
-## Renders in container spec as:
-##   env:
-##     ...
-##     - name: <key>
-##       valueFrom:
-##         <value rendered as YAML>
-envValueFrom: {}
-  #  ENV_NAME:
-  #    configMapKeyRef:
-  #      name: configmap-name
-  #      key: value_key
-
-## The name of a secret in the same kubernetes namespace which contain values to be added to the environment
-## This can be useful for auth tokens, etc. Value is templated.
-envFromSecret: ""
 
 ## Sensible environment variables that will be rendered as new secret object
 ## This can be useful for auth tokens, etc.
@@ -1286,139 +1213,3 @@ imageRenderer:
 #   requests:
 #     cpu: 50m
 #     memory: 50Mi
-  ## Node labels for pod assignment
-  ## ref: https://kubernetes.io/docs/user-guide/node-selection/
-  #
-  nodeSelector: {}
-
-  ## Tolerations for pod assignment
-  ## ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
-  ##
-  tolerations: []
-
-  ## Affinity for pod assignment (evaluated as template)
-  ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
-  ##
-  affinity: {}
-
-  ## Use an alternate scheduler, e.g. "stork".
-  ## ref: https://kubernetes.io/docs/tasks/administer-cluster/configure-multiple-schedulers/
-  ##
-  # schedulerName: "default-scheduler"
-
-  # Extra configmaps to mount in image-renderer pods
-  extraConfigmapMounts: []
-
-  # Extra secrets to mount in image-renderer pods
-  extraSecretMounts: []
-
-  # Extra volumes to mount in image-renderer pods
-  extraVolumeMounts: []
-
-  # Extra volumes for image-renderer pods
-  extraVolumes: []
-
-networkPolicy:
-  ## @param networkPolicy.enabled Enable creation of NetworkPolicy resources. Only Ingress traffic is filtered for now.
-  ##
-  enabled: false
-  ## @param networkPolicy.allowExternal Don't require client label for connections
-  ## The Policy model to apply. When set to false, only pods with the correct
-  ## client label will have network access to  grafana port defined.
-  ## When true, grafana will accept connections from any source
-  ## (with the correct destination port).
-  ##
-  ingress: true
-  ## @param networkPolicy.ingress When true enables the creation
-  ## an ingress network policy
-  ##
-  allowExternal: true
-  ## @param networkPolicy.explicitNamespacesSelector A Kubernetes LabelSelector to explicitly select namespaces from which traffic could be allowed
-  ## If explicitNamespacesSelector is missing or set to {}, only client Pods that are in the networkPolicy's namespace
-  ## and that match other criteria, the ones that have the good label, can reach the grafana.
-  ## But sometimes, we want the grafana to be accessible to clients from other namespaces, in this case, we can use this
-  ## LabelSelector to select these namespaces, note that the networkPolicy's namespace should also be explicitly added.
-  ##
-  ## Example:
-  ## explicitNamespacesSelector:
-  ##   matchLabels:
-  ##     role: frontend
-  ##   matchExpressions:
-  ##    - {key: role, operator: In, values: [frontend]}
-  ##
-  explicitNamespacesSelector: {}
-  ##
-  ##
-  ##
-  ##
-  ##
-  ##
-  egress:
-    ## @param networkPolicy.egress.enabled When enabled, an egress network policy will be
-    ## created allowing grafana to connect to external data sources from kubernetes cluster.
-    enabled: false
-    ##
-    ## @param networkPolicy.egress.blockDNSResolution When enabled, DNS resolution will be blocked
-    ## for all pods in the grafana namespace.
-    blockDNSResolution: false
-    ##
-    ## @param networkPolicy.egress.ports Add individual ports to be allowed by the egress
-    ports: []
-    ## Add ports to the egress by specifying - port: <port number>
-    ## E.X.
-    ## - port: 80
-    ## - port: 443
-    ##
-    ## @param networkPolicy.egress.to Allow egress traffic to specific destinations
-    to: []
-    ## Add destinations to the egress by specifying - ipBlock: <CIDR>
-    ## E.X.
-    ## to:
-    ##  - namespaceSelector:
-    ##    matchExpressions:
-  ##    - {key: role, operator: In, values: [grafana]}
-  ##
-  ##
-  ##
-  ##
-  ##
-
-# Enable backward compatibility of kubernetes where version below 1.13 doesn't have the enableServiceLinks option
-enableKubeBackwardCompatibility: false
-useStatefulSet: false
-
-# extraObjects could be utilized to add dynamic manifests via values
-extraObjects: []
-# Examples:
-# extraObjects:
-# - apiVersion: kubernetes-client.io/v1
-#   kind: ExternalSecret
-#   metadata:
-#     name: grafana-secrets-{{ .Release.Name }}
-#   spec:
-#     backendType: gcpSecretsManager
-#     data:
-#     - key: grafana-admin-password
-#       name: adminPassword
-# Alternatively, you can use strings, which lets you use additional templating features:
-# extraObjects:
-# - |
-#   apiVersion: kubernetes-client.io/v1
-#   kind: ExternalSecret
-#   metadata:
-#     name: grafana-secrets-{{ .Release.Name }}
-#   spec:
-#     backendType: gcpSecretsManager
-#     data:
-#     - key: grafana-admin-password
-#       name: {{ include "some-other-template" }}
-
-# assertNoLeakedSecrets is a helper function defined in _helpers.tpl that checks if secret
-# values are not exposed in the rendered grafana.ini configmap. It is enabled by default.
-#
-# To pass values into grafana.ini without exposing them in a configmap, use variable expansion:
-# https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/#variable-expansion
-#
-# Alternatively, if you wish to allow secret values to be exposed in the rendered grafana.ini configmap,
-# you can disable this check by setting assertNoLeakedSecrets to false.
-assertNoLeakedSecrets: true

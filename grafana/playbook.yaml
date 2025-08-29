@@ -1,7 +1,8 @@
 ---
 
 # This sets storage_provisioner_result as the output
-- hosts: iscsi_target
+- name: Create iscsi volume for Grafana
+  hosts: iscsi_target
   remote_user: hla
   become: true
   gather_facts: false
@@ -11,19 +12,67 @@
   roles:
     - role: ../infra/roles/storage_provisioner
 
-- name: Deploy Grafana using returned storage facts
+- name: Deploy Grafana PV
   hosts: localhost
   gather_facts: false
   vars:
+    # pull the result from your storage host/group
     storage: "{{ hostvars[ groups['iscsi_target'][0] ].storage_provisioner_result }}"
+    kubeconfig_path: "{{ lookup('env','KUBECONFIG') | default('~/.kube/config', true) }}"
   tasks:
-    - name: Show storage details (sanity check)
-      debug:
-        var: storage
+    - name: Ensure PV present
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig_path }}"
+        state: present
+        template: "pv-grafana.yaml.j2"
 
-# (Typical next steps)
-    # - Template & apply a static PV that uses:
-    #     storage.target_portal, storage.iqn, storage.lun
-    # - Apply a PVC that binds to that PV (Retain policy)
+- name: Add/Update Grafana repo and install Grafana
+  hosts: localhost
+  gather_facts: false
+  collections:
+    - kubernetes.core
+  vars:
+    kubeconfig_path: "{{ lookup('env','KUBECONFIG') | default('~/.kube/config', true) }}"
+    grafana_namespace: "grafana"
+    grafana_release: "grafana"
+    grafana_repo_name: "grafana"
+    grafana_repo_url: "https://grafana.github.io/helm-charts"
+    grafana_chart: "grafana/grafana"
+    values_file: "./values.yaml"
+  tasks:
+    - name: Add Grafana Helm repo
+      kubernetes.core.helm_repository:
+        name: "{{ grafana_repo_name }}"
+        repo_url: "{{ grafana_repo_url }}"
+
+    - name: Update Helm repo cache
+      kubernetes.core.helm:
+        name: cache-refresh
+        namespace: kube-system
+        state: absent
+        update_repo_cache: true
+        kubeconfig: "{{ kubeconfig_path }}"
+
+    - name: Ensure Grafana namespace exists
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig_path }}"
+        state: present
+        definition:
+          apiVersion: v1
+          kind: Namespace
+          metadata:
+            name: "{{ grafana_namespace }}"
+
+    - name: Install/Upgrade Grafana with values.yaml
+      kubernetes.core.helm:
+        name: "{{ grafana_release }}"
+        chart_ref: "{{ grafana_chart }}"
+        release_namespace: "{{ grafana_namespace }}"
+        create_namespace: false
+        wait: true
+        kubeconfig: "{{ kubeconfig_path }}"
+        values_files:
+          - "{{ values_file }}"
+
     # - Ensure Helm repo present/updated
     # - Install/upgrade Grafana with values.yaml

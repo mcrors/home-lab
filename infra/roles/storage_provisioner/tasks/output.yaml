@@ -8,5 +8,5 @@
       target_portal: "{{ target_portal }}"
       lun: "{{ provisioned_lun_id | int }}"
       reclaim_policy: "{{ reclaim_policy }}"
-      size: "{{ _normalized_size }}"
+      size: "{{ _normalized_size }}i" # let's keep things in k8s standardized with Gi as the size
       fs_type: "{{ fs_type }}"
