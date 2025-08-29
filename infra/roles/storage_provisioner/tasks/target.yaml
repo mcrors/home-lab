@@ -1,0 +1,62 @@
+# Create/find backstore pointing at our LV
+- name: List block backstores
+  command: "targetcli /backstores/block ls"
+  register: bs_ls
+  changed_when: false
+
+- name: Create block backstore if missing
+  when: backstore_name not in bs_ls.stdout
+  command: "targetcli /backstores/block create {{ backstore_name }} {{ lv_path }}"
+  register: bs_create
+  changed_when: true
+
+- name: List LUNs for TPG
+  command: "targetcli /iscsi/{{ iqn_full }}/{{ tpg }}/luns ls"
+  register: luns_ls
+  changed_when: false
+
+- name: Create LUN if mapping missing
+  when: backstore_name not in luns_ls.stdout
+  command: "targetcli /iscsi/{{ iqn_full }}/{{ tpg }}/luns create /backstores/block/{{ backstore_name }}"
+  register: lun_create
+  changed_when: true
+
+# Persist targetcli config
+- name: Save targetcli configuration
+  command: "targetcli saveconfig"
+  changed_when: false
+
+# Discover the LUN number assigned to our backstore
+- name: Re-list LUNs to parse LUN ID
+  command: "targetcli /iscsi/{{ iqn_full }}/{{ tpg }}/luns ls"
+  register: luns_ls_after
+  changed_when: false
+
+# Build a literal “needle” like: [block/bs_grafana
+- name: Build search needle for backstore
+  set_fact:
+    _needle: "[block/{{ backstore_name }} "
+
+# Find the single line that contains that literal needle
+# (regex-escaped so [ and / are treated literally)
+- name: Grab LUN line for this backstore
+  set_fact:
+    lun_line: >-
+      {{
+        (
+          luns_ls_after.stdout_lines
+          | select('search', (_needle | regex_escape))
+          | list | first
+        ) | default('')
+      }}
+
+- debug:
+    msg: "lun_line= {{ lun_line }}"
+
+- name: Extract LUN id from the matched line
+  set_fact:
+    provisioned_lun_id: >-
+      {{ (lun_line | regex_search('lun[0-9]+') | default('0')) | regex_replace('lun') | int}}
+
+- debug:
+    msg: "Provisioned LUN id = {{ provisioned_lun_id }}"

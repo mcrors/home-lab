@@ -1,0 +1,6 @@
+lv_name: "{{ lv_name_prefix }}{{ app_name }}"
+lv_path: "/dev/{{ vg_name }}/{{ lv_name }}"
+iqn_full: "{{ iqn_base }}"
+backstore_name: "{{ backstore_prefix }}{{ app_name }}"
+tpg: "tpg1"   # default targetcli portal group
+target_portal: "{{ target_portal_ip }}:{{ target_portal_port }}"

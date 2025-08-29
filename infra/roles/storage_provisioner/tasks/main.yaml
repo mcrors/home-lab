@@ -1,0 +1,11 @@
+- name: Validate inputs and environment
+  import_tasks: validate.yaml
+
+- name: Ensure LV exists at requested size
+  import_tasks: lv.yaml
+
+- name: Ensure iSCSI target, backstore, LUN, and access controls exist
+  import_tasks: target.yaml
+
+- name: Publish outputs for the caller (PV template etc.)
+  import_tasks: output.yaml

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-{{ storage.app_name }}
+  labels:
+    app.kubernetes.io/name: {{ storage.app_name }}
+    storage.owner: {{ storage.app_name }}
+spec:
+  capacity:
+    storage: {{ storage.size }}
+  accessModes: ["ReadWriteOnce"]
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""   # important: static PV, don't let a dynamic SC match
+  iscsi:
+    targetPortal: {{ storage.target_portal }}
+    iqn: {{ storage.iqn }}
+    lun: {{ storage.lun }}
+    fsType: {{ storage.fs_type | default('ext4') }}
+    readOnly: false
+    chapAuthDiscovery: false
+    chapAuthSession: false
