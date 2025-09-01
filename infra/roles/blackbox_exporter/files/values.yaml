@@ -1,0 +1,99 @@
+restartPolicy: Always
+
+kind: Deployment
+
+## Number of replicasets to retain ##
+## default value is 10, 0 will not retain any replicasets and make rollbacks impossible ##
+revisionHistoryLimit: 10
+
+strategy:
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 0
+  type: RollingUpdate
+
+image:
+  registry: quay.io
+  repository: prometheus/blackbox-exporter
+  tag: "v0.27.0"
+  pullPolicy: IfNotPresent
+
+## User and Group to run blackbox-exporter container as
+securityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+# Add NET_RAW to enable ICMP
+#    add: ["NET_RAW"]
+
+livenessProbe:
+  httpGet:
+    path: /-/healthy
+    port: 9115
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /-/healthy
+    port: 9115
+  failureThreshold: 3
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: memory
+              operator: In
+              values:
+                - "2.0GB"
+
+config:
+  modules:
+    http_2xx:
+      prober: http
+      timeout: 5s
+      http:
+        valid_http_versions: ["HTTP/1.1", "HTTP/2.0"]
+        follow_redirects: true
+        preferred_ip_protocol: "ip4"
+
+service:
+  annotations: {}
+  labels: {}
+  type: ClusterIP
+  port: 9115
+
+serviceAccount:
+  # Specifies whether a ServiceAccount should be created
+  create: true
+  # The name of the ServiceAccount to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: blackbox-admin
+  annotations: {}
+
+## An Ingress resource can provide name-based virtual hosting and TLS
+## termination among other things for CouchDB deployments which are accessed
+## from outside the Kubernetes cluster.
+## ref: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  enabled: true
+  className: "traefik"
+  labels: {}
+  annotations: {
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  }
+  hosts:
+    ## The host property on hosts and tls is passed through helm tpl function.
+    ## ref: https://helm.sh/docs/developing_charts/#using-the-tpl-function
+    - host: blackbox.houli.eu
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+   - hosts:
+       - blackbox.houli.eu

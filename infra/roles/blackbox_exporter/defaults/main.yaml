@@ -1,0 +1,7 @@
+kubeconfig_path: "{{ lookup('env','KUBECONFIG') | default('~/.kube/config', true) }}"
+blackbox_namespace: "blackbox"
+blackbox_release: "blackbox"
+blackbox_repo_name: "prometheus"
+blackbox_repo_url: "https://prometheus-community.github.io/helm-charts"
+blackbox_chart: "prometheus/prometheus-blackbox-exporter"
+values_file: "{{ role_path }}/files/values.yaml"

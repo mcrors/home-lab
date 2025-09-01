@@ -12,6 +12,7 @@
 # Monitoring
 * Add cron exporter to all hosts
 * Add lvm exporter to iscsi target
+* Add Blackbox exporter
 * Create Temperature monitoring and fan management app
 * Setup up Loki for log storage
 * Create grafana dashboards for:
@@ -21,7 +22,9 @@
 * add cAdvisor:
     * exporter
     * dashboard
-* Setup Uptime Kuma for service and host monitoring and notification
+* Add alloy
+* Setup alerts for disk space
+* Set up notifications
 
 * Check that the volumes are mounted on fstab
 

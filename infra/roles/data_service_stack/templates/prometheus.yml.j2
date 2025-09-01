@@ -15,5 +15,36 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:9090']
 
+  - job_name: blackbox # To get metrics about the exporter itself
+    scheme: https
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+        - blackbox.houli.eu
+
+  - job_name: blackbox-http #
+    scheme: https
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+    - targets:
+      - https://transmission.houli.eu
+      - https://sonarr.houli.eu
+      - https://radarr.houli.eu
+      - https://prowlarr.houli.eu
+      - https://grafana.houli.eu
+      - https://prometheus.houli.eu
+      - https://jenkins.houli.eu
+      - http://omv.houli.eu
+      - http://plex.home
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox.houli.eu
+
 rule_files:
   - "rules/*.yml"

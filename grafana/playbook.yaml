@@ -73,6 +73,3 @@
         kubeconfig: "{{ kubeconfig_path }}"
         values_files:
           - "{{ values_file }}"
-
-    # - Ensure Helm repo present/updated
-    # - Install/upgrade Grafana with values.yaml

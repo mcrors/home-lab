@@ -1,0 +1,35 @@
+---
+
+- name: Add blackbox Helm repo
+  kubernetes.core.helm_repository:
+    name: "{{ blackbox_repo_name }}"
+    repo_url: "{{ blackbox_repo_url }}"
+
+- name: Update Helm repo cache
+  kubernetes.core.helm:
+    name: cache-refresh
+    namespace: kube-system
+    state: absent
+    update_repo_cache: true
+    kubeconfig: "{{ kubeconfig_path }}"
+
+- name: Ensure blackbox namespace exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ blackbox_namespace }}"
+
+- name: Install/Upgrade blackbox with values.yaml
+  kubernetes.core.helm:
+    name: "{{ blackbox_release }}"
+    chart_ref: "{{ blackbox_chart }}"
+    release_namespace: "{{ blackbox_namespace }}"
+    create_namespace: false
+    wait: true
+    kubeconfig: "{{ kubeconfig_path }}"
+    values_files:
+      - "{{ values_file }}"
