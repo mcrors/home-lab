@@ -1,0 +1,12 @@
+# Local socket (use password to avoid peer/root mismatch spam)
+local    all   all                       scram-sha-256
+
+# Allow NGINX → Postgres over Docker network, but only if SSL is used
+hostssl  all   all   172.18.0.0/16       scram-sha-256   # ← replace with your subnet
+
+# (Optional) allow direct LAN SSL clients (if you ever bypass NGINX)
+# hostssl all  all   192.168.0.0/16      scram-sha-256
+
+# Explicitly block non-SSL TCP
+hostnossl all  all   0.0.0.0/0           reject
+hostnossl all  all   ::/0                reject

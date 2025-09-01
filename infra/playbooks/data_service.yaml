@@ -1,0 +1,35 @@
+- name: Pre tasks
+  hosts: data_service
+  become: true
+  roles:
+    - common
+  vars_files:
+      - ../vars/main.yaml
+
+- name: Install docker
+  hosts: data_service
+  become: true
+  roles:
+    - docker
+  vars_files:
+    - ../vars/main.yaml
+
+# This just creates the volumes,
+  # makes an fs
+  # and mounts the volumes to mnt points
+- name: Setup Data Service LVM
+  hosts: data_service
+  become: true
+  roles:
+    - data_service_lvm
+  vars_files:
+    ../vars/main.yaml
+
+# This is for the config files and docker compose files
+- name: Install & Setup Prometheus, Postgres & Minio (Data Service Stack)
+  hosts: data_service  # Only one or a few hosts
+  become: true
+  roles:
+    - data_service_stack
+  vars_files:
+    - ../vars/main.yaml

@@ -4,6 +4,7 @@ cf_ini_path: "/etc/letsencrypt/cloudflare.ini"
 deploy_hook_path: "/usr/local/bin/cert_renew_deploy.sh"
 reload_nginx_path: "/usr/local/bin/reload_nginx.sh"
 push_k8s_path: "/usr/local/bin/push-wildcard-to-traefik.sh"
+push_postgres_path: "/usr/local/bin/copy-certs-to-postgres.sh"
 
 # k8s tls bits
 k8s_namespace: "kube-system"

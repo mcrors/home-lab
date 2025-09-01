@@ -1,0 +1,51 @@
+- name: Ensure dirs
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "{{ item.mode }}"
+    owner: "{{ item.owner | default(omit) }}"
+    group: "{{ item.group | default(omit) }}"
+  loop:
+    - { path: /mnt/postgres/data,   mode: "0700", owner: "999", group: "999" }
+    - { path: /mnt/postgres/conf,   mode: "0755" }
+    - { path: /mnt/postgres/backup, mode: "0755" }
+    - { path: /mnt/postgres/certs,  mode: "0700", owner: "999", group: "999" }
+
+- name: Copy LE fullchain to Postgres server.crt
+  copy:
+    remote_src: true
+    src: /etc/letsencrypt/live/houli.eu/fullchain.pem
+    dest: /mnt/postgres/certs/server.crt
+    owner: "999"
+    group: "999"
+    mode: "0644"
+
+- name: Copy LE privkey to Postgres server.key
+  copy:
+    remote_src: true
+    src: /etc/letsencrypt/live/houli.eu/privkey.pem
+    dest: /mnt/postgres/certs/server.key
+    owner: "999"
+    group: "999"
+    mode: "0600"
+
+- name: Enforce ownership/mode on certs
+  file:
+    path: "{{ item.path }}"
+    owner: "999"
+    group: "999"
+    mode: "{{ item.mode }}"
+    state: file
+  loop:
+    - { path: /mnt/postgres/certs/server.crt, mode: "0644" }
+    - { path: /mnt/postgres/certs/server.key, mode: "0600" }
+
+- name: Template configs
+  template:
+    src: "{{ item.src }}"
+    dest: "/mnt/postgres/{{ item.dest }}"
+    mode: "0644"
+  loop:
+    - { src: postgresql.conf.j2, dest: "conf/postgresql.conf" }
+    - { src: pg_hba.conf.j2,     dest: "conf/pg_hba.conf" }
+

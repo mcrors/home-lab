@@ -1,0 +1,9 @@
+upstream pg_backend { server postgres:5432; }
+
+server {
+  listen 5432;
+  proxy_pass pg_backend;
+
+  proxy_connect_timeout 5s;
+  proxy_timeout 1h;
+}

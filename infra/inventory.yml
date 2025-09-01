@@ -28,7 +28,7 @@ smtp_server:
   hosts:
     lib-pi-04.home:
 
-monitoring_server:
+data_service:
   hosts:
     lib-pi-06.home:
 
@@ -65,15 +65,11 @@ iscsi_initiators:
     lib-pi-03.home:
     lib-pi-05.home:
 
-monitor:
-  hosts:
-    lib-pi-06.home:
-
 docker:
   children:
     nginx:
     pihole:
-    monitor:
+    data_service:
 
 k3smaster:
   hosts:

@@ -1,0 +1,16 @@
+- name: Pre tasks
+  hosts: node_exporters
+  become: true
+  roles:
+    - common
+  vars_files:
+      - ../vars/main.yaml
+
+- name: Install Node Exporter on all nodes
+  hosts: node_exporters
+  become: true
+  roles:
+    - node_exporter
+  vars_files:
+      - ../vars/main.yaml
+

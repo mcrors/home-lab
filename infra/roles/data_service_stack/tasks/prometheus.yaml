@@ -32,29 +32,3 @@
     owner: 65534
     group: 65534
     recurse: yes
-
-- name: Ensure Nginx config directory exists
-  file:
-    path: /mnt/nginx
-    state: directory
-    mode: "0755"
-
-- name: Copy Nginx config to LVM volume
-  template:
-    src: nginx.conf.j2
-    dest: /mnt/nginx/nginx.conf
-
-- name: Ensure monitoring compose directory exists
-  file:
-    path: "{{ compose_file_dir }}"
-    state: directory
-
-- name: Copy Docker Compose file
-  copy:
-    src: docker-compose.yaml
-    dest: "{{ compose_file_dir }}/docker-compose.yaml"
-
-- name: Run Docker Compose
-  command:
-    cmd: docker-compose up --force-recreate -d
-    chdir: "{{ compose_file_dir }}"

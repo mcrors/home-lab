@@ -1,0 +1,2 @@
+compose_file_dir: /opt/containers/data_service_stack
+postgres_user: "postgres"

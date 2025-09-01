@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    container_name: prometheus
+    volumes:
+      - /mnt/prometheus/data:/prometheus
+      - /mnt/prometheus/config:/etc/prometheus
+    dns:
+      - 192.168.1.15
+    networks:
+      - data_service
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    env_file: .env
+    environment:
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    command: ["postgres","-c","config_file=/etc/postgresql/postgresql.conf"]
+    volumes:
+      - /mnt/postgres/data:/var/lib/postgresql/data
+      - /mnt/postgres/conf:/etc/postgresql
+      - /mnt/postgres/backup:/backup
+      - /mnt/postgres/certs/server.crt:/etc/ssl/certs/server.crt:ro
+      - /mnt/postgres/certs/server.key:/etc/ssl/private/server.key:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Figure out resources
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+    restart: unless-stopped
+    networks:
+      - data_service
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx_reverse_proxy
+    volumes:
+      - /etc/letsencrypt/live/houli.eu/fullchain.pem:/etc/nginx/certs/fullchain.pem:ro
+      - /etc/letsencrypt/live/houli.eu/privkey.pem:/etc/nginx/certs/privkey.pem:ro
+      - /mnt/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /mnt/nginx/nginx-http.conf:/etc/nginx/conf.d/default.conf:ro
+      - /mnt/nginx/streams-enabled:/etc/nginx/streams-enabled:ro
+    ports:
+      - "80:80"
+      - "443:443"
+      - "5432:5432"
+    networks:
+      - data_service
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+networks:
+  data_service:
+    name: data_service
+    driver: bridge
