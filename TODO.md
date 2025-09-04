@@ -12,8 +12,7 @@
 # Monitoring
 * Add cron exporter to all hosts
 * Add lvm exporter to iscsi target
-* Add Blackbox exporter
-* Create Temperature monitoring and fan management app
+* Update blackbox exporter for endpoints that require auth
 * Setup up Loki for log storage
 * Create grafana dashboards for:
     * host health -> green or red depending on if the host is reachable
@@ -25,6 +24,7 @@
 * Add alloy
 * Setup alerts for disk space
 * Set up notifications
+* Create Temperature monitoring and fan management app
 
 * Check that the volumes are mounted on fstab
 

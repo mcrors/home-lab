@@ -3,7 +3,7 @@ pv: "/dev/sda"
 vg_name: "vg_k3s_iscsi"
 
 # iSCSI target endpoint (lib-pi-06)
-target_portal_ip: "192.168.1.74"
+target_portal_ip: "192.168.1.226"
 target_portal_port: 3260
 
 # Base IQN prefix. Leave date if you like it as entropy.
@@ -16,7 +16,7 @@ security_mode: "acl"
 initiator_iqns: []     # e.g. ["iqn.1993-08.org.debian:01:k3s-node-01", "iqn..."]
 
 # Filesystem handling (leave "none" to present raw block and let K8s do it)
-fs_type: "none"        # or "ext4" / "xfs"
+fs_type: "ext4"        # or "ext4" / "xfs"
 mkfs_args: "-m 0"      # ext4 perf defaults, ignored if fs_type == none
 
 # Naming

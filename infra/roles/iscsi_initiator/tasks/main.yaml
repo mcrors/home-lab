@@ -37,7 +37,7 @@
     auto_portal_startup: true
     discover: true
     login: true
-    portal: 192.168.1.74
+    portal: 192.168.1.226
     target: iqn.2025-02.home.lib-pi-06:lib-pi-06-target
     rescan: true
 
@@ -46,5 +46,5 @@
     name: "iSCSI discovery, login and rescan"
     minute: "0"  # This makes it run on the hour
     hour: "*"    # Every hour
-    job: "/usr/bin/iscsiadm -m discovery -t sendtargets -p 192.168.1.74 && /usr/bin/iscsiadm -m node --login && /usr/bin/iscsiadm -m node --rescan"
+    job: "/usr/bin/iscsiadm -m discovery -t sendtargets -p 192.168.1.226 && /usr/bin/iscsiadm -m node --login && /usr/bin/iscsiadm -m node --rescan"
     state: present

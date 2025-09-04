@@ -7,7 +7,7 @@ serviceAccount:
 nfsServerIP: 192.168.1.96
 
 iscsi:
-  targetIP: 192.168.1.74:3260
+  targetIP: 192.168.1.226:3260
   iqn: iqn.2025-02.home.lib-pi-06:lib-pi-06-target
   lun: 0
 
