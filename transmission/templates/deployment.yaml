@@ -69,3 +69,16 @@ spec:
         - name: transmission-downloads
           persistentVolumeClaim:
             claimName: {{ .Values.dataVolume.pvc.name }}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: iscsi_initiator
+                    operator: In
+                    values:
+                      - "true"
+                  - key: memory
+                    operator: In
+                    values:
+                      - "4.0GB"
