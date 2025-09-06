@@ -12,3 +12,13 @@
 
 # metrics:
 #   enabled: false         # flip to true + add ServiceMonitor if you have Prometheus
+controller:
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: memory
+                operator: In
+                values:
+                  - "2.0GB"
