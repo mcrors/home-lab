@@ -1,7 +1,6 @@
 # Media Setup
 * Install and configer homarr
-* Install and configer JellyFin
-    * Once this is working, it will require side loading the client to the TV
+* Explore setting up Plex with ramdisk for transcoding
 * Move prowlarr, sonarr and radarr to a single helm chart with 3 different value files
 
 # Security
