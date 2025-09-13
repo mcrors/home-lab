@@ -5,16 +5,14 @@
 
 # Security
 * move plex to metallb and https (maybe)
-* Is there a way to add TLS to the exporters to prometheus
+* Add authentik
 * Update helm chart ClusterRoles to Roles
+* Is there a way to add TLS to the exporters to prometheus
 
 # Monitoring
-* Add cron exporter to all hosts
-* Add lvm exporter to iscsi target
 * Update blackbox exporter for endpoints that require auth
 * Setup up Loki for log storage
 * Create grafana dashboards for:
-    * host health -> green or red depending on if the host is reachable
     * Cron jobs -> List of cron jobs with last 10 run results
 * Set up alerting for specific metrics
 * add cAdvisor:
@@ -24,8 +22,12 @@
 * Setup alerts for disk space
 * Set up notifications
 * Create Temperature monitoring and fan management app
-
 * Check that the volumes are mounted on fstab
+* Add the following exporters and dashboards:
+    * cron
+    * lvm
+    * pi-hole
+    * postgres
 
 # Backup volumes on iscsi Target
 * Clean up log file
@@ -42,10 +44,12 @@
 * debian bookworm update
 * k3s update
 
-
 # Clean up ansible playbooks
 
 # Other Services
 * Look into paperless service
 * Add smpt server
 * Add alert manager
+* Alloy
+* Loki
+* authentik
