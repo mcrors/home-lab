@@ -1,5 +1,5 @@
 - name: Pre tasks
-  hosts: cerbot
+  hosts: certbot
   become: true
   roles:
     - common

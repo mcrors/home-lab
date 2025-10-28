@@ -25,29 +25,29 @@
 
 # --- Copy scripts from your git repo to the target (only when changed) ---
 - name: Copy reload_nginx.sh
-  copy:
-    src: "reload_nginx.sh"
+  template:
+    src: "reload_nginx.sh.j2"
     dest: "{{ reload_nginx_path }}"
     mode: "0755"
   notify: run-deploy-hook
 
 - name: Copy push-wildcard-to-traefik.sh
-  copy:
-    src: "push-wildcard-to-traefik.sh"
+  template:
+    src: "push-wildcard-to-traefik.sh.j2"
     dest: "{{ push_k8s_path }}"
     mode: "0755"
   notify: run-deploy-hook
 
 - name: Copy copy-certs-to-postgres.sh
-  copy:
-    src: "copy-certs-to-postgres.sh"
+  template:
+    src: "copy-certs-to-postgres.sh.j2"
     dest: "{{ push_postgres_path }}"
     mode: "0755"
   notify: run-deploy-hook
 
 - name: Copy unified deploy hook (calls both)
-  copy:
-    src: "cert_renew_deploy.sh"
+  template:
+    src: "cert_renew_deploy.sh.j2"
     dest: "{{ deploy_hook_path }}"
     mode: "0755"
 
