@@ -1,3 +1,6 @@
+deploymentStrategy:
+  type: Recreate
+
 namespace:
   name: radarr
 
@@ -53,7 +56,7 @@ pod:
 container:
   name: radarr
   image: lscr.io/linuxserver/radarr
-  tag: arm64v8-5.26.2
+  tag: arm64v8-5.28.0
 
 service:
   name: radarr-service
