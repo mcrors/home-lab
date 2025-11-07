@@ -22,6 +22,8 @@
 * Is there a way to add TLS to the exporters to prometheus
 
 # Monitoring
+* Setup alerts for disk space
+* Set up notifications
 * Update blackbox exporter for endpoints that require auth
 * Setup up Loki for log storage
 * Create grafana dashboards for:
@@ -31,8 +33,6 @@
     * exporter
     * dashboard
 * Add alloy
-* Setup alerts for disk space
-* Set up notifications
 * Create Temperature monitoring and fan management app
 * Check that the volumes are mounted on fstab
 * Add the following exporters and dashboards:
@@ -56,7 +56,9 @@
 * debian bookworm update
 * k3s update
 
-# Clean up ansible playbooks
+# Automation
+* Clean up ansible playbook
+* Add jenkins agent
 
 # Other Services
 * paperless
