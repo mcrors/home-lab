@@ -4,8 +4,7 @@ metadata:
   name: {{ .Values.ingress.name }}
   namespace: {{ .Values.namespace.name }}
   annotations:
-    traefik.ingress.kubernetes.io/router.tls: "true"
-    traefik.ingress.kubernetes.io/router.middlewares: {{ .Values.namespace.name }}-enforce-https@kubernetescrd
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
 spec:
   ingressClassName: traefik
   tls:
