@@ -30,7 +30,7 @@ pod:
 container:
   name: prowlarr
   image: lscr.io/linuxserver/prowlarr
-  tag: arm64v8-1.37.0
+  tag: arm64v8-2.1.5
 
 service:
   name: "prowlarr-service"
