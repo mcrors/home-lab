@@ -1,3 +1,6 @@
+deploymentStrategy:
+  type: Recreate
+
 clusterType: k3s
 
 namespace:
