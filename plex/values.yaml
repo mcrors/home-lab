@@ -41,7 +41,7 @@ mediaVolume:
 
 secret:
   name: plex-secret
-  plexClaimToken: claim-XXXXXXX
+  plexClaimToken: SECRET-PLEX-CLAIM-ID - See README
 
 deployment:
   name: plex-deployment
@@ -56,7 +56,7 @@ pod:
 
 container:
   name: plex-container
-  image: ghcr.io/linuxserver/plex:arm64v8-1.42.1
+  image: ghcr.io/linuxserver/plex:arm64v8-1.42.2
 
 service:
   http:

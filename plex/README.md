@@ -8,6 +8,6 @@ rm -rf /config/Library/Application\ Support/Plex\ Media\ Server/Preferences.xml
 * Generate a new claim from the plex website
 https://account.plex.tv/en/claim
 * Add the claim to the secret in values.yaml
-* delete and re-install the helm chart
+* upgrade the helm chart
 
 
