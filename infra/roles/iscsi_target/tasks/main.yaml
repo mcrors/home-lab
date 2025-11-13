@@ -35,7 +35,7 @@
   with_items:
     - { name: lv_sonarr_config, size: 1G }
     - { name: lv_prowlar_config, size: 1G }
-    - { name: lv_plex_config, size: 2G }
+    - { name: lv_plex_config, size: 12G }
     - { name: lv_plex_transcode, size: 11G }
     - { name: lv_radarr_config, size: 1G }
 
