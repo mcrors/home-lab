@@ -19,7 +19,7 @@ configVolume:
     name: plex-config
   pvc:
     name: plex-config
-  capacity: 2Gi
+  capacity: 12Gi
 
 transcodeVolume:
   lun: 3
