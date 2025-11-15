@@ -65,22 +65,37 @@ service:
     targetPort: 32400
     protocol: TCP
   discovery:
-    name: discovery
-    port: 1900
-    targetPort: 1900
+    name: plex-gdm
     protocol: UDP
-  tcpdlna:
-    name: tcp-dlna
-    port: 32469
-    targetPort: 32469
-    protocol: TCP
+    port0:
+      name: gdm-0
+      port: 32410
+      targetPort: 32410
+    port2:
+      name: gdm-2
+      port: 32412
+      targetPort: 32412
+    port3:
+      name: gdm-3
+      port: 32413
+      targetPort: 32413
+    port4:
+      name: gdm-4
+      port: 32414
+      targetPort: 32414
 
 ingress:
   http:
     name: plex-ingress
     hostName: plex.home
-  discovery:
-    entryPoint: discovery
-  tcpdlna:
-    name: tcp-dlna
-    entryPoint: tcp-dlna
+  plexGdm0:
+    entryPoint: plex-gdm-0
+  plexGdm2:
+    entryPoint: plex-gdm-2
+  plexGdm3:
+    entryPoint: plex-gdm-3
+  plexGdm4:
+    entryPoint: plex-gdm-4
+  plextcp:
+    name: plex-tcp
+    entryPoint: plex-tcp

@@ -1,0 +1,13 @@
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRouteUDP
+metadata:
+  name: discovery-gdm-3-ingress
+  namespace: {{ .Values.namespace.name }}
+spec:
+  entryPoints:
+    - {{ .Values.ingress.plexGdm3.entryPoint }}
+  routes:
+  - services:
+    - name: {{ .Values.service.discovery.name }}
+      port: {{ .Values.service.discovery.port3.port }}

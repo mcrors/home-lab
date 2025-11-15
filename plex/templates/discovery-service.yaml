@@ -9,7 +9,22 @@ spec:
   selector:
     app: {{ .Values.labels.app }}
   ports:
-    - protocol: {{ .Values.service.discovery.protocol }}
-      port: {{ .Values.service.discovery.port }}
-      targetPort: {{ .Values.service.discovery.targetPort }}
-      name: {{ .Values.service.discovery.name }}
+    - name: {{ .Values.service.discovery.port0.name }}
+      protocol: {{ .Values.service.discovery.protocol }}
+      port: {{ .Values.service.discovery.port0.port }}
+      targetPort: {{ .Values.service.discovery.port0.targetPort }}
+
+    - name: {{ .Values.service.discovery.port2.name }}
+      protocol: {{ .Values.service.discovery.protocol }}
+      port: {{ .Values.service.discovery.port2.port }}
+      targetPort: {{ .Values.service.discovery.port2.targetPort }}
+
+    - name: {{ .Values.service.discovery.port3.name }}
+      protocol: {{ .Values.service.discovery.protocol }}
+      port: {{ .Values.service.discovery.port3.port }}
+      targetPort: {{ .Values.service.discovery.port3.targetPort }}
+
+    - name: {{ .Values.service.discovery.port4.name }}
+      protocol: {{ .Values.service.discovery.protocol }}
+      port: {{ .Values.service.discovery.port4.port }}
+      targetPort: {{ .Values.service.discovery.port4.targetPort }}

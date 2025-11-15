@@ -36,24 +36,18 @@ spec:
             - name: {{ .Values.service.http.name }}
               containerPort: {{ .Values.service.http.targetPort }}
               protocol: {{ .Values.service.http.protocol }}
-            - name: {{ .Values.service.discovery.name }}
-              containerPort: {{ .Values.service.discovery.targetPort }}
+            - name: {{ .Values.service.discovery.port0.name }}
+              containerPort: {{ .Values.service.discovery.port0.port }}
               protocol: {{ .Values.service.discovery.protocol }}
-            - name: {{ .Values.service.tcpdlna.name }}
-              containerPort: {{ .Values.service.tcpdlna.targetPort }}
-              protocol: {{ .Values.service.tcpdlna.protocol }}
-            - name: gdm-0
-              containerPort: 32410
-              protocol: UDP
-            - name: gdm-2
-              containerPort: 32412
-              protocol: UDP
-            - name: gdm-3
-              containerPort: 32413
-              protocol: UDP
-            - name: gdm-4
-              containerPort: 32414
-              protocol: UDP
+            - name: {{ .Values.service.discovery.port2.name }}
+              containerPort: {{ .Values.service.discovery.port2.port }}
+              protocol: {{ .Values.service.discovery.protocol }}
+            - name: {{ .Values.service.discovery.port3.name }}
+              containerPort: {{ .Values.service.discovery.port3.port }}
+              protocol: {{ .Values.service.discovery.protocol }}
+            - name: {{ .Values.service.discovery.port4.name }}
+              containerPort: {{ .Values.service.discovery.port4.port }}
+              protocol: {{ .Values.service.discovery.protocol }}
           env:
             - name: PUID
               value: "1000"
@@ -68,6 +62,8 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.secret.name }}
                   key: PLEX_CLAIM
+            - name: ADVERTISE_IP
+              value: "http://plex.home:32400,http://192.168.1.133:32400"
       volumes:
         - name: plex-config
           persistentVolumeClaim:
