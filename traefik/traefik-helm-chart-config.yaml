@@ -13,22 +13,42 @@ spec:
       traefik:
       # Open up Traefik dashboard port 9000
         expose: true
-      discovery:
-        port: 1900
+      plex-gdm-0:
+        port: 32410
         expose: true
-        exposedPort: 1900
+        exposedPort: 32410
         protocol: UDP
-      tcp-dlna:
-        port: 32469
+      plex-gdm-2:
+        port: 32412
         expose: true
-        exposePort: 32469
+        exposedPort: 32412
+        protocol: UDP
+      plex-gdm-3:
+        port: 32413
+        expose: true
+        exposedPort: 32413
+        protocol: UDP
+      plex-gdm-4:
+        port: 32414
+        expose: true
+        exposedPort: 32414
+        protocol: UDP
+      plex-tcp:
+        port: 32400
+        expose: true
+        exposedPort: 32400
         protocol: TCP
     logs:
       access:
         enabled: true
     entryPoints:
-      discovery:
-        address: ":1900/udp"
-      txp-dlna:
-        address: ":32469/tcp"
-
+      plex-tcp:
+        address: ":32400/tcp"
+      plex-gdm-0:
+        address: ":32410/udp"
+      plex-gdm-2:
+        address: ":32412/udp"
+      plex-gdm-3:
+        address: ":32413/udp"
+      plex-gdm-4:
+        address: ":32414/udp"

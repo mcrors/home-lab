@@ -12,3 +12,5 @@ spec:
     services:
     - name: {{ .Values.service.http.name }}
       port: {{ .Values.service.http.port }}
+  tls:
+    passthrough: true
