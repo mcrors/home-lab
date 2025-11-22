@@ -41,3 +41,22 @@
   command: >
     kubectl label node {{ inventory_hostname | regex_replace('\.home$', '') }} iscsi_initiator=true --overwrite
   when: (rounded_memory | int) > 3
+
+- name: Determine node type from hostname
+  set_fact:
+    node_type: >-
+      {% if 'lib-pi-' in inventory_hostname %}
+      pi
+      {% elif 'lib-potato-' in inventory_hostname %}
+      potato
+      {% elif 'lib-nuc-' in inventory_hostname %}
+      nuc
+      {% else %}
+      unknown
+      {% endif %}
+
+- name: Set node type label
+  delegate_to: localhost
+  become: false
+  command: >
+    kubectl label node {{ inventory_hostname | regex_replace('\.home$', '') }} node_type={{ node_type | trim }} --overwrite
