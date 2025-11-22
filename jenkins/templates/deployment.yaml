@@ -23,7 +23,7 @@ spec:
       serviceAccountName: {{ .Values.serviceAccount.name }}
       containers:
         - name: jenkins
-          image: jenkins/jenkins:lts
+          image: jenkins/jenkins:2.535-jdk21
           resources:
             limits:
               memory: {{ .Values.deployment.container.resources.limits.memory }}
