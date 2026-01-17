@@ -1,25 +1,8 @@
-# Redo physical setup and wiring
-* Make plan for bringing everything offline and backup again
-    * Might want to add another 1U unit to hold ssd's for k3s nodes (for longhorn)
-    * Install new pi 5 NAS's
-    * Will want to re do wiring/cable management
-    * Ansiblize some/most/all of this
-
-# Media Setup
-* Install and configer homarr
-* Create mechanism for using ffprobe and ffmpeg to transcode to default codecs
-    * cron job on k3s that periodically checks for new content and transcodes
-    * Web app to transcode content without waiting for cron job
-* Move prowlarr, sonarr and radarr to a single helm chart with 3 different value files
-
-# Security
-* move plex to metallb and https (maybe)
-* pi hole admin interface behind nginx with certificate
-* pi hole to k3s cluster
-* certificate added to omv
-* Add authentik
-* Update helm chart ClusterRoles to Roles
-* Is there a way to add TLS to the exporters to prometheus
+# Add jenkins agent
+* Fix reverse proxy issue
+* Add pi, potato and nuc node labels
+* Move jenkins to pi node
+* Set executors to 0
 
 # Monitoring
 * Setup alerts for disk space
@@ -56,10 +39,6 @@
 * debian bookworm update
 * k3s update
 
-# Automation
-* Clean up ansible playbook
-* Add jenkins agent
-
 # Other Services
 * paperless
 * smpt server
@@ -68,3 +47,4 @@
 * Loki
 * authentik
 * longhorn
+* Rancher
