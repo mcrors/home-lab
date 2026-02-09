@@ -25,23 +25,29 @@
 
 # --- Copy scripts from your git repo to the target (only when changed) ---
 - name: Copy reload_nginx.sh
-  template:
-    src: "reload_nginx.sh.j2"
+  copy:
+    src: reload_nginx.sh
     dest: "{{ reload_nginx_path }}"
+    owner: root
+    group: root
     mode: "0755"
   notify: run-deploy-hook
 
 - name: Copy push-wildcard-to-traefik.sh
-  template:
-    src: "push-wildcard-to-traefik.sh.j2"
+  copy:
+    src: push-wildcard-to-traefik.sh
     dest: "{{ push_k8s_path }}"
+    owner: root
+    group: root
     mode: "0755"
   notify: run-deploy-hook
 
 - name: Copy copy-certs-to-postgres.sh
-  template:
-    src: "copy-certs-to-postgres.sh.j2"
+  copy:
+    src: copy-certs-to-postgres.sh
     dest: "{{ push_postgres_path }}"
+    owner: root
+    group: root
     mode: "0755"
   notify: run-deploy-hook
 
@@ -50,15 +56,6 @@
     src: "cert_renew_deploy.sh.j2"
     dest: "{{ deploy_hook_path }}"
     mode: "0755"
-
-# Point Certbot renewal for this cert at the unified deploy hook
-- name: Ensure deploy-hook is set for {{ cert_domain }}
-  lineinfile:
-    path: "/etc/letsencrypt/renewal/{{ cert_domain }}.conf"
-    regexp: '^deploy-hook\s*='
-    line: "deploy-hook = {{ deploy_hook_path }}"
-    state: present
-    create: no
 
 # Make sure the kubeconfig used by the hook exists and is readable
 - name: Ensure kubeconfig path exists

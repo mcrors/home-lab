@@ -1,7 +1,7 @@
 # tls certificate vars
 cert_domain: "houli.eu"
 cf_ini_path: "/etc/letsencrypt/cloudflare.ini"
-deploy_hook_path: "/usr/local/bin/cert_renew_deploy.sh"
+deploy_hook_path: "/etc/letsencrypt/renewal-hooks/deploy/50-deploy-shared-cert"
 reload_nginx_path: "/usr/local/bin/reload_nginx.sh"
 push_k8s_path: "/usr/local/bin/push-wildcard-to-traefik.sh"
 push_postgres_path: "/usr/local/bin/copy-certs-to-postgres.sh"
