@@ -23,6 +23,17 @@
   failed_when: false
   changed_when: false
 
+- name: Test For Ubuntu Noble (24.04)
+  command: grep -E "noble" /etc/os-release
+  register: grep_os_release_noble
+  failed_when: false
+  changed_when: false
+
+- name: Test for x86_64 architecture
+  command: uname -m
+  register: uname_machine
+  changed_when: false
+
 - name: execute OS related tasks on the Potato
   include_tasks: prereq/lapotato.yaml
   when:

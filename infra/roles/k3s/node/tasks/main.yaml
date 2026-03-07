@@ -33,7 +33,7 @@
   become: false
   command: >
     kubectl label node {{ inventory_hostname | regex_replace('\.home$', '') }} memory={{ rounded_memory }}GB --overwrite
-  when: current_label.stdout | default('') != ansible_memtotal_mb
+  when: current_label.stdout | default('') != rounded_memory + 'GB'
 
 - name: Set iscsi initiator label for nodes > 4GB MEM
   delegate_to: localhost
@@ -60,3 +60,17 @@
   become: false
   command: >
     kubectl label node {{ inventory_hostname | regex_replace('\.home$', '') }} node_type={{ node_type | trim }} --overwrite
+
+- name: Taint potato nodes for background tasks only
+  delegate_to: localhost
+  become: false
+  command: >
+    kubectl taint node {{ inventory_hostname | regex_replace('\.home$', '') }} node_type=potato:NoSchedule --overwrite
+  when: node_type | trim == 'potato'
+
+- name: Taint nuc node for dedicated workloads only
+  delegate_to: localhost
+  become: false
+  command: >
+    kubectl taint node {{ inventory_hostname | regex_replace('\.home$', '') }} node_type=nuc:NoSchedule --overwrite
+  when: node_type | trim == 'nuc'
