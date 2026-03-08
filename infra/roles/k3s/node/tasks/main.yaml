@@ -61,13 +61,6 @@
   command: >
     kubectl label node {{ inventory_hostname | regex_replace('\.home$', '') }} node_type={{ node_type | trim }} --overwrite
 
-- name: Taint potato nodes for background tasks only
-  delegate_to: localhost
-  become: false
-  command: >
-    kubectl taint node {{ inventory_hostname | regex_replace('\.home$', '') }} node_type=potato:NoSchedule --overwrite
-  when: node_type | trim == 'potato'
-
 - name: Taint nuc node for dedicated workloads only
   delegate_to: localhost
   become: false
