@@ -22,3 +22,7 @@ controller:
                 operator: In
                 values:
                   - "2.0GB"
+speaker:
+  tolerations:
+    - key: "node_type"
+      operator: "Exists"
