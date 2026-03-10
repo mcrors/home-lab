@@ -7,35 +7,45 @@ metadata:
 spec:
   valuesContent: |-
     # move this to it's own Chart when plex is working
+    tlsStore:
+      default:
+        defaultCertificate:
+          secretName: houli-eu-wildcard
     dashboard:
       enabled: true
     ports:
       traefik:
       # Open up Traefik dashboard port 9000
-        expose: true
+        expose:
+          default: true
       plex-gdm-0:
         port: 32410
-        expose: true
+        expose:
+          default: true
         exposedPort: 32410
         protocol: UDP
       plex-gdm-2:
         port: 32412
-        expose: true
+        expose:
+          default: true
         exposedPort: 32412
         protocol: UDP
       plex-gdm-3:
         port: 32413
-        expose: true
+        expose:
+          default: true
         exposedPort: 32413
         protocol: UDP
       plex-gdm-4:
         port: 32414
-        expose: true
+        expose:
+          default: true
         exposedPort: 32414
         protocol: UDP
       plex-tcp:
         port: 32400
-        expose: true
+        expose:
+          default: true
         exposedPort: 32400
         protocol: TCP
     logs:
