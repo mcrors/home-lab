@@ -1,0 +1,7 @@
+kind: ConfigMap
+metadata:
+  name: coredns-custom
+  namespace: kube-system
+data:
+  houli.override: |
+    forward houli.eu 192.168.1.15

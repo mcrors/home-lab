@@ -8,10 +8,13 @@
     group: root
     mode: 0644
 
-- name: Copy k3s service Config file
-  copy:
-    src: config.yaml
+- name: Copy k3s Config file
+  template:
+    src: "config.yaml.j2"
     dest: "{{ k3s_server_config_location }}/config.yaml"
+    owner: root
+    group: root
+    mode: 0644
 
 - name: Enable and check K3s service
   systemd:
@@ -81,3 +84,12 @@
     src: /usr/local/bin/k3s
     dest: /usr/local/bin/crictl
     state: link
+
+- name: Deploy k8s resources
+  block:
+    - name: Deploy coredns update to use pihole as upstream
+      kubernetes.core.k8s:
+        state: present
+        src: "{{ role_path }}/files/codedns-custom-config.yaml"
+  delegate_to: localhost
+  become: false
