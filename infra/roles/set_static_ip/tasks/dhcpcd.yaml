@@ -4,7 +4,7 @@
     block: |
       interface {{ interface }}
       static_routers={{ gateway }}
-      static domain_name_servers={{ dns }}
+      static domain_name_servers={{ pihole_dns_ip }}
       inform ip_address={{ ansible_default_ipv4.address }}
     state: present
   notify:

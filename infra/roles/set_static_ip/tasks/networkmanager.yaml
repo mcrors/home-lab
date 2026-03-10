@@ -11,7 +11,7 @@
   command: >
     nmcli connection modify "{{ networkmanager_connection_name }}"
     ipv4.gateway "{{ gateway }}"
-    ipv4.dns "{{ dns }}"
+    ipv4.dns "{{ pihole_dns_ip  }}"
 
 - name: Activate the connection
   command: nmcli connection up "{{ networkmanager_connection_name }}"

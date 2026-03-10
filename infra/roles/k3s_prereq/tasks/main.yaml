@@ -30,5 +30,5 @@
     value: "1"
     state: present
     reload: yes
-  when: ansible_all_ipv6_addresses
+  when: ansible_all_ipv6_addresses | length > 0
 

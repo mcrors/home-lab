@@ -1,4 +1,3 @@
-kubeconfig_path: "{{ lookup('env','KUBECONFIG') | default('~/.kube/config', true) }}"
 blackbox_namespace: "blackbox"
 blackbox_release: "blackbox"
 blackbox_repo_name: "prometheus"

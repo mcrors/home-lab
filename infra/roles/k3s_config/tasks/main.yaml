@@ -1,0 +1,20 @@
+---
+
+- name: Deploy coredns update to use pihole as upstream
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      kind: ConfigMap
+      metadata:
+        name: coredns-custom
+        namespace: kube-system
+      data:
+        houli.override: |
+          forward houli.eu {{ pihole_dns_ip }}
+
+- name: Deploy traefik HelmChartConfig update
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    src: "{{ role_path }}/files/traefik-helm-chart-config.yaml"

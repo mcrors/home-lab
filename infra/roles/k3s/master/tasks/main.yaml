@@ -85,11 +85,3 @@
     dest: /usr/local/bin/crictl
     state: link
 
-- name: Deploy k8s resources
-  block:
-    - name: Deploy coredns update to use pihole as upstream
-      kubernetes.core.k8s:
-        state: present
-        src: "{{ role_path }}/files/codedns-custom-config.yaml"
-  delegate_to: localhost
-  become: false

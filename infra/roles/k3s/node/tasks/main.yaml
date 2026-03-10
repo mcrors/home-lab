@@ -26,7 +26,7 @@
 
 - name: Calculate memory rounded to nearest 2GB
   set_fact:
-    rounded_memory: "{{ ((ansible_memtotal_mb / 1024) + 2) // 2 * 2 }}"
+    rounded_memory: "{{ (((ansible_memtotal_mb / 1024) + 2) // 2 * 2) | int | string }}"
 
 - name: Set memory label for node if not set
   delegate_to: localhost

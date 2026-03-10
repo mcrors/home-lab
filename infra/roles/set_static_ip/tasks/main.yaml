@@ -1,26 +1,29 @@
 - name: Check if NetworkManager is active
-  shell: systemctl is-active NetworkManager
+  ansible.builtin.systemd:
+    name: NetworkManager
   register: nm_status
-  ignore_errors: true
+  failed_when: false
 
 - name: Set static IP using NetworkManager
   include_tasks: networkmanager.yaml
-  when: nm_status.rc == 0
+  when: nm_status.status.ActiveState == "active"
 
 - name: Check if dhcpcd is active
-  shell: systemctl is-active dhcpcd
+  ansible.builtin.systemd:
+    name: dhcpcd
   register: dhcpcd_status
-  ignore_errors: true
+  failed_when: false
 
 - name: Set static IP using dhcpcd
   include_tasks: dhcpcd.yaml
-  when: dhcpcd_status.rc == 0
+  when: dhcpcd_status.status.ActiveState == "active"
 
 - name: Check if systemd-networkd is active
-  shell: systemctl is-active systemd-networkd
+  ansible.builtin.systemd:
+    name: systemd-networkd
   register: systemd_networkd_status
-  ignore_errors: true
+  failed_when: false
 
 - name: Set static IP using systemd-networkd
   include_tasks: systemd_networkd.yaml
-  when: systemd_networkd_status.rc == 0
+  when: systemd_networkd_status.status.ActiveState == "active"

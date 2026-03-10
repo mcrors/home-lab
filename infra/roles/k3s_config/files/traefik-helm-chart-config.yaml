@@ -11,6 +11,9 @@ spec:
       default:
         defaultCertificate:
           secretName: houli-eu-wildcard
+    service:
+      annotations:
+        metallb.universe.tf/loadBalancerIPs: 192.168.1.250
     dashboard:
       enabled: true
     ports:
