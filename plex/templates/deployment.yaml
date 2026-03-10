@@ -86,4 +86,4 @@ spec:
                   - key: memory
                     operator: In
                     values:
-                      - "8.0GB"
+                      - "8GB"

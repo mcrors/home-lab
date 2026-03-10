@@ -136,7 +136,7 @@ affinity:
             - key: memory
               operator: In
               values:
-                - "4.0GB"
+                - "4GB"
 
 ## Enable persistence using Persistent Volume Claims
 persistence:
