@@ -10,33 +10,6 @@
       - vars/main.yaml
   tags: common
 
-- hosts: k3s_cluster
-  gather_facts: yes
-  become: true
-  remote_user: hla
-  roles:
-    - role: prereq
-    - role: download
-    - role: raspberrypi
-  vars_files:
-      - vars/main.yaml
-
-- hosts: k3smaster
-  become: true
-  remote_user: hla
-  roles:
-    - role: k3s/master
-  vars_files:
-      - vars/main.yaml
-
-- hosts: k3snodes
-  become: true
-  remote_user: hla
-  roles:
-    - role: k3s/node
-  vars_files:
-      - vars/main.yaml
-
 - hosts: docker
   become: true
   remote_user: hla
@@ -44,16 +17,3 @@
     - role: docker
   tags: docker
 
-- hosts: iscsi_initiators
-  become: true
-  remote_user: hla
-  roles:
-    - role: iscsi_initiator
-  tags: iscsi_initiator
-
-- hosts: iscsi_targets
-  become: true
-  remote_user: hla
-  roles:
-    - role: iscsi_target
-  tags: iscsi_target
