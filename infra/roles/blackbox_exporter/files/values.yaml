@@ -50,7 +50,7 @@ affinity:
             - key: memory
               operator: In
               values:
-                - "2.0GB"
+                - "2GB"
 
 config:
   modules:
