@@ -1,3 +1,10 @@
+# Add Ollama to nuc
+* This will run on the nuc, maybe as a k3s workload, maybe as systemd
+
+# Security
+* Add the secret creation to the playbook
+* Get the cert-sync credentials from the cluster to the node that runs the playbook
+
 # Add jenkins agent
 * Fix reverse proxy issue
 * Add pi, potato and nuc node labels
