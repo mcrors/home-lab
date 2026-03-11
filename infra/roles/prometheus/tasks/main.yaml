@@ -1,27 +1,16 @@
-- name: Ensure data_service compose directory exists
+- name: Ensure prometheus compose directory exists
   file:
     path: "{{ compose_file_dir }}"
     state: directory
 
-- name: Create .env file
-  template:
-    src: data_service.env.j2
-    dest: "{{ compose_file_dir }}/.env"
-    mode: "0600"
+- name: Setup Volumes
+  import_tasks: volume-setup.yaml
 
 - name: Prometheus Setup
   import_tasks: prometheus.yaml
 
-- name: Postgres Setup
-  import_tasks: postgres.yaml
-
 - name: Nginx Setup
   import_tasks: nginx.yaml
-
-- name: Ensure data_service compose directory exists
-  file:
-    path: "{{ compose_file_dir }}"
-    state: directory
 
 - name: Copy Docker Compose file
   copy:

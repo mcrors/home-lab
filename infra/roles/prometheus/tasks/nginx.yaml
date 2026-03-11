@@ -19,9 +19,3 @@
   template:
     src: nginx-http.conf.j2
     dest: /mnt/nginx/nginx-http.conf
-
-- name: Copy streams configs
-  template:
-    src: postgres-stream.conf.j2
-    dest: /mnt/nginx/streams-enabled/postgres.conf
-

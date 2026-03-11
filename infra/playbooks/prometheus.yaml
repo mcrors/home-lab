@@ -1,0 +1,8 @@
+
+- name: Install & Setup Prometheus
+  hosts: data_service  # Only one or a few hosts
+  become: true
+  roles:
+    - prometheus
+  vars_files:
+    - ../vars/main.yaml

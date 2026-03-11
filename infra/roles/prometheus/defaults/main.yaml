@@ -1,13 +1,14 @@
+compose_file_dir: /opt/containers/prometheus
+
 # Default disk for LVM (change as needed)
-data_service_disk: "/dev/sdb1"  # Change this to your actual disk
+prometheus_disk: "/dev/sda1"  # Change this to your actual disk
 
 # TODO: How easy is it to rename the vg
 # Volume group name
-data_service_vg: "data_service_vg"
+prometheus_vg_name: "prometheus_vg"
 
 # Logical volumes and mount points
-data_service_lvs:
+prometheus_lvs:
   - { name: "prometheus", size: "200G", mount: "/mnt/prometheus" }
-  - { name: "postgres", size: "10G", mount: "/mnt/postgres" }
-  - { name: "minio", size: "200G", mount: "/mnt/minio" }
   - { name: "nginx", size: "512M", mount: "/mnt/nginx" }
+
