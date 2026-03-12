@@ -1,3 +1,4 @@
+
 ---
 
 - name: Pre tasks
@@ -7,6 +8,10 @@
     - common
   vars_files:
       - ../vars/main.yaml
+  tags:
+    - node_exporter
+    - blackbox
+    - prometheus
 
 - name: Install Node Exporter on all nodes
   hosts: node_exporters
@@ -15,6 +20,7 @@
     - node_exporter
   vars_files:
       - ../vars/main.yaml
+  tags: node_exporter
 
 - name: Install Blackbox Exporter into K3s
   hosts: localhost
@@ -24,4 +30,13 @@
     - blackbox_exporter
   vars_files:
       - ../vars/main.yaml
+  tags: blackbox
 
+- name: Install & Setup Prometheus
+  hosts: prometheus
+  become: true
+  roles:
+    - prometheus
+  vars_files:
+    - ../vars/main.yaml
+  tags: prometheus

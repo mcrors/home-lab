@@ -29,7 +29,7 @@ smtp_server:
   hosts:
     lib-pi-04.home:
 
-data_service:
+prometheus:
   hosts:
     lib-pi-06.home:
 
