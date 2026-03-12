@@ -11,6 +11,10 @@
     - k3s_cgroup_support
   vars_files:
       - ../vars/main.yaml
+  tags:
+    - pre
+    - master
+    - nodes
 
 - hosts: k3smaster
   become: true
@@ -19,6 +23,7 @@
     - role: k3s/master
   vars_files:
       - ../vars/main.yaml
+  tags: master
 
 - hosts: k3snodes
   become: true
@@ -27,6 +32,7 @@
     - role: k3s/node
   vars_files:
       - ../vars/main.yaml
+  tags: nodes
 
 - name: Configure K3s
   hosts: localhost
