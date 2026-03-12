@@ -35,13 +35,15 @@ scrape_configs:
       - https://prowlarr.houli.eu
       - https://grafana.houli.eu
       - https://prometheus.houli.eu
-      - https://jenkins.houli.eu
+      - https://jenkins.houli.eu/login
       - http://omv.houli.eu
       - http://plex.home
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
       - source_labels: [__param_target]
+        regex: (https?://[^/]+)(?:/.*)?
+        replacement: ${1}
         target_label: instance
       - target_label: __address__
         replacement: blackbox.houli.eu
