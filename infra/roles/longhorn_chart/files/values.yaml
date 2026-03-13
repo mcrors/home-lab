@@ -1,0 +1,165 @@
+# Default values for longhorn.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+image:
+  longhorn:
+    engine:
+      repository: longhornio/longhorn-engine
+      tag: v1.11.0
+    manager:
+      repository: longhornio/longhorn-manager
+      tag: v1.11.0
+    ui:
+      repository: longhornio/longhorn-ui
+      tag: v1.11.0
+    instanceManager:
+      repository: longhornio/longhorn-instance-manager
+      tag: v1.11.0
+    shareManager:
+      repository: longhornio/longhorn-share-manager
+      tag: v1.11.0
+    backingImageManager:
+      repository: longhornio/backing-image-manager
+      tag: v1.11.0
+    supportBundleKit:
+      repository: longhornio/support-bundle-kit
+      tag: v0.0.79
+  csi:
+    attacher:
+      repository: longhornio/csi-attacher
+      tag: v4.10.0-20251226
+    provisioner:
+      repository: longhornio/csi-provisioner
+      tag: v5.3.0-20251226
+    nodeDriverRegistrar:
+      repository: longhornio/csi-node-driver-registrar
+      tag: v2.15.0-20251226
+    resizer:
+      repository: longhornio/csi-resizer
+      tag: v2.0.0-20251226
+    snapshotter:
+      repository: longhornio/csi-snapshotter
+      tag: v8.4.0-20251226
+    livenessProbe:
+      repository: longhornio/livenessprobe
+      tag: v2.17.0-20251226
+  pullPolicy: IfNotPresent
+
+service:
+  ui:
+    type: ClusterIP
+  manager:
+    type: ClusterIP
+
+persistence:
+  defaultClass: true
+  defaultFsType: ext4
+  defaultMkfsParams: ""
+  defaultClassReplicaCount: 2
+  defaultDataLocality: best-effort
+  defaultReplicaAutoBalance: best-effort
+  reclaimPolicy: Retain
+  migratable: false
+  recurringJobSelector:
+    enable: false
+    jobList: []
+  backingImage:
+    enable: false
+    name: ~
+    dataSourceType: ~
+    dataSourceParameters: ~
+    expectedChecksum: ~
+  defaultNodeSelector:
+    enable: false # disable by default
+    selector: []
+  removeSnapshotsDuringFilesystemTrim: ignored # "enabled" or "disabled" otherwise
+
+csi:
+  kubeletRootDir: ~
+  attacherReplicaCount: ~
+  provisionerReplicaCount: ~
+  resizerReplicaCount: ~
+  snapshotterReplicaCount: ~
+
+defaultSettings:
+  backupTarget: ~
+  createDefaultDiskLabeledNodes: true
+  defaultDataPath: /mnt/longhorn-storage
+  taintToleration: "node_type=nuc:NoSchedule"
+  systemManagedComponentsNodeSelector: "longhorn-storage:true"
+  snapshotDataIntegrityImmediateCheckAfterSnapshotCreation: ~
+  snapshotDataIntegrityCronjob: ~
+  removeSnapshotsDuringFilesystemTrim: ~
+  fastReplicaRebuildEnabled: ~
+  replicaFileSyncHttpClientTimeout: ~
+
+longhornManager:
+  log:
+    ## Allowed values are `plain` or `json`.
+    format: plain
+  priorityClass: ~
+  tolerations:
+    - key: "node_type"
+      operator: "Equal"
+      value: "nuc"
+      effect: "NoSchedule"
+  nodeSelector:
+    longhorn-storage: "true"
+  serviceAnnotations: {}
+  ## If you want to set annotations for the Longhorn Manager service, delete the `{}` in the line above
+  ## and uncomment this example block
+  #  annotation-key1: "annotation-value1"
+  #  annotation-key2: "annotation-value2"
+
+longhornDriver:
+  priorityClass: ~
+  tolerations:
+    - key: "node_type"
+      operator: "Equal"
+      value: "nuc"
+      effect: "NoSchedule"
+  nodeSelector:
+    longhorn-storage: "true"
+
+longhornUI:
+  replicas: 2
+  priorityClass: ~
+  tolerations: []
+  nodeSelector:
+    longhorn-storage: "true"
+
+longhornConversionWebhook:
+  replicas: 2
+  priorityClass: ~
+  tolerations: []
+  nodeSelector:
+    longhorn-storage: "true"
+
+longhornAdmissionWebhook:
+  replicas: 2
+  priorityClass: ~
+  tolerations: []
+  nodeSelector:
+    longhorn-storage: "true"
+
+longhornRecoveryBackend:
+  replicas: 2
+  priorityClass: ~
+  tolerations: []
+  nodeSelector:
+    longhorn-storage: "true"
+
+ingress:
+  ## disable this, and create our own traefik ingress seperately for the UI
+  enabled: false
+
+## Specify override namespace, specifically this is useful for using longhorn as sub-chart
+## and its release namespace is not the `longhorn-system`
+namespaceOverride: ""
+
+# Annotations to add to the Longhorn Manager DaemonSet Pods. Optional.
+annotations: {}
+
+serviceAccount:
+  # Annotations to add to the service account
+  annotations: {}

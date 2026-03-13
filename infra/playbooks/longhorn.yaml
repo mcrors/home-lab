@@ -1,0 +1,45 @@
+
+- name: Install longhorn pre-reqs
+  hosts: longhorn
+  become: true
+  roles:
+    - longhorn_prereq
+  vars_files:
+      - ../vars/main.yaml
+
+- name: Setup storage node disks
+  hosts: longhorn
+  become: true
+  roles:
+    - longhorn_disk_setup
+  vars_files:
+      - ../vars/main.yaml
+
+- name: Label longhorn nodes
+  hosts: longhorn
+  gather_facts: false
+  become: false
+  tasks:
+    - name: Set longhorn-storage label
+      delegate_to: localhost
+      kubernetes.core.k8s:
+        kubeconfig: "{{ kubeconfig_path }}"
+        kind: Node
+        name: "{{ inventory_hostname | regex_replace('\\.home$', '') }}"
+        state: patched
+        definition:
+          metadata:
+            labels:
+              longhorn-storage: "true"
+              node.longhorn.io/create-default-disk: "true"
+  vars_files:
+      - ../vars/main.yaml
+
+- name: Install longhorn into K3s
+  hosts: localhost
+  gather_facts: false
+  become: false
+  roles:
+    - longhorn_chart
+  vars_files:
+      - ../vars/main.yaml

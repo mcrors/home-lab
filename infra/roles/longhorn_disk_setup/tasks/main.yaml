@@ -1,0 +1,71 @@
+- name: Find ~1TB disk
+  shell: |
+    lsblk -bdno NAME,SIZE | awk '$2 >= 900000000000 && $2 <= 1100000000000 {print $1}'
+  register: longhorn_disk_result
+
+- name: Set disk fact
+  set_fact:
+    longhorn_disk: "/dev/{{ longhorn_disk_result.stdout_lines[0] }}"
+  when: longhorn_disk_result.stdout_lines | length > 0
+
+- name: Install LVM packages
+  apt:
+    name: lvm2
+    state: present
+    update_cache: yes
+
+# Pi's - create new VG from dedicated disk
+- name: Create physical volume
+  lvg:
+    pvs: "{{ longhorn_disk }}"
+    vg: longhorn-vg
+    state: present
+  when: node_type == 'pi'
+
+- name: Check if longhorn-lv exists
+  shell: lvs longhorn-vg/longhorn-lv
+  register: lv_check
+  failed_when: false
+  changed_when: false
+  when: node_type == 'pi'
+
+- name: Create logical volume (new VG)
+  lvol:
+    vg: longhorn-vg
+    lv: longhorn-lv
+    size: 100%FREE
+  when: node_type == 'pi' and lv_check.rc != 0
+
+# NUC - use existing VG
+- name: Check if longhorn-lv exists on NUC
+  shell: lvs ubuntu-vg/longhorn-lv
+  register: lv_check_nuc
+  failed_when: false
+  changed_when: false
+  when: node_type == 'nuc'
+
+- name: Create logical volume (existing VG)
+  lvol:
+    vg: ubuntu-vg
+    lv: longhorn-lv
+    size: 750G
+  when: node_type == 'nuc' and lv_check_nuc.rc != 0
+
+# Same for both from here
+- name: Format logical volume
+  filesystem:
+    fstype: ext4
+    dev: "/dev/{{ (node_type == 'nuc') | ternary('ubuntu-vg', 'longhorn-vg') }}/longhorn-lv"
+
+- name: Create mount point
+  file:
+    path: /mnt/longhorn-storage
+    state: directory
+
+- name: Mount logical volume
+  mount:
+    path: /mnt/longhorn-storage
+    src: "/dev/{{ (node_type == 'nuc') | ternary('ubuntu-vg', 'longhorn-vg') }}/longhorn-lv"
+    fstype: ext4
+    state: mounted
+

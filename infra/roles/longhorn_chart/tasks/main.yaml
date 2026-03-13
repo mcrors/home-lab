@@ -1,0 +1,42 @@
+---
+
+- name: Add longhorn Helm repo
+  kubernetes.core.helm_repository:
+    name: "{{ longhorn_repo_name }}"
+    repo_url: "{{ longhorn_repo_url }}"
+
+- name: Update Helm repo cache
+  kubernetes.core.helm:
+    name: cache-refresh
+    namespace: kube-system
+    state: absent
+    update_repo_cache: true
+    kubeconfig: "{{ kubeconfig_path }}"
+
+- name: Ensure longhorn-system namespace exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ longhorn_namespace }}"
+
+- name: Install/Upgrade longhorn with values.yaml
+  kubernetes.core.helm:
+    name: "{{ longhorn_release }}"
+    chart_ref: "{{ longhorn_chart }}"
+    chart_version: 1.11.0
+    release_namespace: "{{ longhorn_namespace }}"
+    create_namespace: false
+    wait: true
+    kubeconfig: "{{ kubeconfig_path }}"
+    values_files:
+      - "{{ values_file }}"
+
+- name: Create longhorn-ingress
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    template: "{{ ingress_file }}"
