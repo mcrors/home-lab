@@ -2,16 +2,16 @@
 
 - name: Add blackbox Helm repo
   kubernetes.core.helm_repository:
-    name: "{{ blackbox_repo_name }}"
-    repo_url: "{{ blackbox_repo_url }}"
+    name: prometheus
+    repo_url: https://prometheus-community.github.io/helm-charts
 
 - name: Update Helm repo cache
   kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig_path }}"
     name: cache-refresh
     namespace: kube-system
     state: absent
     update_repo_cache: true
-    kubeconfig: "{{ kubeconfig_path }}"
 
 - name: Ensure blackbox namespace exists
   kubernetes.core.k8s:
@@ -25,11 +25,12 @@
 
 - name: Install/Upgrade blackbox with values.yaml
   kubernetes.core.helm:
-    name: "{{ blackbox_release }}"
-    chart_ref: "{{ blackbox_chart }}"
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: blackbox
+    chart_ref: prometheus/prometheus-blackbox-exporter
+    chart_version: "{{ chart_version }}"
     release_namespace: "{{ blackbox_namespace }}"
     create_namespace: false
     wait: true
-    kubeconfig: "{{ kubeconfig_path }}"
     values_files:
-      - "{{ values_file }}"
+      - "{{ role_path }}/files/values.yaml"
