@@ -82,3 +82,4 @@ admin:
   enabled: true
   existingSecret: "pihole-admin-secret"
   passwordKey: "password"
+

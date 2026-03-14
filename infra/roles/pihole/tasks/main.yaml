@@ -47,6 +47,7 @@
     wait: true
     values_files:
       - "{{ role_path }}/files/values.yaml"
+      - "{{ role_path }}/files/dnsmasq.yaml"
     values:
       serviceDns:
         loadBalancerIP: "{{ k3s_pihole_dns_ip }}"
