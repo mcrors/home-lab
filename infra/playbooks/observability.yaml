@@ -36,6 +36,7 @@
   hosts: prometheus
   become: true
   roles:
+    - docker
     - prometheus
   vars_files:
     - ../vars/main.yaml

@@ -1,0 +1,9 @@
+
+- name: Install pihole into k3s cluster
+  hosts: localhost
+  gather_facts: false
+  become: false
+  roles:
+    - pihole
+  vars_files:
+      - ../vars/main.yaml

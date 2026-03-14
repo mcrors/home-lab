@@ -1,0 +1,84 @@
+replicaCount: 1
+
+strategyType: Recreate
+
+image:
+  repository: "pihole/pihole"
+  pullPolicy: IfNotPresent
+
+serviceDns:
+  mixedService: true
+  type: LoadBalancer
+  port: 53
+  externalTrafficPolicy: Cluster
+
+serviceDhcp:
+  enabled: false
+
+serviceWeb:
+  http:
+    enabled: true
+    port: 80
+  https:
+    enabled: false  # Traefik handles TLS termination, no need for HTTPS on the pod itself
+  type: ClusterIP
+
+virtualHost: pihole.houli.eu
+
+ingress:
+  enabled: true
+  ingressClassName: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    traefik.ingress.kubernetes.io/router.tls: "true"
+  path: /
+  pathType: Prefix
+  hosts:
+    - pihole.houli.eu
+  tls:
+    - secretName: houli-eu-wildcard
+      hosts:
+        - pihole.houli.eu
+
+probes:
+  liveness:
+    type: command
+    command:
+      - /bin/sh
+      - -c
+      - "curl --silent http://localhost/api/info/login | jq 'if (.dns | not) then halt_error(1) end'"
+    enabled: true
+    initialDelaySeconds: 60
+    failureThreshold: 10
+    timeoutSeconds: 5
+  readiness:
+    type: command
+    command:
+      - /bin/sh
+      - -c
+      - "curl --silent http://localhost/api/info/login | jq 'if (.dns | not) then halt_error(1) end'"
+    enabled: true
+    initialDelaySeconds: 60
+    failureThreshold: 10
+    timeoutSeconds: 5
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+persistentVolumeClaim:
+  enabled: false
+  existingClaim: "pihole-data"
+
+nodeSelector:
+  node_type: pi
+
+adminPassword: ""
+admin:
+  enabled: true
+  existingSecret: "pihole-admin-secret"
+  passwordKey: "password"

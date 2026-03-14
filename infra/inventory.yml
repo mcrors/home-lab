@@ -54,7 +54,7 @@ nginx:
 
 pihole:
   hosts:
-    lib-pi-04.home:
+    localhost:
 
 iscsi_targets:
   hosts:

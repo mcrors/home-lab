@@ -1,0 +1,52 @@
+- name: Create PiHole namespace
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: namespace
+      metadata:
+        name: "{{ pihole_namespace }}"
+
+- name: Create PiHole admin secret
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: pihole-admin-secret
+        namespace: "{{ pihole_namespace }}"
+      stringData:
+        password: "{{ pihole_admin_password }}"
+
+- name: Add pihole Helm repo
+  kubernetes.core.helm_repository:
+    name: mojo2600
+    repo_url: https://mojo2600.github.io/pihole-kubernetes/
+
+- name: Update Helm repo cache
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: cache-refresh
+    namespace: kube-system
+    state: absent
+    update_repo_cache: true
+
+- name: Install/Upgrade longhorn with values.yaml
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: pihole
+    chart_ref: mojo2600/pihole
+    chart_version: "{{ chart_version }}"
+    release_namespace: "{{ pihole_namespace }}"
+    create_namespace: false
+    wait: true
+    values_files:
+      - "{{ role_path }}/files/values.yaml"
+    values:
+      serviceDns:
+        loadBalancerIP: "{{ k3s_pihole_dns_ip }}"
+        annotations:
+          metallb.universe.tf/loadBalancerIPs: "{{ k3s_pihole_dns_ip }}"

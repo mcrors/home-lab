@@ -6,7 +6,8 @@ systemd_dir: /etc/systemd/system
 networkmanager_connection_name: ansible-managed
 interface: eth0
 gateway: 192.168.1.1
-pihole_dns_ip : 192.168.1.15
+pihole_dns_ip: 192.168.1.15
+k3s_pihole_dns_ip: 192.168.1.252
 
 # k3 vars
 k3s_version: v1.32.13+k3s1
