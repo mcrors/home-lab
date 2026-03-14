@@ -3,8 +3,6 @@ compose_file_dir: /opt/containers/prometheus
 # Default disk for LVM (change as needed)
 prometheus_disk: "/dev/sda1"  # Change this to your actual disk
 
-# TODO: How easy is it to rename the vg
-# Volume group name
 prometheus_vg_name: "prometheus_vg"
 
 # Logical volumes and mount points

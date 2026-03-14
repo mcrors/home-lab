@@ -1,3 +1,5 @@
+---
+
 - name: Create PiHole namespace
   kubernetes.core.k8s:
     kubeconfig: "{{ kubeconfig_path }}"
