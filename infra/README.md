@@ -1,7 +1,3 @@
-# Introduction
-
-# Roles
-
 # New Host
 This section explains the steps that need to be taken before a new host can be added to the
 inventory file.
@@ -41,15 +37,4 @@ inventory file.
 * Update DNS table:
     * Add the IP address of the new host to the DNS table of the router.
 
-# Add Kubernetes helm charts
-* nginx-ingress controller
-```bash
-helm upgrade --install ingress-nginx ingress-nginx --set controller.service.type=NodePort \
-  --repo https://kubernetes.github.io/ingress-nginx \
-  --namespace ingress-nginx --create-namespace
-```
-* prometheus & grafana
-https://devopscube.com/setup-prometheus-monitoring-on-kubernetes/
 
-* Ensure that workloads do not get scheuled on the master node
-kubectl taint nodes lib-potato-02 node-role.kubernetes.io/master=true:NoSchedule --overwrite
