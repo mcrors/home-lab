@@ -40,6 +40,8 @@ the DNS address that the router points to and must remain stable permanently.
 - The IP is annotated/reserved so MetalLB does not assign it to any other service
 - The chosen IP is recorded in the chart `values.yaml`
 
+**Status:** Done
+
 ---
 
 ### PIHOLE-02 — Export current PiHole configuration
@@ -58,6 +60,9 @@ be reconstructed from a backup if lost.
 - Blocklist sources documented
 - All custom DNS entries exported and stored in the repo or a safe location
 - Admin password noted securely
+
+**Status:** Won't Do. Config will be handled in the playbook
+
 
 ---
 
@@ -82,6 +87,8 @@ values file used as documented variables rather than full template abstraction.
   admin password reference, replica count, resource limits
 - `home-lab/piholetemplates/` directory scaffolded
 - Chart lints cleanly with `helm lint`
+
+**Status:** Done. Using community helm chart instead
 
 ---
 
@@ -109,6 +116,8 @@ Implement all required Kubernetes resource templates within the Helm chart.
 - Liveness probe: HTTP GET `/admin/` port 80
 - Readiness probe: same, with appropriate initial delay
 - PVC uses Longhorn storage class with 2 replicas
+
+**Status:** Done. Using community helm chart instead
 
 ---
 
