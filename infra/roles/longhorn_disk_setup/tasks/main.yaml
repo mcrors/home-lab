@@ -33,7 +33,7 @@
   lvol:
     vg: longhorn-vg
     lv: longhorn-lv
-    size: 100%FREE
+    size: 90%FREE
   when: node_type == 'pi' and lv_check.rc != 0
 
 # NUC - use existing VG

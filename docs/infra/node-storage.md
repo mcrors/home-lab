@@ -155,6 +155,8 @@ sudo systemctl restart systemd-journald
 - Journal survives a reboot — verify with `journalctl --list-boots`
 - Added to `common` Ansible role
 
+**Status:** DONE
+
 ---
 
 ### STORAGE-04 — Mount /tmp as tmpfs
@@ -207,15 +209,15 @@ Longhorn this is a clean teardown and reinstall.
 
 **Applies to:** lib-pi-01, lib-pi-02, lib-pi-03, lib-pi-04, lib-pi-05
 
-**Step 1 — Uninstall Longhorn via Helm:**
+**Step 1 — Uninstall Longhorn via Helm:** DONE
 ```bash
 helm uninstall longhorn -n longhorn-system
 ```
 
-**Step 2 — Clean up LVM on each Pi node:**
+**Step 2 — Clean up LVM on each Pi node:** DONE
 ```bash
 # Unmount
-sudo umount /var/lib/longhorn
+sudo umount /mnt/longhorn-storage
 
 # Remove fstab entry
 sudo sed -i '/longhorn/d' /etc/fstab
@@ -230,7 +232,7 @@ sudo vgremove longhorn-vg
 sudo pvremove /dev/sdX
 ```
 
-**Step 3 — Update Longhorn playbook:**
+**Step 3 — Update Longhorn playbook:** DONE
 Update the LV creation task to use 90% instead of 100%:
 ```yaml
 # Before
