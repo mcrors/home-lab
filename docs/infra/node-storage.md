@@ -3,7 +3,7 @@
 ## Overview
 
 This project covers all storage related work across the cluster nodes and external nodes.
-This includes physical SSD installation, Longhorn reconfiguration, and moving volatile 
+This includes physical SSD installation, Longhorn reconfiguration, and moving volatile
 directories off SD cards onto SSDs for improved reliability and longevity.
 
 ### Node Inventory
@@ -29,13 +29,13 @@ directories off SD cards onto SSDs for improved reliability and longevity.
 
 ### STORAGE-01 — Buy and install SSDs
 
-**Type:** Hardware  
-**Priority:** High  
+**Type:** Hardware
+**Priority:** High
 **Blocked by:** Nothing
 
-**Description:**  
-Purchase and physically install SSDs across all nodes. Pi nodes (lib-pi-01 to 05) already 
-have 1TB SSDs for Longhorn — these will be reconfigured in STORAGE-05 to also serve as 
+**Description:**
+Purchase and physically install SSDs across all nodes. Pi nodes (lib-pi-01 to 05) already
+have 1TB SSDs for Longhorn — these will be reconfigured in STORAGE-05 to also serve as
 system volumes. La Potatoes and the master need dedicated 128GB SSDs for system use.
 
 **Shopping list:**
@@ -43,7 +43,7 @@ system volumes. La Potatoes and the master need dedicated 128GB SSDs for system 
 - 1x 128GB SSD + USB enclosure — lib-potato-02 (master)
 - USB hub for shelf mounting (optional but recommended for cable tidiness)
 
-> Note: lib-pi-06 already has two SSDs. The 500GB iSCSI SSD will be repurposed for 
+> Note: lib-pi-06 already has two SSDs. The 500GB iSCSI SSD will be repurposed for
 > system use once iSCSI is migrated to Longhorn.
 
 **Acceptance Criteria:**
@@ -55,13 +55,13 @@ system volumes. La Potatoes and the master need dedicated 128GB SSDs for system 
 
 ### STORAGE-02 — Disable swap across all nodes
 
-**Type:** Configuration  
-**Priority:** High  
+**Type:** Configuration
+**Priority:** High
 **Blocked by:** STORAGE-01
 
-**Description:**  
-k3s requires swap to be disabled. Raspberry Pi OS enables swap by default via 
-`dphys-swapfile`. This should be added to the `common` or `k3s_prereq` Ansible role 
+**Description:**
+k3s requires swap to be disabled. Raspberry Pi OS enables swap by default via
+`dphys-swapfile`. This should be added to the `common` or `k3s_prereq` Ansible role
 so it applies to all nodes.
 
 **Verify current state:**
@@ -101,18 +101,20 @@ sudo dphys-swapfile uninstall
 - Change is persistent across reboots
 - Added to Ansible role so future nodes get this automatically
 
+**Status:** DONE
+
 ---
 
 ### STORAGE-03 — Verify and fix systemd journal persistence
 
-**Type:** Configuration  
-**Priority:** Medium  
+**Type:** Configuration
+**Priority:** Medium
 **Blocked by:** Nothing
 
-**Description:**  
-By default Debian does not persist the systemd journal across reboots — logs are lost 
-on restart which makes post-reboot debugging very difficult. At least one node has 
-already had this fixed after an unexpected reboot incident. This task ensures it is 
+**Description:**
+By default Debian does not persist the systemd journal across reboots — logs are lost
+on restart which makes post-reboot debugging very difficult. At least one node has
+already had this fixed after an unexpected reboot incident. This task ensures it is
 consistent across all nodes and added to the `common` role.
 
 **Verify current state:**
@@ -157,14 +159,14 @@ sudo systemctl restart systemd-journald
 
 ### STORAGE-04 — Mount /tmp as tmpfs
 
-**Type:** Configuration  
-**Priority:** Low  
+**Type:** Configuration
+**Priority:** Low
 **Blocked by:** Nothing
 
-**Description:**  
-Mounting `/tmp` as tmpfs moves temporary file writes to RAM rather than the SD card, 
-reducing SD card wear. `/tmp` contents are ephemeral by definition so there is no 
-downside to losing them on reboot. Note: do NOT mount `/var/tmp` as tmpfs — that 
+**Description:**
+Mounting `/tmp` as tmpfs moves temporary file writes to RAM rather than the SD card,
+reducing SD card wear. `/tmp` contents are ephemeral by definition so there is no
+downside to losing them on reboot. Note: do NOT mount `/var/tmp` as tmpfs — that
 directory is expected to survive reboots.
 
 **Verify current state:**
@@ -193,14 +195,14 @@ mount | grep tmp
 
 ### STORAGE-05 — Reconfigure Longhorn disk allocation (90/10 split)
 
-**Type:** Infrastructure  
-**Priority:** High  
+**Type:** Infrastructure
+**Priority:** High
 **Blocked by:** STORAGE-01
 
-**Description:**  
-Currently the Longhorn playbook gives 100% of the SSD to the Longhorn VG. This needs 
-to be reconfigured to a 90/10 split — 90% for Longhorn, 10% for a system VG that will 
-host `/var/lib/rancher` and `/var/log` (see STORAGE-06). Since nothing is currently on 
+**Description:**
+Currently the Longhorn playbook gives 100% of the SSD to the Longhorn VG. This needs
+to be reconfigured to a 90/10 split — 90% for Longhorn, 10% for a system VG that will
+host `/var/lib/rancher` and `/var/log` (see STORAGE-06). Since nothing is currently on
 Longhorn this is a clean teardown and reinstall.
 
 **Applies to:** lib-pi-01, lib-pi-02, lib-pi-03, lib-pi-04, lib-pi-05
@@ -228,7 +230,7 @@ sudo vgremove longhorn-vg
 sudo pvremove /dev/sdX
 ```
 
-**Step 3 — Update Longhorn playbook:**  
+**Step 3 — Update Longhorn playbook:**
 Update the LV creation task to use 90% instead of 100%:
 ```yaml
 # Before
@@ -263,21 +265,21 @@ ansible-playbook playbook.yaml --tags longhorn
 
 ### STORAGE-06 — Move /var/lib/rancher and /var/log to SSD
 
-**Type:** Infrastructure  
-**Priority:** High  
+**Type:** Infrastructure
+**Priority:** High
 **Blocked by:** STORAGE-01, STORAGE-05
 
-**Description:**  
-Move the two highest write directories off the SD card and onto the SSD. This dramatically 
-reduces SD card wear and improves I/O performance for k3s. 
+**Description:**
+Move the two highest write directories off the SD card and onto the SSD. This dramatically
+reduces SD card wear and improves I/O performance for k3s.
 
-**For Pi nodes (lib-pi-01 to 05):** Create a new LV from the 10% free space left after 
+**For Pi nodes (lib-pi-01 to 05):** Create a new LV from the 10% free space left after
 the Longhorn reconfiguration in STORAGE-05.
 
-**For Potato nodes (lib-potato-01 to 04):** Use the full 128GB SSD — create a VG and LV 
+**For Potato nodes (lib-potato-01 to 04):** Use the full 128GB SSD — create a VG and LV
 for system use.
 
-**For lib-potato-02 (master):** Same as Potato nodes but the critical path is 
+**For lib-potato-02 (master):** Same as Potato nodes but the critical path is
 `/var/lib/rancher/k3s` which contains the SQLite database.
 
 **LVM setup for Potato nodes (Ansible tasks):**
@@ -317,7 +319,7 @@ echo '/mnt/ssd/rancher /var/lib/rancher none bind 0 0' | sudo tee -a /etc/fstab
 echo '/mnt/ssd/log /var/log none bind 0 0' | sudo tee -a /etc/fstab
 ```
 
-> Note: This should be done with the node cordoned and drained, and ideally offline 
+> Note: This should be done with the node cordoned and drained, and ideally offline
 > to avoid bind mount ordering issues on reboot.
 
 **Acceptance Criteria:**

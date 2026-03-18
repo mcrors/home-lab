@@ -32,3 +32,39 @@
     reload: yes
   when: ansible_all_ipv6_addresses | length > 0
 
+# Common to all hosts
+- name: Disable swap immediately
+  command: swapoff -a
+
+# Pi / Potato (dphys-swapfile)
+- name: Check if dphys-swapfile service exists
+  stat:
+    path: /etc/init.d/dphys-swapfile
+  register: dphys_swapfile
+
+- name: Disable dphys-swapfile service
+  systemd:
+    name: dphys-swapfile
+    state: stopped
+    enabled: false
+  when: dphys_swapfile.stat.exists
+
+- name: Remove dphys swapfile
+  command: dphys-swapfile uninstall
+  ignore_errors: yes
+  when: dphys_swapfile.stat.exists
+
+# Ubuntu (NUC)
+- name: Remove swap entries from fstab
+  lineinfile:
+    path: /etc/fstab
+    regexp: '\sswap\s'
+    state: absent
+
+- name: Remove swap file if present
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /swap.img
+    - /swapfile
