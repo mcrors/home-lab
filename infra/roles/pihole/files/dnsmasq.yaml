@@ -8,11 +8,35 @@ dnsmasq:
   # - server=/bar.foo/192.168.178.11
 
   # -- Add custom dns entries to override the dns resolution. All lines will be added to the pihole dnsmasq configuration.
-  customDnsEntries: []
-  # - address=/foo.bar/192.168.178.10
-  # - address=/bar.foo/192.168.178.11
+  customDnsEntries:
+    - address=/blackbox.houli.eu/192.168.1.250
+    - address=/grafana.houli.eu/192.168.1.250
+    - address=/jenkins.houli.eu/192.168.1.250
+    - address=/longhorn.houli.eu/192.168.1.250
+    - address=/omv.houli.eu/192.168.1.96
+    - address=/prometheus.houli.eu/192.168.1.226
+    - address=/postgres.houli.eu/192.168.1.226
+    - address=/prowlarr.houli.eu/192.168.1.250
+    - address=/sonarr.houli.eu/192.168.1.250
+    - address=/radarr.houli.eu/192.168.1.250
+    - address=/transmission.houli.eu/192.168.1.250
+    - address=/plex.home/192.168.1.250
+    - address=/paperless.houli.eu/192.168.1.250
+    - address=/authentik.houli.eu/192.168.1.250
+    - address=/home.houli.eu/192.168.1.250
 
   # -- Dnsmasq reads the /etc/hosts file to resolve ips. You can add additional entries if you like
-  additionalHostsEntries: []
-  # - 192.168.0.3     host4
-  # - 192.168.0.4     host5
+  additionalHostsEntries:
+    - 192.168.1.96    lib-hp-01.home
+    - 192.168.1.169   lib-nuc-01.home
+    - 192.168.1.152   lib-pi-01.home
+    - 192.168.1.58    lib-pi-02.home
+    - 192.168.1.194   lib-pi-03.home
+    - 192.168.1.15    lib-pi-04.home
+    - 192.168.1.133   lib-pi-05.home
+    - 192.168.1.226   lib-pi-06.home
+    - 192.168.1.57    lib-potato-01.home
+    - 192.168.1.156   lib-potato-02.home
+    - 192.168.1.228   lib-potato-03.home
+    - 192.168.1.136   lib-potato-04.home
+
