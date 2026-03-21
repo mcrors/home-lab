@@ -145,8 +145,12 @@ potatoes:
   vars:
     node_type: potato
 
-all_nodes:
+sbc:
   children:
     pis:
-    nucs:
     potatoes:
+
+all_nodes:
+  children:
+    nucs:
+    sbc:
