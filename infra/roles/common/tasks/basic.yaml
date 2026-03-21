@@ -26,3 +26,12 @@
   with_items:
     - .bashrc
     - .vimrc
+
+- name: Mount /tmp as tmpfs
+  mount:
+    path: /tmp
+    src: tmpfs
+    fstype: tmpfs
+    opts: "defaults,noatime,mode=1777,size={{ tmpfs_size_mb }}m"
+    state: mounted
+

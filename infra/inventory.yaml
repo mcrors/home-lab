@@ -144,3 +144,9 @@ potatoes:
     lib-potato-04.home:
   vars:
     node_type: potato
+
+all_nodes:
+  children:
+    pis:
+    nucs:
+    potatoes:
