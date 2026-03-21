@@ -195,7 +195,7 @@ mount | grep tmp
 - Change is persistent across reboots
 - Added to `common` Ansible role
 
-**Status:**
+Status:** DONE
 
 ---
 
@@ -343,6 +343,6 @@ echo '/mnt/ssd/log /var/log none bind 0 0' | sudo tee -a /etc/fstab
 | STORAGE-01 | Buy and install SSDs | — | DONE
 | STORAGE-02 | Disable swap | STORAGE-01 | DONE
 | STORAGE-03 | Fix journal persistence | — | DONE
-| STORAGE-04 | Mount /tmp as tmpfs | — |
+| STORAGE-04 | Mount /tmp as tmpfs | — | DONE
 | STORAGE-05 | Reconfigure Longhorn 90/10 | STORAGE-01 |
 | STORAGE-06 | Move /var to SSD | STORAGE-01, STORAGE-05 |

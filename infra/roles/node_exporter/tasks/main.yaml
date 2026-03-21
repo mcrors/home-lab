@@ -53,3 +53,11 @@
     state: started
     enabled: yes
     daemon_reload: yes
+
+- name: Clean up Node Exporter temp files
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /tmp/node_exporter.tar.gz
+    - "/tmp/node_exporter-{{ node_exporter_version }}.linux-{{ node_exporter_arch }}"
