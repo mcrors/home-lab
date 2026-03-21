@@ -1,0 +1,5 @@
+---
+- name: Reboot to new root
+  ansible.builtin.reboot:
+    reboot_timeout: 300
+    msg: "Rebooting to switch root to SSD"

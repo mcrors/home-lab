@@ -1,0 +1,253 @@
+---
+# ============================================================
+# root_on_ssd — Move root filesystem from SD card to SSD LV
+# ============================================================
+# Idempotent: detects if root is already on the LV and skips.
+# Re-runnable: every task guards on current state.
+# ============================================================
+
+# ----------------------------------------------------------
+# 1. Detect if root is already on the SSD LV
+# ----------------------------------------------------------
+- name: Get current root device
+  ansible.builtin.command: findmnt -n -o SOURCE /
+  register: current_root_device
+  changed_when: false
+
+- name: Check if root is already on the LV
+  ansible.builtin.set_fact:
+    root_already_on_ssd: "{{ root_lv_name in current_root_device.stdout }}"
+
+- name: Root already on SSD — nothing to do
+  ansible.builtin.debug:
+    msg: "Root is already on /dev/{{ root_vg_name }}/{{ root_lv_name }}, skipping all tasks."
+  when: root_already_on_ssd
+
+# ----------------------------------------------------------
+# 2. Discover the target SSD
+# ----------------------------------------------------------
+- name: Gather candidate disks
+  ansible.builtin.shell: |
+    lsblk -dnbo NAME,SIZE,TYPE | awk '$3 == "disk" {
+      size_gb = $2 / 1024 / 1024 / 1024
+      if (size_gb >= {{ ssd_min_size_gb }} && size_gb <= {{ ssd_max_size_gb }})
+        print "/dev/" $1
+    }'
+  register: candidate_disks
+  changed_when: false
+  when: not root_already_on_ssd
+
+- name: Fail if no suitable SSD found
+  ansible.builtin.fail:
+    msg: >
+      No disk found in the {{ ssd_min_size_gb }}–{{ ssd_max_size_gb }} GB range.
+      Available disks: {{ candidate_disks.stdout_lines | default([]) }}
+  when:
+    - not root_already_on_ssd
+    - candidate_disks.stdout_lines | length == 0
+
+- name: Fail if multiple candidate SSDs found
+  ansible.builtin.fail:
+    msg: >
+      Multiple disks found in range: {{ candidate_disks.stdout_lines }}.
+      Set the target disk explicitly.
+  when:
+    - not root_already_on_ssd
+    - candidate_disks.stdout_lines | length > 1
+
+- name: Set target SSD device
+  ansible.builtin.set_fact:
+    ssd_device: "{{ candidate_disks.stdout_lines[0] }}"
+  when: not root_already_on_ssd
+
+- name: Show discovered SSD
+  ansible.builtin.debug:
+    msg: "Target SSD: {{ ssd_device }}"
+  when: not root_already_on_ssd
+
+# ----------------------------------------------------------
+# 3. LVM setup — PV, VG, LV (all idempotent)
+# ----------------------------------------------------------
+- name: Check if PV exists on SSD
+  ansible.builtin.command: pvs {{ ssd_device }}
+  register: pv_check
+  failed_when: false
+  changed_when: false
+  when: not root_already_on_ssd
+
+- name: Create PV on SSD
+  ansible.builtin.command: pvcreate {{ ssd_device }}
+  when:
+    - not root_already_on_ssd
+    - pv_check.rc != 0
+
+- name: Check if VG exists
+  ansible.builtin.command: vgs {{ root_vg_name }}
+  register: vg_check
+  failed_when: false
+  changed_when: false
+  when: not root_already_on_ssd
+
+- name: Create VG on SSD
+  ansible.builtin.command: vgcreate {{ root_vg_name }} {{ ssd_device }}
+  when:
+    - not root_already_on_ssd
+    - vg_check.rc != 0
+
+- name: Check if root LV exists
+  ansible.builtin.command: lvs {{ root_vg_name }}/{{ root_lv_name }}
+  register: lv_check
+  failed_when: false
+  changed_when: false
+  when: not root_already_on_ssd
+
+- name: Create root LV
+  ansible.builtin.command: >
+    lvcreate -L {{ root_lv_size }} -n {{ root_lv_name }} {{ root_vg_name }}
+  when:
+    - not root_already_on_ssd
+    - lv_check.rc != 0
+
+# ----------------------------------------------------------
+# 4. Filesystem
+# ----------------------------------------------------------
+- name: Set LV device path
+  ansible.builtin.set_fact:
+    lv_device: "/dev/{{ root_vg_name }}/{{ root_lv_name }}"
+  when: not root_already_on_ssd
+
+- name: Check if filesystem exists on LV
+  ansible.builtin.command: blkid -s TYPE -o value {{ lv_device }}
+  register: fs_check
+  failed_when: false
+  changed_when: false
+  when: not root_already_on_ssd
+
+- name: Create filesystem on root LV
+  ansible.builtin.filesystem:
+    fstype: "{{ root_fs_type }}"
+    dev: "{{ lv_device }}"
+  when:
+    - not root_already_on_ssd
+    - fs_check.stdout == ""
+
+# ----------------------------------------------------------
+# 5. Rsync root to the new LV
+# ----------------------------------------------------------
+- name: Create temporary mount point
+  ansible.builtin.file:
+    path: /mnt/new_root
+    state: directory
+  when: not root_already_on_ssd
+
+- name: Mount the new root LV
+  ansible.posix.mount:
+    path: /mnt/new_root
+    src: "{{ lv_device }}"
+    fstype: "{{ root_fs_type }}"
+    state: mounted
+  when: not root_already_on_ssd
+
+- name: Rsync current root to new LV
+  ansible.builtin.shell: |
+    rsync -axS --delete \
+      {% for exclude in rsync_excludes %}
+      --exclude='{{ exclude }}' \
+      {% endfor %}
+      / /mnt/new_root/
+  when: not root_already_on_ssd
+
+- name: Create excluded mount point dirs on new root
+  ansible.builtin.file:
+    path: "/mnt/new_root/{{ item }}"
+    state: directory
+    mode: "{{ '1777' if item == 'tmp' else '0755' }}"
+  loop:
+    - boot
+    - dev
+    - proc
+    - sys
+    - tmp
+    - run
+    - mnt
+    - media
+  when: not root_already_on_ssd
+
+# ----------------------------------------------------------
+# 6. Update fstab on the NEW root
+# ----------------------------------------------------------
+- name: Get LV UUID
+  ansible.builtin.command: blkid -s UUID -o value {{ lv_device }}
+  register: lv_uuid
+  changed_when: false
+  when: not root_already_on_ssd
+
+- name: Get current SD card root entry from fstab
+  ansible.builtin.shell: grep -E '^\S+\s+/\s+' /mnt/new_root/etc/fstab
+  register: old_fstab_root
+  changed_when: false
+  when: not root_already_on_ssd
+
+- name: Replace root entry in new fstab
+  ansible.builtin.lineinfile:
+    path: /mnt/new_root/etc/fstab
+    regexp: '^\S+\s+/\s+'
+    line: "UUID={{ lv_uuid.stdout }}  /  {{ root_fs_type }}  defaults,noatime  0  1"
+  when: not root_already_on_ssd
+
+# ----------------------------------------------------------
+# 7. Update boot config to point root at the LV
+# ----------------------------------------------------------
+- name: Get LV PARTUUID (fallback to UUID)
+  ansible.builtin.set_fact:
+    root_param: "UUID={{ lv_uuid.stdout }}"
+  when: not root_already_on_ssd
+
+- name: Read current cmdline.txt
+  ansible.builtin.slurp:
+    src: "{{ boot_cmdline_path }}"
+  register: cmdline_content
+  when: not root_already_on_ssd
+
+- name: Update root= in cmdline.txt
+  ansible.builtin.copy:
+    content: >-
+      {{ (cmdline_content.content | b64decode) | regex_replace('root=\S+', 'root=' + root_param) }}
+    dest: "{{ boot_cmdline_path }}"
+  when: not root_already_on_ssd
+
+# ----------------------------------------------------------
+# 8. Unmount and reboot
+# ----------------------------------------------------------
+- name: Unmount new root
+  ansible.posix.mount:
+    path: /mnt/new_root
+    state: unmounted
+  when: not root_already_on_ssd
+
+- name: Remove temporary mount point
+  ansible.builtin.file:
+    path: /mnt/new_root
+    state: absent
+  when: not root_already_on_ssd
+
+- name: Reboot to new root
+  ansible.builtin.reboot:
+    reboot_timeout: 300
+    msg: "Rebooting to switch root to SSD"
+  when: not root_already_on_ssd
+
+# ----------------------------------------------------------
+# 9. Post-reboot verification
+# ----------------------------------------------------------
+- name: Verify root is now on SSD
+  ansible.builtin.command: findmnt -n -o SOURCE /
+  register: post_reboot_root
+  changed_when: false
+
+- name: Confirm migration succeeded
+  ansible.builtin.assert:
+    that:
+      - root_lv_name in post_reboot_root.stdout
+    fail_msg: "Root migration failed — root is still on {{ post_reboot_root.stdout }}"
+    success_msg: "Root successfully moved to {{ post_reboot_root.stdout }}"

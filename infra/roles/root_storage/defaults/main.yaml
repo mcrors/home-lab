@@ -1,0 +1,33 @@
+---
+# Size of the root logical volume
+root_lv_size: "50g"
+
+# LVM naming
+root_vg_name: "ssd_vg"
+root_lv_name: "root_lv"
+
+# Filesystem type for the new root
+root_fs_type: "ext4"
+
+# Disk size range (GB) to auto-discover the target SSD
+# Potato SSDs are ~120G, Pi SSDs are ~1TB
+ssd_min_size_gb: 100
+ssd_max_size_gb: 2000
+
+# Directories to exclude from rsync
+rsync_excludes:
+  - "/boot/*"
+  - "/dev/*"
+  - "/proc/*"
+  - "/sys/*"
+  - "/tmp/*"
+  - "/run/*"
+  - "/mnt/*"
+  - "/media/*"
+  - "/var/lib/kubelet/pods/*"
+  - "/var/lib/kubelet/plugins/*"
+
+# Boot config path — differs between Pi and Potato
+# Pi:     /boot/firmware/cmdline.txt
+# Potato: /boot/efi/... (may use extlinux or grub)
+boot_cmdline_path: "/boot/firmware/cmdline.txt"
