@@ -1,18 +1,19 @@
 ---
 
 # List of machine names and IP addresses
-# lib-hp-01.home      192.168.1.96
-# lib-potato-01.home  192.168.1.57
-# lib-potato-02.home  192.168.1.156
-# lib-potato-03.home  192.168.1.228
-# lib-potato-04.home  192.168.1.136
-# lib-pi-01.home      192.168.1.152
-# lib-pi-02.home      192.168.1.58
-# lib-pi-03.home      192.168.1.194
-# lib-pi-04.home      192.168.1.15
-# lib-pi-05.home      192.168.1.133
-# lib-pi-06.home      192.168.1.226
-# lib-nuc-01.home     192.168.1.169
+# lib-potato-01.home  192.168.1.57    // 192.168.1.230
+# lib-potato-02.home  192.168.1.156   // 192.168.1.231
+# lib-potato-03.home  192.168.1.228   // 192.168.1.232
+# lib-potato-04.home  192.168.1.136   // 192.168.1.233
+# lib-pi-01.home      192.168.1.152   // 192.168.1.234
+# lib-pi-02.home      192.168.1.58    // 192.168.1.235
+# lib-pi-03.home      192.168.1.194   // 192.168.1.236
+# lib-pi-04.home      192.168.1.15    // 192.168.1.237
+# lib-pi-05.home      192.168.1.133   // 192.168.1.238
+# lib-pi-06.home      192.168.1.226   // 192.168.1.239
+# lib-pi-07.home                      // 192.168.1.240
+# lib-hp-01.home      192.168.1.96    // 192.168.1.241
+# lib-nuc-01.home     192.168.1.169   // 192.168.1.242
 
 # These nodes sometimes stall for some reason
 unstable:
@@ -154,3 +155,7 @@ all_nodes:
   children:
     nucs:
     sbc:
+
+migrate:
+  hosts:
+    lib-potato-01.home:

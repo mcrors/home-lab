@@ -87,6 +87,7 @@
 
 - name: Taint master node for api-server only
   delegate_to: localhost
+  connection: local
   become: false
   command: >
     kubectl taint node {{ inventory_hostname | regex_replace('\.home$', '') }} node-role.kubernetes.io/master=true:NoSchedule --overwrite

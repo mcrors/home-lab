@@ -65,3 +65,54 @@
     msg: "Target SSD: {{ ssd_device }}"
   when: not root_already_on_ssd
 
+# ----------------------------------------------------------
+# 3. LVM setup — PV, VG, LV (all idempotent)
+# ----------------------------------------------------------
+
+- name: Install LVM packages
+  apt:
+    name: lvm2
+    state: present
+    update_cache: yes
+
+- name: Create physical volume
+  lvg:
+    pvs: "{{ ssd_device }}"
+    vg: "{{ root_vg_name }}"
+    state: present
+  when: not root_already_on_ssd
+
+- name: Create logical volume (new VG)
+  lvol:
+    vg: "{{ root_vg_name }}"
+    lv: "{{ root_lv_name }}"
+    size: "{{ root_lv_size }}"
+  when: not root_already_on_ssd
+
+# ----------------------------------------------------------
+# 4. Filesystem
+# ----------------------------------------------------------
+- name: Set LV device path
+  set_fact:
+    lv_device: "/dev/{{ root_vg_name }}/{{ root_lv_name }}"
+  when: not root_already_on_ssd
+
+- name: Show LV device path
+  debug:
+    msg: "LV device path: {{ lv_device }}"
+  when: not root_already_on_ssd
+
+- name: Check if filesystem exists on LV
+  command: blkid -s TYPE -o value {{ lv_device }}
+  register: fs_check
+  failed_when: false
+  changed_when: false
+  when: not root_already_on_ssd
+
+- name: Create filesystem on root LV
+  filesystem:
+    fstype: "{{ root_fs_type }}"
+    dev: "{{ lv_device }}"
+  when:
+    - not root_already_on_ssd
+    - fs_check.stdout == ""

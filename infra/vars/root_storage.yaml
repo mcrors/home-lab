@@ -26,8 +26,3 @@ rsync_excludes:
   - "/media/*"
   - "/var/lib/kubelet/pods/*"
   - "/var/lib/kubelet/plugins/*"
-
-# Boot config path — differs between Pi and Potato
-# Pi:     /boot/firmware/cmdline.txt
-# Potato: /boot/efi/... (may use extlinux or grub)
-boot_cmdline_path: "/boot/firmware/cmdline.txt"
