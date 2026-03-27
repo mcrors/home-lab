@@ -1,17 +1,26 @@
 ---
 
-- name: Create systemd-networkd configuration file
-  blockinfile:
-    path: /etc/systemd/network/01-eth.network
-    create: true
-    block: |
-      [Match]
-      Name={{ interface }}
+- name: Remove Armbian default DHCP netplan config
+  file:
+    path: /etc/netplan/10-dhcp-all-interfaces.yaml
+    state: absent
 
-      [Network]
-      Address={{ static_ip }}/24
-      Gateway={{ gateway }}
-      DNS={{ pihole_dns_ip }}
+- name: Create static IP netplan config
+  copy:
+    dest: /etc/netplan/10-static.yaml
+    content: |
+      network:
+        version: 2
+        renderer: networkd
+        ethernets:
+          end0:
+            addresses:
+              - {{ static_ip }}/24
+            routes:
+              - to: default
+                via: {{ gateway }}
+            nameservers:
+              addresses:
+                - {{ pihole_dns_ip }}
   notify:
-    - Restart systemd-networkd
-    - Restart systemd-resolved
+    - Apply netplan

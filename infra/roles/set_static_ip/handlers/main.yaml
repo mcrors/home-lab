@@ -17,3 +17,8 @@
     name: dhcpcd
     state: restarted
     enabled: true
+
+- name: Apply netplan
+  command: netplan apply
+  async: 1
+  poll: 0
