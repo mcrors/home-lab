@@ -1,6 +1,6 @@
 ---
 # Size of the root logical volume
-root_lv_size: "50g"
+root_lv_size: "30g"
 
 # LVM naming
 root_vg_name: "ssd_vg"
