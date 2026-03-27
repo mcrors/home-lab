@@ -1,1 +1,2 @@
-boot_cmdline_path: "/boot/efi/cmdline.txt"
+boot_cmdline_path: "/boot/armbianEnv.txt"
+root_param_key: "rootdev"
