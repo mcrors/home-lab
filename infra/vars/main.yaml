@@ -13,9 +13,10 @@ k3s_pihole_dns_ip: 192.168.1.252
 k3s_version: v1.32.13+k3s1
 k3s_download_path: /usr/local/bin
 k3s_resolv_conf_location: /etc/rancher/k3s
-master_ip: "{{ hostvars[groups['k3smaster'][0]]['ansible_host'] | default(groups['k3smaster'][0]) }}"
+master_ip: 192.168.1.231
 extra_server_args: ""
 extra_agent_args: ""
+k3s_master: lib-potato-02.home
 
 # kubectl vars
 kubeconfig_path: "{{ lookup('env','KUBECONFIG') | default('~/.kube/config', true) }}"

@@ -89,12 +89,12 @@ k3smaster:
 
 k3snodes:
   hosts:
-    lib-potato-01.home:
-    lib-potato-03.home:
+    # lib-potato-01.home:
+    # lib-potato-03.home:
     lib-potato-04.home:
     lib-pi-01.home:
-    lib-pi-02.home:
-    lib-pi-03.home:
+    # lib-pi-02.home:
+    # lib-pi-03.home:
     lib-pi-05.home:
     lib-nuc-01.home:
 
@@ -123,26 +123,37 @@ ubuntu:
 pis:
   hosts:
     lib-pi-01.home:
+      static_ip: 192.168.1.234
     lib-pi-02.home:
+      static_ip: 192.168.1.235
     lib-pi-03.home:
+      static_ip: 192.168.1.236
     lib-pi-04.home:
+      static_ip: 192.168.1.237
     lib-pi-05.home:
+      static_ip: 192.168.1.238
     lib-pi-06.home:
+      static_ip: 192.168.1.239
   vars:
     node_type: pi
 
 nucs:
   hosts:
     lib-nuc-01.home:
+      static_ip: 192.168.1.242
   vars:
     node_type: nuc
 
 potatoes:
   hosts:
     lib-potato-01.home:
+      static_ip: 192.168.1.230
     lib-potato-02.home:
+      static_ip: 192.168.1.231
     lib-potato-03.home:
+      static_ip: 192.168.1.232
     lib-potato-04.home:
+      static_ip: 192.168.1.233
   vars:
     node_type: potato
 
