@@ -1,17 +1,37 @@
 ---
-- name: Create NetworkManager connection profile
-  command: >
-    nmcli connection add con-name "{{ networkmanager_connection_name }}"
-    ifname "{{ interface }}"
-    type ethernet
-    ipv4.method manual
-    ipv4.addresses "{{ ansible_default_ipv4.address }}/24"
 
-- name: Set static IP, gateway, and DNS
-  command: >
-    nmcli connection modify "{{ networkmanager_connection_name }}"
-    ipv4.gateway "{{ gateway }}"
-    ipv4.dns "{{ pihole_dns_ip  }}"
+- name: Check if systemd-networkd is active
+  ansible.builtin.systemd:
+    name: systemd-networkd
+  register: networkd_status_nm
+  failed_when: false
 
-- name: Activate the connection
-  command: nmcli connection up "{{ networkmanager_connection_name }}"
+- name: Disable systemd-networkd if NetworkManager is managing the interface
+  ansible.builtin.systemd:
+    name: systemd-networkd
+    state: stopped
+    enabled: false
+  when: networkd_status_nm.status.ActiveState == "active"
+
+- name: Remove any systemd-networkd config for this interface
+  ansible.builtin.file:
+    path: "/etc/systemd/network/{{ interface }}.network"
+    state: absent
+  when: networkd_status_nm.status.ActiveState == "active"
+
+- name: Configure NetworkManager static IP
+  community.general.nmcli:
+    conn_name: "{{ networkmanager_connection_name }}"
+    ifname: "{{ interface }}"
+    type: ethernet
+    ip4: "{{ static_ip }}/24"
+    gw4: "{{ gateway }}"
+    dns4: "{{ pihole_dns_ip }}"
+    state: present
+    autoconnect: yes
+  register: nm_config
+
+- name: Reload NetworkManager connection to apply new IP
+  ansible.builtin.command:
+    cmd: nmcli connection up "{{ networkmanager_connection_name }}"
+  when: nm_config.changed

@@ -10,6 +10,7 @@
     name: systemd-resolved
     state: restarted
     enabled: true
+  failed_when: false
 
 - name: Restart dhcpcd
   systemd:
