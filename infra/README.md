@@ -37,4 +37,21 @@ inventory file.
 * Update DNS table:
     * Add the IP address of the new host to the DNS table of the router.
 
-
+# Armbian Host
+* Connect monitor to discover ip
+* Run through root and hla setup
+* grab ip address and do the rest from the mac
+* Edit hostname
+    ```bash
+    sudo hostnamectl set-hostname lib-potato-XX
+    # this is for potatos
+    sudo sed -i 's/lepotato/lib-potato-02/g' /etc/hosts
+    ```
+* Copy ssh keys
+    ```bash
+    ssh-copy-id -i ~/.ssh/hla_id_rsa.pub hls@<node-ip>
+    ```
+* Update DNS table:
+    * Add the IP address of the new host to the DNS table of the router.
+* Run common playbook
+* Update DNS table again with static ip
