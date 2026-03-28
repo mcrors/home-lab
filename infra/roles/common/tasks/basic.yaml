@@ -35,3 +35,34 @@
     opts: "defaults,noatime,mode=1777,size={{ tmpfs_size_mb }}m"
     state: mounted
 
+- name: Ensure en_US.UTF-8 is in /etc/locale.gen
+  lineinfile:
+    path: /etc/locale.gen
+    regexp: '^#?\s*en_US\.UTF-8\s+UTF-8'
+    line: "en_US.UTF-8 UTF-8"
+    state: present
+  register: locale_gen_file
+
+- name: Generate locales
+  command: locale-gen
+  when: locale_gen_file.changed
+
+- name: Set system locale
+  copy:
+    dest: /etc/default/locale
+    content: |
+      LANG=en_US.UTF-8
+      LC_ALL=en_US.UTF-8
+      LC_CTYPE=en_US.UTF-8
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Ensure passwordless sudo for hla
+  copy:
+    dest: /etc/sudoers.d/hla
+    content: "hla ALL=(ALL) NOPASSWD: ALL"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: "visudo -cf %s"
