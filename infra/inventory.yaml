@@ -15,48 +15,6 @@
 # lib-hp-01.home      192.168.1.96    // 192.168.1.241
 # lib-nuc-01.home     192.168.1.169   // 192.168.1.242
 
-# These nodes sometimes stall for some reason
-unstable:
-  hosts:
-    lib-potato-03.home:
-
-# These are the non k8s nodes that have certbot installed
-certbot:
-  hosts:
-    lib-pi-06.home:
-
-# for Alerts, we need to have an smtp server. It lives on these nodes
-smtp_server:
-  hosts:
-    lib-pi-04.home:
-
-prometheus:
-  hosts:
-    lib-pi-06.home:
-
-node_exporters:
-  hosts:
-    # lib-hp-o1.home This didn't work so installed manually with apt
-    lib-pi-01.home:
-    lib-pi-02.home:
-    lib-pi-03.home:
-    lib-pi-04.home:
-    lib-pi-05.home:
-    lib-pi-06.home:
-    lib-potato-01.home:
-    lib-potato-02.home:
-    lib-potato-03.home:
-    lib-potato-04.home:
-    lib-nuc-01.home:
-
-nginx:
-  hosts:
-    lib-pi-04.home:
-
-pihole:
-  hosts:
-    localhost:
-
 iscsi_targets:
   hosts:
     lib-pi-06.home:
@@ -74,14 +32,8 @@ longhorn:
     lib-pi-01.home:
     lib-pi-02.home:
     lib-pi-03.home:
-    # lib-pi-05.home:
+    lib-pi-05.home:
     lib-nuc-01.home:
-
-docker:
-  children:
-    nginx:
-    pihole:
-    data_service:
 
 k3smaster:
   hosts:
@@ -89,13 +41,13 @@ k3smaster:
 
 k3snodes:
   hosts:
-    # lib-potato-01.home:
-    # lib-potato-03.home:
-    lib-potato-04.home:
+    lib-potato-01.home:
+    lib-potato-03.home:
+    # lib-potato-04.home:
     lib-pi-01.home:
     # lib-pi-02.home:
     # lib-pi-03.home:
-    lib-pi-05.home:
+    # lib-pi-05.home:
     lib-nuc-01.home:
 
 k3s_cluster:
@@ -103,22 +55,9 @@ k3s_cluster:
     k3smaster:
     k3snodes:
 
-raspbian:
-  hosts:
-    lib-pi-01.home:
-    lib-pi-02.home:
-    lib-pi-03.home:
-    lib-pi-04.home:
-    lib-pi-05.home:
-    lib-potato-01.home:
-    lib-potato-02.home:
-    lib-potato-03.home:
-    lib-potato-04.home:
-
-ubuntu:
+non_k3s:
   hosts:
     lib-pi-06.home:
-    lib-nuc-01.home:
 
 pis:
   hosts:
@@ -137,13 +76,6 @@ pis:
   vars:
     node_type: pi
 
-nucs:
-  hosts:
-    lib-nuc-01.home:
-      static_ip: 192.168.1.242
-  vars:
-    node_type: nuc
-
 potatoes:
   hosts:
     lib-potato-01.home:
@@ -157,6 +89,14 @@ potatoes:
   vars:
     node_type: potato
 
+nucs:
+  hosts:
+    lib-nuc-01.home:
+      static_ip: 192.168.1.242
+  vars:
+    node_type: nuc
+
+
 sbc:
   children:
     pis:
@@ -166,7 +106,3 @@ all_nodes:
   children:
     nucs:
     sbc:
-
-migrate:
-  hosts:
-    lib-potato-01.home:
