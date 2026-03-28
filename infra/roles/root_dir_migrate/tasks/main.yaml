@@ -23,23 +23,26 @@
   when: not root_already_on_ssd
 
 # ----------------------------------------------------------
-# Make sure nothing is running on the node
+# Prepare initramfs with LVM support
 # ----------------------------------------------------------
 
-- name: Cordon nodes
-  delegate_to: localhost
-  connection: local
-  become: false
-  command: >
-    kubectl cordon {{ inventory_hostname | regex_replace('\.home$', '') }}
+- name: Ensure lvm2 and initramfs-tools are installed
+  apt:
+    name:
+      - lvm2
+      - initramfs-tools
+    state: present
   when: not root_already_on_ssd
 
-- name: Drain nodes
-  delegate_to: localhost
-  connection: local
-  become: false
-  command: >
-    kubectl drain {{ inventory_hostname | regex_replace('\.home$', '') }} --ignore-daemonsets --delete-emptydir-data
+- name: Regenerate initramfs with LVM support
+  command: update-initramfs -u
+  when: not root_already_on_ssd
+
+- name: Verify LVM is in the initramfs
+  shell: lsinitramfs /boot/initrd.img-$(uname -r) | grep lvm
+  register: initramfs_lvm_check
+  changed_when: false
+  failed_when: initramfs_lvm_check.rc != 0
   when: not root_already_on_ssd
 
 # ----------------------------------------------------------
@@ -56,7 +59,7 @@
     path: /mnt/new_root
     src: "{{ lv_device }}"
     fstype: "{{ root_fs_type }}"
-    state: mounted
+    state: ephemeral
   when: not root_already_on_ssd
 
 - name: Rsync current root to new LV
@@ -109,7 +112,7 @@
 # ----------------------------------------------------------
 # Update boot config to point root at the LV
 # ----------------------------------------------------------
-- name: Get LV PARTUUID (fallback to UUID)
+- name: Set root_param
   set_fact:
     root_param: "UUID={{ lv_uuid.stdout }}"
   when: not root_already_on_ssd
@@ -120,15 +123,15 @@
   register: cmdline_content
   when: not root_already_on_ssd
 
-- name: Update root= in cmdline.txt
+- name: Update root device in boot config
   copy:
     content: >-
-      {{ (cmdline_content.content | b64decode) | regex_replace('root=\S+', 'root=' + root_param) }}
+      {{ (cmdline_content.content | b64decode) | regex_replace(root_param_key + '=\S+', root_param_key + '=' + root_param) }}
     dest: "{{ boot_cmdline_path }}"
   when: not root_already_on_ssd
 
 # ----------------------------------------------------------
-# 8. Unmount and reboot
+# Unmount and reboot
 # ----------------------------------------------------------
 - name: Unmount new root
   mount:
@@ -162,12 +165,3 @@
       - root_lv_name in post_reboot_root.stdout
     fail_msg: "Root migration failed — root is still on {{ post_reboot_root.stdout }}"
     success_msg: "Root successfully moved to {{ post_reboot_root.stdout }}"
-
-# ----------------------------------------------------------
-# Uncordon nodes
-# ----------------------------------------------------------
-- name: uncordon nodes
-  delegate_to: localhost
-  become: false
-  command: >
-    kubectl uncordon {{ inventory_hostname }}
