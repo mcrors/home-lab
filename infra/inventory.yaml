@@ -67,12 +67,12 @@ pis:
       static_ip: 192.168.1.235
     lib-pi-03.home:
       static_ip: 192.168.1.236
-    lib-pi-04.home:
-      static_ip: 192.168.1.237
+    # lib-pi-04.home:
+      # static_ip: 192.168.1.237
     lib-pi-05.home:
       static_ip: 192.168.1.238
-    lib-pi-06.home:
-      static_ip: 192.168.1.239
+    # lib-pi-06.home:
+      # static_ip: 192.168.1.239
   vars:
     node_type: pi
 

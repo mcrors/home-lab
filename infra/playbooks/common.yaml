@@ -1,7 +1,7 @@
 ---
 
 - name: Run Common Operations
-  hosts: all_nodes
+  hosts: sbc
   become: true
   roles:
     - common
@@ -22,7 +22,7 @@
     - storage
 
 - name: Move root to ssd
-  hosts: migrate
+  hosts: sbc
   become: true
   roles:
     - root_dir_migrate
@@ -31,3 +31,26 @@
     - ../vars/root_storage.yaml
   tags:
     - storage
+
+- name: Re-add the boot directory from the sd card
+  hosts: potatoes
+  become: true
+  roles:
+    - boot_mount
+  vars_files:
+    - ../vars/main.yaml
+    - ../vars/root_storage.yaml
+  tags:
+    - storage
+
+- name: Set Static IP
+  hosts: sbc
+  become: true
+  roles:
+    - set_static_ip
+  vars_files:
+    - ../vars/main.yaml
+  tags:
+    - static_ip
+
+

@@ -57,12 +57,3 @@
     owner: root
     group: root
     mode: "0644"
-
-- name: Ensure passwordless sudo for hla
-  copy:
-    dest: /etc/sudoers.d/hla
-    content: "hla ALL=(ALL) NOPASSWD: ALL"
-    owner: root
-    group: root
-    mode: "0440"
-    validate: "visudo -cf %s"

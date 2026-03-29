@@ -1,0 +1,26 @@
+# ----------------------------------------------------------
+# Mount SD card boot files (single-partition boards)
+# ----------------------------------------------------------
+#
+- name: Create SD card mount point
+  file:
+    path: /mnt/sdcard
+    state: directory
+
+- name: Mount SD card partition
+  mount:
+    path: /mnt/sdcard
+    src: /dev/mmcblk0p1
+    fstype: ext4
+    state: mounted
+
+- name: Reload systemd after fstab change
+  command: systemctl daemon-reload
+
+- name: Bind mount SD card boot over /boot
+  mount:
+    path: /boot
+    src: /mnt/sdcard/boot
+    fstype: none
+    opts: bind
+    state: mounted
