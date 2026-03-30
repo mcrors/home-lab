@@ -13,9 +13,8 @@
     src: /dev/mmcblk0p1
     fstype: ext4
     state: mounted
-
-- name: Reload systemd after fstab change
-  command: systemctl daemon-reload
+  notify:
+    - Reload systemd
 
 - name: Bind mount SD card boot over /boot
   mount:
@@ -24,3 +23,5 @@
     fstype: none
     opts: bind
     state: mounted
+  notify:
+    - Reload systemd
