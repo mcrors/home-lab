@@ -1,0 +1,2 @@
+net_interface: "enp86s0"
+netplan_default_file: "/etc/netplan/50-cloud-init.yaml"

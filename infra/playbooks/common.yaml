@@ -1,7 +1,7 @@
 ---
 
 - name: Run Common Operations
-  hosts: sbc
+  hosts: all_nodes
   become: true
   roles:
     - common
@@ -44,7 +44,7 @@
     - storage
 
 - name: Set Static IP
-  hosts: sbc
+  hosts: all_nodes
   become: true
   roles:
     - set_static_ip

@@ -1,0 +1,13 @@
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    {{ net_interface }}:
+      addresses:
+        - {{ static_ip }}/24
+      routes:
+        - to: default
+          via: {{ gateway }}
+      nameservers:
+        addresses:
+          - {{ pihole_dns_ip }}

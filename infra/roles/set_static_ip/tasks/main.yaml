@@ -1,37 +1,16 @@
 ---
 
-- name: Check if NetworkManager is active
-  ansible.builtin.systemd:
-    name: NetworkManager
-  register: nm_status
-  failed_when: false
+- name: Remove default DHCP netplan config
+  file:
+    path: "{{ netplan_default_file }}"
+    state: absent
 
-- name: Check if dhcpcd is active
-  ansible.builtin.systemd:
-    name: dhcpcd
-  register: dhcpcd_status
-  failed_when: false
-
-- name: Check if systemd-networkd is active
-  ansible.builtin.systemd:
-    name: systemd-networkd
-  register: systemd_networkd_status
-  failed_when: false
-
-- name: Set static IP using NetworkManager
-  include_tasks: networkmanager.yaml
-  when: nm_status.status.ActiveState == "active"
-
-- name: Set static IP using dhcpcd
-  include_tasks: dhcpcd.yaml
-  when:
-    - dhcpcd_status.status.ActiveState == "active"
-    - nm_status.status.ActiveState != "active"
-
-- name: Set static IP using systemd-networkd
-  include_tasks: systemd_networkd.yaml
-  when:
-    - systemd_networkd_status.status.ActiveState == "active"
-    - nm_status.status.ActiveState != "active"
-    - dhcpcd_status.status.ActiveState != "active"
-
+- name: Create static IP netplan config
+  template:
+    src: static-netplan.yaml.j2
+    dest: /etc/netplan/10-static.yaml
+    owner: root
+    group: root
+    mode: '0600'
+  notify:
+    - Apply netplan
