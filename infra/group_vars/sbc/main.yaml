@@ -1,0 +1,4 @@
+net_interface: "end0"
+netplan_default_file: "/etc/netplan/10-dhcp-all-interfaces.yaml"
+k3s_download_url: "https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/k3s-arm64"
+k3s_download_checksum: "sha256:https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/sha256sum-arm64.txt"

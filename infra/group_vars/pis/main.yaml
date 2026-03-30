@@ -1,4 +1,2 @@
 boot_cmdline_path: "/boot/firmware/cmdline.txt"
 root_param_key: "root"
-net_interface: "end0"
-netplan_default_file: "/etc/netplan/10-dhcp-all-interfaces.yaml"

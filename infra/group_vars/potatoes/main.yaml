@@ -1,4 +1,2 @@
 boot_cmdline_path: "/boot/armbianEnv.txt"
 root_param_key: "rootdev"
-net_interface: "end0"
-netplan_default_file: "/etc/netplan/10-dhcp-all-interfaces.yaml"

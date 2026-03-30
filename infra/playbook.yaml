@@ -3,3 +3,7 @@
 import_playbook: "{{ playbook_dir }}/playbooks/common.yaml"
 tags:
   - common
+
+import_playbook: "{{ playbook_dir }}/playbooks/k3s.yaml"
+tags:
+  - k3s

@@ -4,8 +4,6 @@
   become: true
   remote_user: hla
   roles:
-    - common
-    - set_static_ip
     - k3s_prereq
     - download_k3s
     - k3s_cgroup_support
@@ -36,10 +34,13 @@
 
 - name: Configure K3s
   hosts: localhost
+  connection: local
   gather_facts: false
   become: false
   roles:
     - k3s_config
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
   vars_files:
       - ../vars/main.yaml
   tags: config
