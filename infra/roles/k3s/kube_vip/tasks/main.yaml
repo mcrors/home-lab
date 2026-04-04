@@ -1,0 +1,32 @@
+---
+
+- name: Copy kube-vip RBAC
+  copy:
+    src: kube-vip-rbac.yaml
+    dest: "{{ k3s_server_location }}/server/manifests/kube-vip-rbac.yaml"
+
+- name: Generate kube-vip manifest
+  shell: |
+    ctr --address /run/k3s/containerd/containerd.sock image pull ghcr.io/kube-vip/kube-vip:{{ kubevip_version }}
+    ctr --address /run/k3s/containerd/containerd.sock run --rm --net-host ghcr.io/kube-vip/kube-vip:{{ kubevip_version }} vip /kube-vip \
+      manifest  daemonset \
+      --interface {{ net_interface }} \
+      --address {{ master_ip }} \
+      --inCluster \
+      --taint \
+      --controlPlane \
+      --arp \
+      --leaderElection
+  register: kubevip_yaml
+  changed_when: false
+
+- name: Deploy kube-vip manifest
+  copy:
+    dest: "{{ k3s_server_location }}/server/manifests/kube-vip.yaml"
+    content: "{{ kubevip_yaml.stdout }}"
+
+- name: Wait for VIP to be reachable
+  wait_for:
+    host: "{{ master_ip }}"
+    port: 6443
+    timeout: 120

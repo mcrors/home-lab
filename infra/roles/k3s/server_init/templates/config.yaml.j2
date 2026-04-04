@@ -1,0 +1,8 @@
+token: {{ k3s_master_token }}
+cluster-init: true
+tls-san:
+    - {{ master_ip }}
+disable:
+  - servicelb
+node-taint:
+    - "node-role.kubernetes.io/control-plan=true:NoSchedule"

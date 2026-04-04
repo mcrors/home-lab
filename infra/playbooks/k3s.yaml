@@ -14,11 +14,12 @@
     - master
     - nodes
 
-- hosts: k3smaster
+- hosts: k3smaster[0]
   become: true
   remote_user: hla
   roles:
-    - role: k3s/master
+    - k3s/server_init
+    - k3s/kube_vip
   vars_files:
       - ../vars/main.yaml
   tags: master
@@ -27,7 +28,7 @@
   become: true
   remote_user: hla
   roles:
-    - role: k3s/node
+    - role: k3s/node_join
   vars_files:
       - ../vars/main.yaml
   tags: nodes

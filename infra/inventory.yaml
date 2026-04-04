@@ -15,6 +15,10 @@
 # lib-hp-01.home      192.168.1.96    // 192.168.1.241
 # lib-nuc-01.home     192.168.1.169   // 192.168.1.242
 
+pihole:
+  hosts:
+    localhost:
+
 iscsi_targets:
   hosts:
     lib-pi-06.home:
@@ -37,17 +41,17 @@ longhorn:
 
 k3smaster:
   hosts:
+    lib-potato-01.home:
     lib-potato-02.home:
+    lib-potato-03.home:
 
 k3snodes:
   hosts:
-    lib-potato-01.home:
-    lib-potato-03.home:
-    # lib-potato-04.home:
+    lib-potato-04.home:
     lib-pi-01.home:
-    # lib-pi-02.home:
-    # lib-pi-03.home:
-    # lib-pi-05.home:
+    lib-pi-02.home:
+    lib-pi-03.home:
+    lib-pi-05.home:
     lib-nuc-01.home:
 
 k3s_cluster:
@@ -95,7 +99,6 @@ nucs:
       static_ip: 192.168.1.242
   vars:
     node_type: nuc
-
 
 sbc:
   children:
