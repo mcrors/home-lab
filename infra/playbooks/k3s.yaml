@@ -1,6 +1,7 @@
 ---
 
-- hosts: k3s_cluster
+- name: k3s Prereqs, download and cgroup support
+  hosts: k3s_cluster
   become: true
   remote_user: hla
   roles:
@@ -11,24 +12,56 @@
       - ../vars/main.yaml
   tags:
     - pre
-    - master
+    - init
+    - server
     - nodes
 
-- hosts: k3smaster[0]
+- name: Setup initial k3s server
+  hosts: k3s_servers[0]
   become: true
   remote_user: hla
   roles:
-    - k3s/server_init
-    - k3s/kube_vip
+    - role: k3s/server
+      vars:
+        k3s_cluster_init: true
+    - role: k3s/kube_vip
   vars_files:
-      - ../vars/main.yaml
-  tags: master
+    - ../vars/main.yaml
+  tags: init
 
-- hosts: k3snodes
+- name: Copy kubeconfig to local
+  hosts: k3s_servers[0]
+  become: true
+  remote_user: hla
+  tasks:
+    - name: Fetch kubeconfig to local machine
+      fetch:
+        src: /etc/rancher/k3s/k3s.yaml
+        dest: ~/.kube/k3s-home.yaml
+        flat: yes
+  vars_files:
+    - ../vars/main.yaml
+  tags: init
+
+- name: Join additional k3s servers
+  hosts: k3s_servers[1:]
+  become: true
+  remote_user: hla
+  serial: 1
+  roles:
+    - role: k3s/server
+      vars:
+        k3s_cluster_init: false
+  vars_files:
+    - ../vars/main.yaml
+  tags: server
+
+- name: Join k3s worker nodes
+  hosts: k3s_workers
   become: true
   remote_user: hla
   roles:
-    - role: k3s/node_join
+    - role: k3s/worker
   vars_files:
       - ../vars/main.yaml
   tags: nodes
@@ -44,5 +77,7 @@
     ansible_python_interpreter: "{{ ansible_playbook_python }}"
   vars_files:
       - ../vars/main.yaml
-  tags: config
+  tags:
+    - config
+    - init
 

@@ -1,0 +1,55 @@
+---
+
+- name: Copy K3s service file
+  template:
+    src: "k3s.service.j2"
+    dest: "{{ systemd_dir }}/k3s-node.service"
+    owner: root
+    group: root
+    mode: 0755
+  notify: Restart k3s
+
+- name: Enable and check K3s service
+  systemd:
+    name: k3s-node
+    state: started
+    enabled: yes
+
+- name: Set node name
+  set_fact:
+    k3s_node_name: "{{ inventory_hostname | regex_replace('\\.home$', '') }}"
+
+- name: Calculate memory rounded to nearest 2GB
+  set_fact:
+    rounded_memory: "{{ (((ansible_memtotal_mb / 1024) + 2) // 2 * 2) | int | string }}"
+
+- block:
+    - name: Check if memory label is already set
+      command: >
+        kubectl get node {{ k3s_node_name }} -o jsonpath='{.metadata.labels.memory}'
+      register: current_label
+      changed_when: false
+      failed_when: false
+
+    - name: Set memory label for node if not set
+      command: >
+        kubectl label node {{ k3s_node_name }} memory={{ rounded_memory }}GB --overwrite
+      when: current_label.stdout | default('') != rounded_memory + 'GB'
+
+    - name: Set iscsi initiator label for nodes > 4GB MEM
+      command: >
+        kubectl label node {{ k3s_node_name }} iscsi_initiator=true --overwrite
+      when: (rounded_memory | int) > 3
+
+    - name: Set node type label
+      command: >
+        kubectl label node {{ k3s_node_name }} node_type={{ node_type | trim }} --overwrite
+
+    - name: Taint nuc node for dedicated workloads only
+      command: >
+        kubectl taint node {{ k3s_node_name }} node_type=nuc:NoSchedule --overwrite
+      when: node_type | trim == 'nuc'
+
+  delegate_to: localhost
+  connection: local
+  become: false

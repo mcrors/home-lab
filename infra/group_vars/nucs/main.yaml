@@ -1,3 +1,4 @@
+node_type: nuc
 net_interface: "enp86s0"
 netplan_default_file: "/etc/netplan/50-cloud-init.yaml"
 k3s_download_url: "https://github.com/k3s-io/k3s/releases/download/{{ k3s_version }}/k3s"

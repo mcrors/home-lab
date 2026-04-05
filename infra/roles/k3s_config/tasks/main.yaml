@@ -5,6 +5,7 @@
     kubeconfig: "{{ kubeconfig_path }}"
     state: present
     definition:
+      apiVersion: v1
       kind: ConfigMap
       metadata:
         name: coredns-custom
