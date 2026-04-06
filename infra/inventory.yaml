@@ -19,6 +19,11 @@ pihole:
   hosts:
     localhost:
 
+cert_manager:
+  hosts:
+    localhost:
+
+
 iscsi_targets:
   hosts:
     lib-pi-06.home:

@@ -1,0 +1,100 @@
+---
+# Role: cert_manager
+# Installs cert-manager via Helm, configures a ClusterIssuer for Let's Encrypt
+# with Cloudflare DNS-01 challenge, and creates a wildcard certificate for *.houli.eu
+#
+# The Cloudflare API token secret goes in the cert-manager namespace because
+# ClusterIssuers look up referenced secrets in the "cluster resource namespace",
+# which defaults to the cert-manager install namespace (cert-manager).
+#
+# The Certificate resource goes in kube-system so that the resulting TLS secret
+# (houli-eu-wildcard) is created there, where Traefik's TLSStore expects it.
+
+- name: Add jetstack helm repo
+  kubernetes.core.helm_repository:
+    name: jetstack
+    repo_url: https://charts.jetstack.io
+
+- name: Install cert-manager
+  kubernetes.core.helm:
+    name: cert-manager
+    chart_ref: jetstack/cert-manager
+    chart_version: "{{ cert_manager_version }}"
+    release_namespace: cert-manager
+    create_namespace: true
+    update_repo_cache: true
+    values:
+      crds:
+        enabled: true
+    wait: true
+    wait_timeout: "300s"
+
+- name: Create Cloudflare API token secret
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: cloudflare-api-token
+        namespace: cert-manager
+      type: Opaque
+      stringData:
+        api-token: "{{ cloudflare_api_token }}"
+
+- name: Create Let's Encrypt ClusterIssuer
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: ClusterIssuer
+      metadata:
+        name: letsencrypt-prod
+      spec:
+        acme:
+          server: https://acme-v02.api.letsencrypt.org/directory
+          email: "{{ letsencrypt_email }}"
+          privateKeySecretRef:
+            name: letsencrypt-prod-account-key
+          solvers:
+            - dns01:
+                cloudflare:
+                  apiTokenSecretRef:
+                    name: cloudflare-api-token
+                    key: api-token
+
+- name: Create wildcard Certificate in kube-system
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: cert-manager.io/v1
+      kind: Certificate
+      metadata:
+        name: houli-eu-wildcard
+        namespace: kube-system
+      spec:
+        secretName: houli-eu-wildcard
+        issuerRef:
+          name: letsencrypt-prod
+          kind: ClusterIssuer
+        dnsNames:
+          - "*.houli.eu"
+          - "houli.eu"
+
+- name: Wait for certificate to be ready
+  kubernetes.core.k8s_info:
+    api_version: cert-manager.io/v1
+    kind: Certificate
+    name: houli-eu-wildcard
+    namespace: kube-system
+  register: cert_status
+  until: >-
+    cert_status.resources | length > 0 and
+    cert_status.resources[0].status is defined and
+    cert_status.resources[0].status.conditions is defined and
+    (cert_status.resources[0].status.conditions
+      | selectattr('type', 'equalto', 'Ready')
+      | selectattr('status', 'equalto', 'True')
+      | list | length > 0)
+  retries: 30
+  delay: 10
