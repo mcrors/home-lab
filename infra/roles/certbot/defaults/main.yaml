@@ -3,12 +3,5 @@ cert_domain: "houli.eu"
 cf_ini_path: "/etc/letsencrypt/cloudflare.ini"
 deploy_hook_path: "/etc/letsencrypt/renewal-hooks/deploy/50-deploy-shared-cert"
 reload_nginx_path: "/usr/local/bin/reload_nginx.sh"
-push_k8s_path: "/usr/local/bin/push-wildcard-to-traefik.sh"
 push_postgres_path: "/usr/local/bin/copy-certs-to-postgres.sh"
-
-# k8s tls bits
-k8s_namespace: "kube-system"
-kubeconfig_path: "/home/hla/.kube/config-cert-sync"  # already created earlier
-secret_name: "houli-eu-wildcard"
-letsencrypt_live_dir: "/etc/letsencrypt/live/{{ cert_domain }}"
 

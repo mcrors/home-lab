@@ -7,15 +7,6 @@
     state: present
     update_cache: yes
 
-# Make sure the kubeconfig used by the hook exists and is readable
-- name: Ensure kubeconfig path exists
-  ansible.builtin.file:
-    path: "{{ kubeconfig_path }}"
-    state: file
-    mode: "0600"
-  changed_when: false
-  failed_when: false
-
 # create a cloudflare api token and put it into the below locations
     # sudo mkdir -p /etc/letsencrypt
     # sudo vim /etc/letsencrypt/cloudflare.ini
@@ -32,20 +23,10 @@
     enabled: yes
     state: started
 
-# --- Copy scripts from your git repo to the target (only when changed) ---
 - name: Copy reload_nginx.sh
   copy:
     src: reload_nginx.sh
     dest: "{{ reload_nginx_path }}"
-    owner: root
-    group: root
-    mode: "0755"
-  notify: run-deploy-hook
-
-- name: Copy push-wildcard-to-traefik.sh
-  template:
-    src: push-wildcard-to-traefik.sh.j2
-    dest: "{{ push_k8s_path }}"
     owner: root
     group: root
     mode: "0755"
@@ -66,48 +47,3 @@
     dest: "{{ deploy_hook_path }}"
     mode: "0755"
 
-- name: deploy k8s resources
-  block:
-  - name: Deploy cert-sync rbac
-    kubernetes.core.k8s:
-      state: present
-      src: "{{ role_path }}//files/cert-sync-rbac.yaml"
-
-  - name: Deploy traefik tlsstore
-    kubernetes.core.k8s:
-      state: present
-      src: "{{ role_path }}/files/traefik-tls-store.yaml"
-
-  delegate_to: localhost
-  become: false
-
-- name: Wait for cert-sync token to be populated
-  command:
-    cmd: kubectl -n kube-system get secret cert-sync-token -o jsonpath='{.data.token}'
-  register: cert_sync_token
-  delegate_to: "{{ k3s_master }}"
-  become: true
-  retries: 5
-  delay: 5
-  until: cert_sync_token.stdout != ""
-
-- name: Get cluster CA cert
-  slurp:
-    src: /var/lib/rancher/k3s/server/tls/server-ca.crt
-  register: k3s_ca
-  delegate_to: "{{ k3s_master }}"
-  become: true
-
-- name: Get cert-sync token
-  command:
-    cmd: kubectl -n kube-system get secret cert-sync-token -o jsonpath='{.data.token}'
-  register: cert_sync_token
-  delegate_to: "{{ k3s_master }}"
-  become: true
-
-- name: Template kubeconfig to cert host
-  template:
-    src: config-cert-sync.j2
-    dest: "{{ kubeconfig_path }}"
-    owner: "{{ ansible_user }}"
-    mode: "0600"
