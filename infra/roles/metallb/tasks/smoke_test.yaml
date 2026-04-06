@@ -1,0 +1,55 @@
+- name: Create test deployment
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: lb-test
+        namespace: default
+      spec:
+        replicas: 1
+        selector:
+          matchLabels:
+            app: lb-test
+        template:
+          metadata:
+            labels:
+              app: lb-test
+          spec:
+            containers:
+              - name: hello
+                image: nginxdemos/hello:plain-text
+
+- name: Expose as LoadBalancer
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: lb-test
+        namespace: default
+      spec:
+        type: LoadBalancer
+        selector:
+          app: lb-test
+        ports:
+          - port: 80
+
+- name: Wait for external IP
+  kubernetes.core.k8s_info:
+    kubeconfig: "{{ kubeconfig_path }}"
+    kind: Service
+    name: lb-test
+    namespace: default
+  register: lb_svc
+  until: lb_svc.resources[0].status.loadBalancer.ingress | default([]) | length > 0
+  retries: 30
+  delay: 4
+
+- name: Show external IP
+  ansible.builtin.debug:
+    msg: "Smoke test IP: {{ lb_svc.resources[0].status.loadBalancer.ingress[0].ip }}"

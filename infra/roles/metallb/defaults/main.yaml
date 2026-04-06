@@ -1,0 +1,11 @@
+# metallb/defaults/main.yml
+metallb_namespace: metallb-system
+metallb_release_name: metallb
+metallb_chart_version: ""
+metallb_values_file: "{{ role_path }}/files/values.yaml"
+metallb_wait_timeout: 300
+metallb_pool_name: default-pool
+metallb_pool_addresses:
+  - 192.168.1.250-192.168.1.254
+metallb_l2adv_name: default-l2adv
+metallb_smoke_test: true

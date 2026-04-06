@@ -1,0 +1,61 @@
+---
+
+- name: Create MetalLB namespace
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ metallb_namespace }}"
+
+- name: Add metallb Helm repo
+  kubernetes.core.helm_repository:
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: metallb
+    repo_url: https://metallb.github.io/metallb
+
+- name: Install/upgrade MetalLB
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: "{{ metallb_release_name }}"
+    chart_ref: metallb/metallb
+    chart_version: "{{ metallb_chart_version | default(omit) }}"
+    release_namespace: "{{ metallb_namespace }}"
+    values_files:
+      - "{{ metallb_values_file }}"
+    update_repo_cache: true
+    wait: true
+    wait_timeout: "{{ metallb_wait_timeout }}s"
+
+- name: Apply IPAddressPool
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: metallb.io/v1beta1
+      kind: IPAddressPool
+      metadata:
+        name: "{{ metallb_pool_name }}"
+        namespace: "{{ metallb_namespace }}"
+      spec:
+        addresses:
+          - "{{ metallb_pool_addresses }}"
+
+- name: Apply L2Advertisement
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: metallb.io/v1beta1
+      kind: L2Advertisement
+      metadata:
+        name: "{{ metallb_l2adv_name }}"
+        namespace: "{{ metallb_namespace }}"
+      spec:
+        ipAddressPools:
+          - "{{ metallb_pool_name }}"
+
+- name: Smoke Test
+  include_tasks: smoke_test.yaml

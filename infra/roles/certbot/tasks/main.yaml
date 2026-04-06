@@ -80,3 +80,34 @@
 
   delegate_to: localhost
   become: false
+
+- name: Wait for cert-sync token to be populated
+  command:
+    cmd: kubectl -n kube-system get secret cert-sync-token -o jsonpath='{.data.token}'
+  register: cert_sync_token
+  delegate_to: "{{ k3s_master }}"
+  become: true
+  retries: 5
+  delay: 5
+  until: cert_sync_token.stdout != ""
+
+- name: Get cluster CA cert
+  slurp:
+    src: /var/lib/rancher/k3s/server/tls/server-ca.crt
+  register: k3s_ca
+  delegate_to: "{{ k3s_master }}"
+  become: true
+
+- name: Get cert-sync token
+  command:
+    cmd: kubectl -n kube-system get secret cert-sync-token -o jsonpath='{.data.token}'
+  register: cert_sync_token
+  delegate_to: "{{ k3s_master }}"
+  become: true
+
+- name: Template kubeconfig to cert host
+  template:
+    src: config-cert-sync.j2
+    dest: "{{ kubeconfig_path }}"
+    owner: "{{ ansible_user }}"
+    mode: "0600"
