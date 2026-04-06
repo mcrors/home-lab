@@ -66,26 +66,15 @@
       - ../vars/main.yaml
   tags: nodes
 
-- name: Apply metallb
-  hosts: localhosts
-  connection: local
-  gather_facts: false
-  become: false
-  roles:
-    - metallb
-  vars:
-    ansible_python_interpreter: "{{ ansible_playbook_python }}"
-  vars_files:
-      - ../vars/main.yaml
-  tags:
-    - config
-
-- name: Configure K3s
+- name: Install cluster infrastructure charts and configure
   hosts: localhost
   connection: local
   gather_facts: false
   become: false
   roles:
+    # metallb and cert_manager must install before k3s_config
+    - metallb
+    - cert_manager
     - k3s_config
   vars:
     ansible_python_interpreter: "{{ ansible_playbook_python }}"
@@ -93,5 +82,3 @@
       - ../vars/main.yaml
   tags:
     - config
-    - init
-
