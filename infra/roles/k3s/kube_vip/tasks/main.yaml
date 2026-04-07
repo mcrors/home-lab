@@ -7,14 +7,14 @@
 
 - name: Generate kube-vip manifest
   shell: |
-    ctr --address /run/k3s/containerd/containerd.sock image pull ghcr.io/kube-vip/kube-vip:{{ kubevip_version }} > /dev/null 2>&1
-    ctr --address /run/k3s/containerd/containerd.sock run --rm --net-host ghcr.io/kube-vip/kube-vip:{{ kubevip_version }} vip /kube-vip \
+    k3s ctr --address /run/k3s/containerd/containerd.sock image pull ghcr.io/kube-vip/kube-vip:{{ kubevip_version }} > /dev/null 2>&1
+    k3s ctr --address /run/k3s/containerd/containerd.sock run --rm --net-host ghcr.io/kube-vip/kube-vip:{{ kubevip_version }} vip /kube-vip \
       manifest  daemonset \
       --interface {{ net_interface }} \
       --address {{ master_ip }} \
       --inCluster \
       --taint \
-      --controlPlane \
+      --controlplane \
       --arp \
       --leaderElection
   register: kubevip_yaml

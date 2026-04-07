@@ -36,8 +36,8 @@
   tasks:
     - name: Fetch kubeconfig to local machine
       fetch:
-        src: /etc/rancher/k3s/k3s.yaml
-        dest: ~/.kube/k3s-home.yaml
+        src: ~{{ ansible_user }}/.kube/config
+        dest: ~/.kube/config
         flat: yes
   vars_files:
     - ../vars/main.yaml

@@ -1,4 +1,21 @@
 ---
+- name: Ensure required kernel modules load at boot
+  copy:
+    dest: /etc/modules-load.d/k3s.conf
+    content: |
+      overlay
+      br_netfilter
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Load modules immediately
+  modprobe:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - overlay
+    - br_netfilter
 
 - name: Copy K3s service file
   template:

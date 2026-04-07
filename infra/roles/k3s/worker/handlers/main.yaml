@@ -2,6 +2,6 @@
 
 - name: Restart k3s
   systemd:
-    name: k3s
+    name: k3s-node
     state: restarted
     daemon_reload: yes
