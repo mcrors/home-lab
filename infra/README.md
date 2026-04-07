@@ -16,11 +16,13 @@ inventory file.
     ```
 * Copy ssh keys
     ```bash
-    ssh-copy-id -i ~/.ssh/hla_id_rsa.pub hls@<node-ip>
+    ssh-copy-id -i ~/.ssh/hla_id_rsa.pub hla@<node-ip>
     ```
 * Update DNS table:
     * Add the IP address of the new host to the DNS table of the router.
 * sudo apt update & sudo apt upgrade -y
+    * If there are issues with the kernal version. run sudo apt --fix-broken install
+    * reboot
 * create file /etc/sudoers.d/hla
 * add this to the file hla ALL=(ALL) NOPASSWD: ALL
 * Run common playbook
