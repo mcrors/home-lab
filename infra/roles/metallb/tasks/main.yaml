@@ -40,8 +40,7 @@
         name: "{{ metallb_pool_name }}"
         namespace: "{{ metallb_namespace }}"
       spec:
-        addresses:
-          - "{{ metallb_pool_addresses }}"
+        addresses: "{{ metallb_pool_addresses }}"
 
 - name: Apply L2Advertisement
   kubernetes.core.k8s:
