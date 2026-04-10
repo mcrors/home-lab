@@ -15,3 +15,8 @@ tags:
 import_playbook: "{{ playbook_dir }}/playbooks/security.yaml"
 tags:
   - security
+
+import_playbook: "{{ playbook_dir }}/playbooks/observability.yaml"
+tags:
+  - observability
+

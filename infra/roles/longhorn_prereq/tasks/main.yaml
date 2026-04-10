@@ -1,8 +1,12 @@
 ---
 
-- name: Install cryptsetup
+- name: Install required packages for Longhorn
   apt:
-    name: cryptsetup
+    name:
+      - open-iscsi
+      - util-linux
+      - nfs-common
+      - cryptsetup
     state: present
     update_cache: yes
 
@@ -14,3 +18,9 @@
   loop:
     - nfs
     - dm_crypt
+
+- name: Enable and start iscsid
+  systemd:
+    name: iscsid
+    enabled: yes
+    state: started

@@ -17,6 +17,7 @@
 
 - name: Label longhorn nodes
   hosts: longhorn
+  connection: local
   gather_facts: false
   become: false
   tasks:
@@ -32,14 +33,19 @@
             labels:
               longhorn-storage: "true"
               node.longhorn.io/create-default-disk: "true"
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
   vars_files:
       - ../vars/main.yaml
 
 - name: Install longhorn into K3s
   hosts: localhost
+  connection: local
   gather_facts: false
   become: false
   roles:
     - longhorn_chart
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
   vars_files:
       - ../vars/main.yaml

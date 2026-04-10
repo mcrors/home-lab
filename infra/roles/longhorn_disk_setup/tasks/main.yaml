@@ -18,12 +18,12 @@
 - name: Create physical volume
   lvg:
     pvs: "{{ longhorn_disk }}"
-    vg: longhorn-vg
+    vg: ssd_vg
     state: present
   when: node_type == 'pi'
 
 - name: Check if longhorn-lv exists
-  shell: lvs longhorn-vg/longhorn-lv
+  shell: lvs ssd_vg/longhorn-lv
   register: lv_check
   failed_when: false
   changed_when: false
@@ -31,7 +31,7 @@
 
 - name: Create logical volume (new VG)
   lvol:
-    vg: longhorn-vg
+    vg: ssd_vg
     lv: longhorn-lv
     size: 60%FREE
   when: node_type == 'pi' and lv_check.rc != 0
@@ -55,7 +55,7 @@
 - name: Format logical volume
   filesystem:
     fstype: ext4
-    dev: "/dev/{{ (node_type == 'nuc') | ternary('ubuntu-vg', 'longhorn-vg') }}/longhorn-lv"
+    dev: "/dev/{{ (node_type == 'nuc') | ternary('ubuntu-vg', 'ssd_vg') }}/longhorn-lv"
 
 - name: Create mount point
   file:
@@ -65,7 +65,7 @@
 - name: Mount logical volume
   mount:
     path: /mnt/longhorn-storage
-    src: "/dev/{{ (node_type == 'nuc') | ternary('ubuntu-vg', 'longhorn-vg') }}/longhorn-lv"
+    src: "/dev/{{ (node_type == 'nuc') | ternary('ubuntu-vg', 'ssd_vg') }}/longhorn-lv"
     fstype: ext4
     state: mounted
 
