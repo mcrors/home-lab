@@ -7,3 +7,7 @@ tags:
 import_playbook: "{{ playbook_dir }}/playbooks/k3s.yaml"
 tags:
   - k3s
+
+import_playbook: "{{ playbook_dir }}/playbooks/longhorn.yaml"
+tags:
+  - longhorn
