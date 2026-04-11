@@ -15,14 +15,6 @@
 # lib-hp-01.home      192.168.1.96    // 192.168.1.241
 # lib-nuc-01.home     192.168.1.169   // 192.168.1.242
 
-pihole:
-  hosts:
-    localhost:
-
-cert_manager:
-  hosts:
-    localhost:
-
 prometheus:
   hosts:
     lib-pi-06.home:

@@ -21,7 +21,7 @@
         name: pihole-admin-secret
         namespace: "{{ pihole_namespace }}"
       stringData:
-        password: "{{ pihole_admin_password }}"
+        password: "{{ vault_pihole_admin_password }}"
 
 - name: Add pihole Helm repo
   kubernetes.core.helm_repository:

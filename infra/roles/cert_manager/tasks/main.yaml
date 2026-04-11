@@ -40,7 +40,7 @@
         namespace: cert-manager
       type: Opaque
       stringData:
-        api-token: "{{ cloudflare_api_token }}"
+        api-token: "{{ vault_cert_manager_cloudflare_api_token }}"
 
 - name: Create Let's Encrypt ClusterIssuer
   kubernetes.core.k8s:
@@ -53,7 +53,7 @@
       spec:
         acme:
           server: https://acme-v02.api.letsencrypt.org/directory
-          email: "{{ letsencrypt_email }}"
+          email: "{{ vault_cert_manager_letsencrypt_email }}"
           privateKeySecretRef:
             name: letsencrypt-prod-account-key
           solvers:
