@@ -19,5 +19,3 @@ tags:
 import_playbook: "{{ playbook_dir }}/playbooks/security.yaml"
 tags:
   - security
-
-

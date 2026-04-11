@@ -1,6 +1,6 @@
 
 - name: Certbot
-  hosts: certbot
+  hosts: non_k3s
   become: true
   roles:
     - certbot
