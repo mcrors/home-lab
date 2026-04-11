@@ -40,3 +40,13 @@
     kubeconfig: "{{ kubeconfig_path }}"
     state: present
     template: "{{ role_path }}/templates/ingress.yaml.j2"
+
+- name: Remove default annotation from local-path StorageClass
+  kubernetes.core.k8s:
+    state: patched
+    kind: StorageClass
+    name: local-path
+    definition:
+      metadata:
+        annotations:
+          storageclass.kubernetes.io/is-default-class: "false"
