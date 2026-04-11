@@ -6,7 +6,7 @@ scrape_configs:
   - job_name: 'node_exporter'
     static_configs:
       - targets:
-          {% for host in groups['node_exporters'] %}
+          {% for host in groups['all_nodes'] %}
           - '{{ host }}:9100'  # Use the hostname instead of the IP
           {% endfor %}
           - 'lib-hp-01.home:9100'  # manually adding this node as it doesn't play well with the ansible role

@@ -23,6 +23,10 @@ cert_manager:
   hosts:
     localhost:
 
+prometheus:
+  hosts:
+    lib-pi-06.home:
+
 iscsi_targets:
   hosts:
     lib-pi-06.home:

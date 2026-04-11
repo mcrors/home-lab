@@ -47,10 +47,10 @@ affinity:
     requiredDuringSchedulingIgnoredDuringExecution:
       nodeSelectorTerms:
         - matchExpressions:
-            - key: memory
+            - key: node_type
               operator: In
               values:
-                - "2GB"
+                - "potato"
 
 config:
   modules:
