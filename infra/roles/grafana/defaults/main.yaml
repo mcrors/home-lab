@@ -1,0 +1,5 @@
+grafana_namespace: grafana
+grafana_pvc: "pvc-grafana"
+grafana_chart_version: 10.5.15
+grafana_secret_name: "grafana-admin-secret"
+
