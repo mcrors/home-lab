@@ -1,0 +1,2 @@
+prowlarr_namespace: prowlarr
+prowlarr_pvc: "pvc-prowlarr"

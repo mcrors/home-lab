@@ -1,0 +1,120 @@
+# Default values for prowlarr.
+
+# Override the chart name (used in app.kubernetes.io/name label).
+# Leave empty to use the chart name from Chart.yaml.
+nameOverride: ""
+
+# Override the full resource name (used as metadata.name on resources).
+# Leave empty to use the standard release-name + chart-name pattern.
+fullnameOverride: ""
+
+serviceAccount:
+  # Whether the chart should create a ServiceAccount.
+  # Set to false if you want to pre-create one via Ansible, or use the namespace default.
+  create: true
+
+  # Name of the ServiceAccount to use or create.
+  # If create=true and name is empty, the fullname is used.
+  # If create=false and name is empty, "default" is used.
+  name: ""
+
+  # Annotations to add to the ServiceAccount (only applied if create=true).
+  annotations: {}
+
+  # Prowlarr doesn't talk to the Kubernetes API, so don't mount the SA token.
+  automountServiceAccountToken: false
+
+persistence:
+  # Whether Prowlarr's config directory should be persisted.
+  # If false, an emptyDir is used and data is lost on pod restart.
+  enabled: true
+
+  # Use an existing PersistentVolumeClaim instead of letting the chart create one.
+  # Useful when the PVC is pre-provisioned (e.g. by Ansible for a data migration)
+  # or when you want the PVC lifecycle decoupled from the Helm release.
+  # If set, all other fields in this block except mountPath are ignored.
+  existingClaim: ""
+
+  # StorageClass for the PVC the chart creates.
+  # Leave empty to use the cluster default.
+  storageClass: "longhorn"
+
+  # Access mode. Prowlarr is a single-writer app, so RWO is correct.
+  accessMode: ReadWriteOnce
+
+  # Size of the volume the chart creates.
+  size: 1Gi
+
+  # Annotations applied to the PVC the chart creates.
+  # Useful for things like helm.sh/resource-policy: keep to survive helm uninstall.
+  annotations: {}
+
+  # Where the volume is mounted inside the container.
+  # This is independent of whether the PVC is chart-created or existing —
+  # it's about the container side, not the storage side.
+  mountPath: /config
+
+image:
+  repository: lscr.io/linuxserver/prowlarr
+  tag: "2.3.0"
+  pullPolicy: IfNotPresent
+
+# Linuxserver image environment.
+# PUID/PGID must match the ownership of the /config volume on disk.
+env:
+  PUID: "1000"
+  PGID: "1000"
+  TZ: "Etc/UTC"
+  UMASK: "002"
+
+# Extra environment variables passed through verbatim.
+# Use this for ad-hoc additions without touching the template.
+extraEnv: []
+# - name: PROWLARR__LOG_LEVEL
+#   value: debug
+
+# Pod-level security context. fsGroup ensures the mounted PVC is
+# group-writable by PGID, which is what linuxserver's s6-init expects.
+podSecurityContext:
+  fsGroup: 1000
+
+# Container-level security context. Linuxserver images run s6-init as root
+# at startup to chown /config and drop privileges, so runAsNonRoot and
+# readOnlyRootFilesystem cannot be enabled. See README for details.
+securityContext:
+  allowPrivilegeEscalation: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Scheduling passthroughs. Leave empty to let the scheduler decide.
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+service:
+  type: ClusterIP
+  port: 9696
+  annotations: {}
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations: {}
+  hosts:
+    - host: prowlarr.local
+      paths:
+        - path: /
+          pathType: Prefix
+  # TLS configuration. Leave secretName empty to rely on the ingress
+  # controller's default certificate (e.g. Traefik TLSStore). Set it
+  # explicitly to reference a secret in this namespace.
+  tls:
+    - secretName: ""
+      hosts:
+        - prowlarr.local
