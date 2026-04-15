@@ -1,0 +1,10 @@
+---
+
+- name: Install Prowlarr into K3s
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  roles:
+    - prowlarr
+  tags: prowlarr

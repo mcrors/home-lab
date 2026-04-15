@@ -12,5 +12,15 @@ ingress:
 nodeSelector:
   longhorn-storage: "true"
 
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: node_type
+              operator: NotIn
+              values: ["potato"]
+
 env:
   TZ: "Europe/Prague"

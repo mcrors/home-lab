@@ -39,7 +39,7 @@
     kubeconfig: "{{ kubeconfig_path }}"
     name: prowlarr
     # TODO: use playbook dir below
-    chart_ref: ../../../helm/prowlarr
+    chart_ref: "{{ playbook_dir }}/helm/prowlarr"
     release_namespace: "{{ prowlarr_namespace }}"
     create_namespace: false
     wait: true

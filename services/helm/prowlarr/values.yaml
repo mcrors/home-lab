@@ -56,7 +56,7 @@ persistence:
 
 image:
   repository: lscr.io/linuxserver/prowlarr
-  tag: "2.3.0"
+  tag: "2.3.5"
   pullPolicy: IfNotPresent
 
 # Linuxserver image environment.
