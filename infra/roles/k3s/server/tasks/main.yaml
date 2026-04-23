@@ -1,9 +1,17 @@
 ---
+- name: Install apt packages
+  apt:
+    pkg:
+      - etcd-client
+    state: present
+    update_cache: yes
+
 - name: Ensure required kernel modules load at boot
   copy:
     dest: /etc/modules-load.d/k3s.conf
     content: |
       overlay
+      vxlan
       br_netfilter
     owner: root
     group: root
@@ -16,6 +24,7 @@
   loop:
     - overlay
     - br_netfilter
+    - vxlan
 
 - name: Copy K3s service file
   template:

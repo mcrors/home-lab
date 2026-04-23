@@ -44,7 +44,7 @@
   tags: init
 
 - name: Join additional k3s servers
-  hosts: k3s_servers[1:]
+  hosts: k3s_servers
   become: true
   remote_user: hla
   serial: 1
