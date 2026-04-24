@@ -8,3 +8,12 @@
   roles:
     - prowlarr
   tags: prowlarr
+
+- name: Install transmission into K3s
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  roles:
+    - transmission
+  tags: transmission

@@ -1,0 +1,43 @@
+{{- if not .Values.dataVolume.existingClaim }}
+{{- if eq .Values.dataVolume.type "nfs" }}
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ include "transmission.fullname" . }}-data
+  labels:
+    {{- include "transmission.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: {{ .Values.dataVolume.capacity | quote }}
+  volumeMode: Filesystem
+  accessModes:
+    - {{ .Values.dataVolume.accessMode }}
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs
+  mountOptions:
+    - hard
+    - nfsvers=4.1
+  nfs:
+    path: {{ .Values.dataVolume.nfs.path }}
+    server: {{ .Values.dataVolume.nfs.server }}
+---
+{{- end }}
+{{- if ne .Values.dataVolume.type "emptyDir" }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "transmission.fullname" . }}-data
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "transmission.labels" . | nindent 4 }}
+spec:
+  {{- if eq .Values.dataVolume.type "nfs" }}
+  storageClassName: nfs
+  {{- end }}
+  accessModes:
+    - {{ .Values.dataVolume.accessMode }}
+  resources:
+    requests:
+      storage: {{ .Values.dataVolume.capacity | quote }}
+{{- end }}
+{{- end }}

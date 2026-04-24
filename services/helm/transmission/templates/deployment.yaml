@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "transmission.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "transmission.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "transmission.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "transmission.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "transmission.serviceAccountName" . }}
+      restartPolicy: Always
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: {{ include "transmission.fullname" . }}
+            - secretRef:
+                name: {{ include "transmission.fullname" . }}
+          {{- with .Values.env }}
+          env:
+            {{- range $key, $value := . }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+            {{- end }}
+          {{- end }}
+          {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: {{ .Values.configVolume.mountPath }}
+            - name: data
+              mountPath: {{ .Values.dataVolume.mountPath }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: config
+          {{- if .Values.configVolume.existingClaim }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.configVolume.existingClaim }}
+          {{- else if eq .Values.configVolume.type "emptyDir" }}
+          emptyDir: {}
+          {{- else if eq .Values.configVolume.type "hostPath" }}
+          hostPath:
+            path: {{ .Values.configVolume.hostPath.path }}
+            type: DirectoryOrCreate
+          {{- else if eq .Values.configVolume.type "nfs" }}
+          persistentVolumeClaim:
+            claimName: {{ include "transmission.fullname" . }}-config
+          {{- else }}
+          {{- fail (printf "configVolume.type must be one of: nfs, hostPath, emptyDir — got %s" .Values.configVolume.type) }}
+          {{- end }}
+        - name: data
+          {{- if .Values.dataVolume.existingClaim }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.dataVolume.existingClaim }}
+          {{- else if eq .Values.dataVolume.type "emptyDir" }}
+          emptyDir: {}
+          {{- else if eq .Values.dataVolume.type "hostPath" }}
+          hostPath:
+            path: {{ .Values.dataVolume.hostPath.path }}
+            type: DirectoryOrCreate
+          {{- else if eq .Values.dataVolume.type "nfs" }}
+          persistentVolumeClaim:
+            claimName: {{ include "transmission.fullname" . }}-data
+          {{- else }}
+          {{- fail (printf "dataVolume.type must be one of: nfs, hostPath, emptyDir — got %s" .Values.dataVolume.type) }}
+          {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

@@ -1,0 +1,119 @@
+# Default values for transmission.
+
+# Override the chart name (used in app.kubernetes.io/name label).
+# Leave empty to use the chart name from Chart.yaml.
+nameOverride: ""
+
+# Override the full resource name (used as metadata.name on resources).
+# Leave empty to use the standard release-name + chart-name pattern.
+fullnameOverride: ""
+
+serviceAccount:
+  # Whether the chart should create a ServiceAccount.
+  # Set to false if you want to pre-create one via Ansible, or use the namespace default.
+  create: true
+
+  # Name of the ServiceAccount to use or create.
+  # If create=true and name is empty, the fullname is used.
+  # If create=false and name is empty, "default" is used.
+  name: ""
+
+  # Annotations to add to the ServiceAccount (only applied if create=true).
+  annotations: {}
+
+  # transmission doesn't talk to the Kubernetes API, so don't mount the SA token.
+  automountServiceAccountToken: false
+
+configVolume:
+  # "nfs" | "hostPath" | "emptyDir"
+  type: nfs
+  # Use an existing PVC instead of letting the chart create one.
+  existingClaim: ""
+  capacity: "1Gi"
+  accessMode: ReadWriteMany
+  mountPath: /config
+  # NFS settings (only used when type=nfs)
+  nfs:
+    server: "192.168.1.x"
+    path: "/path/to/transmission/config"
+  # hostPath settings (only used when type=hostPath)
+  hostPath:
+    path: "/tmp/transmission/config"
+
+dataVolume:
+  # "nfs" | "hostPath" | "emptyDir"
+  type: nfs
+  existingClaim: ""
+  capacity: "500Gi"
+  accessMode: ReadWriteMany
+  mountPath: /data
+  # NFS settings (only used when type=nfs)
+  nfs:
+    server: "192.168.1.x"
+    path: "/path/to/transmission/data"
+  # hostPath settings (only used when type=hostPath)
+  hostPath:
+    path: "/tmp/transmission/data"
+
+openvpn:
+  provider: "PROTONVPN"
+  config: "nl.protonvpn.udp"
+  localNetwork: "192.168.1.0/24"
+  # Pass via --set or Ansible Vault
+  username: ""
+  password: ""
+
+image:
+  repository: haugene/transmission-openvpn
+  tag: ""  # defaults to Chart.AppVersion
+  pullPolicy: IfNotPresent
+
+env:
+  PUID: "1000"
+  PGID: "1000"
+  TZ: "Etc/UTC"
+
+extraEnv: []
+
+podSecurityContext:
+  fsGroup: 1000
+
+securityContext:
+  capabilities:
+    add:
+      - NET_ADMIN
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+service:
+  type: ClusterIP
+  port: 9091
+  annotations: {}
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations: {}
+  hosts:
+    - host: transmission.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+  # TLS configuration. Leave secretName empty to rely on the ingress
+  # controller's default certificate (e.g. Traefik TLSStore). Set it
+  # explicitly to reference a secret in this namespace.
+    - secretName: ""
+      hosts:
+        - transmission.local
+

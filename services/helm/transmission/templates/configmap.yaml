@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "transmission.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "transmission.labels" . | nindent 4 }}
+data:
+  OPENVPN_PROVIDER: {{ .Values.openvpn.provider | quote }}
+  OPENVPN_CONFIG: {{ .Values.openvpn.config | quote }}
+  LOCAL_NETWORK: {{ .Values.openvpn.localNetwork | quote }}

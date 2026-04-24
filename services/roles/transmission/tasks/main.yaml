@@ -1,0 +1,34 @@
+---
+
+- name: Ensure transmission namespace exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ transmission_namespace }}"
+        labels:
+          app.kubernetes.io/managed-by: ansible
+
+- name: Install/Upgrade transmission with values.yaml
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: transmission
+    chart_ref: "{{ playbook_dir }}/helm/transmission"
+    release_namespace: "{{ transmission_namespace }}"
+    create_namespace: false
+    wait: true
+    values_files:
+      - "{{ role_path }}/files/values.yaml"
+    values:
+      configVolume:
+        nfs:
+          server: "{{ nfs_server_ip }}"
+      dataVolume:
+        nfs:
+          server: "{{ nfs_server_ip }}"
+      openvpn:
+        username: "{{ vault_transmission_openvpn_username }}"
+        password: "{{ vault_transmission_openvpn_password }}"

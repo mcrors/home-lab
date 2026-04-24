@@ -1,0 +1,27 @@
+configVolume:
+  nfs:
+    path: /transmission
+
+dataVolume:
+  nfs:
+    path: /downloads
+
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: node_type
+              operator: NotIn
+              values: ["potato"]
+
+ingress:
+  hosts:
+    - host: transmission.houli.eu
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts:
+        - transmission.houli.eu
