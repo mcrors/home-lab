@@ -6,15 +6,34 @@ dataVolume:
   nfs:
     path: /downloads
 
+extraPodLabels:
+  workload-class: heavy
+
 affinity:
   nodeAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 30
+        preference:
+          matchExpressions:
+            - key: node_type
+              operator: In
+              values: ["nuc"]
       - weight: 100
         preference:
           matchExpressions:
             - key: node_type
               operator: NotIn
               values: ["potato"]
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 80
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: workload-class
+                operator: In
+                values: ["heavy"]
+          topologyKey: kubernetes.io/hostname
 
 ingress:
   hosts:

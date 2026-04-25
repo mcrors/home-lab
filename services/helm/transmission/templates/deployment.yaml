@@ -14,6 +14,9 @@ spec:
     metadata:
       labels:
         {{- include "transmission.selectorLabels" . | nindent 8 }}
+        {{- with .Values.extraPodLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
     spec:
       serviceAccountName: {{ include "transmission.serviceAccountName" . }}
       restartPolicy: Always

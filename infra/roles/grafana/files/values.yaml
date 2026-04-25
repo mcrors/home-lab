@@ -120,16 +120,35 @@ resources:
     cpu: "1"        # or omit to avoid CPU throttling
     memory: 1Gi
 
+extraLabels:
+  workload-class: heavy
+
 ## Affinity for pod assignment (evaluated as template)
 affinity:
   nodeAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: longhorn-storage
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 30
+        preference:
+          matchExpressions:
+            - key: node_type
               operator: In
-              values:
-                - "true"
+              values: ["nuc"]
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: node_type
+              operator: NotIn
+              values: ["potato"]
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 80
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+              - key: workload-class
+                operator: In
+                values: ["heavy"]
+          topologyKey: kubernetes.io/hostname
 
 ## Enable persistence using Persistent Volume Claims
 persistence:

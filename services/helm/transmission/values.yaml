@@ -94,6 +94,8 @@ resources:
 nodeSelector: {}
 tolerations: []
 affinity: {}
+extraPodLabels: {}
+
 
 service:
   type: ClusterIP
