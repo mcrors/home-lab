@@ -45,11 +45,6 @@
       command: >
         kubectl label node {{ k3s_node_name }} node_type={{ node_type | trim }} --overwrite
 
-    - name: Taint nuc node for dedicated workloads only
-      command: >
-        kubectl taint node {{ k3s_node_name }} node_type=nuc:NoSchedule --overwrite
-      when: node_type | trim == 'nuc'
-
   delegate_to: localhost
   connection: local
   become: false
