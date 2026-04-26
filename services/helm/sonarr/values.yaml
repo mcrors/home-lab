@@ -135,7 +135,7 @@ ingress:
   className: traefik
   annotations: {}
   hosts:
-    - host: prowlarr.local
+    - host: sonarr.local
       paths:
         - path: /
           pathType: Prefix
@@ -145,4 +145,4 @@ ingress:
   tls:
     - secretName: ""
       hosts:
-        - prowlarr.local
+        - sonarr.local
