@@ -2,10 +2,6 @@ configVolume:
   nfs:
     path: /transmission
 
-dataVolume:
-  nfs:
-    path: /downloads
-
 extraPodLabels:
   workload-class: heavy
 

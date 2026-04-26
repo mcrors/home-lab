@@ -1,0 +1,26 @@
+ingress:
+  hosts:
+    - host: sonarr.houli.eu
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: ""
+      hosts:
+        - sonarr.houli.eu
+
+nodeSelector:
+  longhorn-storage: "true"
+
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: node_type
+              operator: NotIn
+              values: ["potato"]
+
+env:
+  TZ: "Europe/Prague"

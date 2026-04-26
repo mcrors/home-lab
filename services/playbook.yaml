@@ -17,3 +17,12 @@
   roles:
     - transmission
   tags: transmission
+
+- name: Install Sonarr into K3s
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  roles:
+    - sonarr
+  tags: sonarr

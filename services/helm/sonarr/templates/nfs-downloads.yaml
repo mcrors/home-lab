@@ -1,0 +1,50 @@
+{{- if .Values.nfsVolumes.downloads.enabled }}
+{{- if and (not .Values.nfsVolumes.downloads.createPV) (not .Values.nfsVolumes.downloads.existingClaim) }}
+{{- fail "nfsVolumes.downloads: either createPV must be true or existingClaim must be set" }}
+{{- end }}
+
+{{- if .Values.nfsVolumes.downloads.createPV }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ default (printf "%s-downloads" (include "sonarr.fullname" .)) .Values.nfsVolumes.downloads.pvName }}
+  labels:
+    {{- include "sonarr.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: {{ .Values.nfsVolumes.downloads.capacity | quote }}
+  volumeMode: Filesystem
+  accessModes:
+    - {{ .Values.nfsVolumes.downloads.accessMode | quote }}
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs
+  {{- with .Values.nfsVolumes.downloads.mountOptions }}
+  mountOptions:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  nfs:
+    server: {{ .Values.nfsVolumes.downloads.server }}
+    path: {{ .Values.nfsVolumes.downloads.path }}
+{{- end }}
+{{- if not .Values.nfsVolumes.downloads.existingClaim }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "sonarr.fullname" . }}-downloads
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "sonarr.labels" . | nindent 4 }}
+spec:
+  storageClassName: nfs
+  accessModes:
+    - {{ .Values.nfsVolumes.downloads.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.nfsVolumes.downloads.capacity | quote }}
+  {{- if .Values.nfsVolumes.downloads.createPV }}
+  volumeName: {{ default (printf "%s-downloads" (include "sonarr.fullname" .)) .Values.nfsVolumes.downloads.pvName }}
+  {{- end }}
+{{- end }}
+{{- end }}

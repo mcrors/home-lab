@@ -1,0 +1,5 @@
+nfs_server_ip: 192.168.1.96
+nfs_downloads_path: /downloads
+nfs_downloads_capacity: 500Gi
+nfs_media_path: /media
+nfs_media_capacity: 10Ti

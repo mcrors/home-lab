@@ -1,0 +1,58 @@
+---
+
+- name: Ensure sonarr namespace exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ sonarr_namespace }}"
+        labels:
+          app.kubernetes.io/managed-by: ansible
+
+- name: Ensure sonarr pvc exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: "{{ sonarr_pvc }}"
+        namespace: "{{ sonarr_namespace }}"
+        annotations:
+          # Prevent accidental deletion during chart uninstall;
+          # this PVC is managed by Ansible, not Helm.
+          helm.sh/resource-policy: keep
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 1Gi
+
+- name: Install/Upgrade sonarr with values.yaml
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: sonarr
+    chart_ref: "{{ playbook_dir }}/helm/sonarr"
+    release_namespace: "{{ sonarr_namespace }}"
+    create_namespace: false
+    wait: true
+    values_files:
+      - "{{ role_path }}/files/values.yaml"
+    values:
+      persistence:
+        existingClaim: "{{ sonarr_pvc }}"
+      nfsVolumes:
+        downloads:
+          server: "{{ nfs_server_ip }}"
+          path: "{{ nfs_downloads_path }}"
+          capacity: "{{ nfs_downloads_capacity }}"
+        media:
+          server: "{{ nfs_server_ip }}"
+          path: "{{ nfs_media_path }}"
+          capacity: "{{ nfs_media_capacity }}"

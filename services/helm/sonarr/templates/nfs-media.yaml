@@ -1,0 +1,49 @@
+{{- if .Values.nfsVolumes.media.enabled }}
+{{- if and (not .Values.nfsVolumes.media.createPV) (not .Values.nfsVolumes.media.existingClaim) }}
+{{- fail "nfsVolumes.media: either createPV must be true or existingClaim must be set" }}
+{{- end }}
+{{- if .Values.nfsVolumes.media.createPV }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ default (printf "%s-media" (include "sonarr.fullname" .)) .Values.nfsVolumes.media.pvName }}
+  labels:
+    {{- include "sonarr.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: {{ .Values.nfsVolumes.media.capacity | quote }}
+  volumeMode: Filesystem
+  accessModes:
+    - {{ .Values.nfsVolumes.media.accessMode | quote }}
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs
+  {{- with .Values.nfsVolumes.media.mountOptions }}
+  mountOptions:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  nfs:
+    server: {{ .Values.nfsVolumes.media.server }}
+    path: {{ .Values.nfsVolumes.media.path }}
+{{- end }}
+{{- if not .Values.nfsVolumes.media.existingClaim }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "sonarr.fullname" . }}-media
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "sonarr.labels" . | nindent 4 }}
+spec:
+  storageClassName: nfs
+  accessModes:
+    - {{ .Values.nfsVolumes.media.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.nfsVolumes.media.capacity | quote }}
+  {{- if .Values.nfsVolumes.media.createPV }}
+  volumeName: {{ default (printf "%s-media" (include "sonarr.fullname" .)) .Values.nfsVolumes.media.pvName }}
+  {{- end }}
+{{- end }}
+{{- end }}

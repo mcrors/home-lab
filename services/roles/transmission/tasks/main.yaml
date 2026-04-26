@@ -29,6 +29,8 @@
       dataVolume:
         nfs:
           server: "{{ nfs_server_ip }}"
+          path: "{{ nfs_downloads_path }}"
+          capacity: "{{ nfs_downloads_capacity }}"
       openvpn:
         username: "{{ vault_transmission_openvpn_username }}"
         password: "{{ vault_transmission_openvpn_password }}"

@@ -1,26 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "prowlarr.fullname" . }}
+  name: {{ include "sonarr.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "prowlarr.labels" . | nindent 4 }}
+    {{- include "sonarr.labels" . | nindent 4 }}
 spec:
-  # Prowlarr stores state in a SQLite database inside /config.
-  # SQLite does not support concurrent writers, and the PVC is RWO.
-  # Running more than one replica is never correct.
+  # Sonarr uses SQLite for its database — single writer only.
   replicas: 1
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      {{- include "prowlarr.selectorLabels" . | nindent 6 }}
+      {{- include "sonarr.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "prowlarr.labels" . | nindent 8 }}
+        {{- include "sonarr.labels" . | nindent 8 }}
     spec:
-      serviceAccountName: {{ include "prowlarr.serviceAccountName" . }}
+      serviceAccountName: {{ include "sonarr.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -31,7 +29,7 @@ spec:
             {{- toYaml .Values.securityContext | nindent 12 }}
           ports:
             - name: http
-              containerPort: 9696
+              containerPort: 8989
               protocol: TCP
           env:
             - name: PUID
@@ -66,14 +64,32 @@ spec:
           volumeMounts:
             - name: config
               mountPath: {{ .Values.persistence.mountPath }}
+            {{- if .Values.nfsVolumes.downloads.enabled }}
+            - name: downloads
+              mountPath: {{ .Values.nfsVolumes.downloads.mountPath }}
+            {{- end }}
+            {{- if .Values.nfsVolumes.media.enabled }}
+            - name: media
+              mountPath: {{ .Values.nfsVolumes.media.mountPath }}
+            {{- end }}
       volumes:
         - name: config
           {{- if .Values.persistence.enabled }}
           persistentVolumeClaim:
-            claimName: {{ include "prowlarr.pvcName" . }}
+            claimName: {{ include "sonarr.pvcName" . }}
           {{- else }}
           emptyDir: {}
           {{- end }}
+        {{- if .Values.nfsVolumes.downloads.enabled }}
+        - name: downloads
+          persistentVolumeClaim:
+            claimName: {{ default (printf "%s-downloads" (include "sonarr.fullname" .)) .Values.nfsVolumes.downloads.existingClaim }}
+        {{- end }}
+        {{- if .Values.nfsVolumes.media.enabled }}
+        - name: media
+          persistentVolumeClaim:
+            claimName: {{ default (printf "%s-media" (include "sonarr.fullname" .)) .Values.nfsVolumes.media.existingClaim }}
+        {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

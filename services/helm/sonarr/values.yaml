@@ -1,4 +1,4 @@
-# Default values for prowlarr.
+# Default values for sonarr.
 
 # Override the chart name (used in app.kubernetes.io/name label).
 # Leave empty to use the chart name from Chart.yaml.
@@ -21,11 +21,11 @@ serviceAccount:
   # Annotations to add to the ServiceAccount (only applied if create=true).
   annotations: {}
 
-  # Prowlarr doesn't talk to the Kubernetes API, so don't mount the SA token.
+  # sonarr doesn't talk to the Kubernetes API, so don't mount the SA token.
   automountServiceAccountToken: false
 
 persistence:
-  # Whether Prowlarr's config directory should be persisted.
+  # Whether sonarr's config directory should be persisted.
   # If false, an emptyDir is used and data is lost on pod restart.
   enabled: true
 
@@ -39,7 +39,7 @@ persistence:
   # Leave empty to use the cluster default.
   storageClass: "longhorn"
 
-  # Access mode. Prowlarr is a single-writer app, so RWO is correct.
+  # Access mode. sonarr is a single-writer app, so RWO is correct.
   accessMode: ReadWriteOnce
 
   # Size of the volume the chart creates.
@@ -54,24 +54,58 @@ persistence:
   # it's about the container side, not the storage side.
   mountPath: /config
 
+nfsVolumes:
+  downloads:
+    enabled: true
+    # Set to skip PV creation (e.g. if managed externally)
+    createPV: true
+    pvName: ""          # auto-generated from fullname + volume name if empty
+    server: ""
+    path: ""
+    capacity: 100Gi
+    accessMode: ReadWriteMany
+    mountOptions:
+      - hard
+      - nfsvers=4.1
+    # Set to use a pre-existing PVC instead of chart-created one
+    existingClaim: ""
+    mountPath: /data/downloads
+  media:
+    enabled: true
+    createPV: true
+    pvName: ""
+    server: ""
+    path: ""
+    capacity: 10Ti
+    accessMode: ReadWriteMany
+    mountOptions:
+      - hard
+      - nfsvers=4.1
+    existingClaim: ""
+    mountPath: /data/media
+
+service:
+  type: ClusterIP
+  port: 8989
+  annotations: {}
+
 image:
-  repository: lscr.io/linuxserver/prowlarr
+  repository: lscr.io/linuxserver/sonarr
   tag: ""
   pullPolicy: IfNotPresent
 
-# Linuxserver image environment.
-# PUID/PGID must match the ownership of the /config volume on disk.
 env:
   PUID: "1000"
   PGID: "1000"
   TZ: "Etc/UTC"
   UMASK: "002"
 
-# Extra environment variables passed through verbatim.
-# Use this for ad-hoc additions without touching the template.
+# Additional environment variables injected into the container.
+# Example:
+#   extraEnv:
+#     - name: MY_VAR
+#       value: "foo"
 extraEnv: []
-# - name: PROWLARR__LOG_LEVEL
-#   value: debug
 
 # Pod-level security context. fsGroup ensures the mounted PVC is
 # group-writable by PGID, which is what linuxserver's s6-init expects.
@@ -87,20 +121,14 @@ securityContext:
 resources:
   requests:
     cpu: 50m
-    memory: 128Mi
+    memory: 256Mi
   limits:
     cpu: 500m
     memory: 512Mi
 
-# Scheduling passthroughs. Leave empty to let the scheduler decide.
 nodeSelector: {}
 tolerations: []
 affinity: {}
-
-service:
-  type: ClusterIP
-  port: 9696
-  annotations: {}
 
 ingress:
   enabled: true
