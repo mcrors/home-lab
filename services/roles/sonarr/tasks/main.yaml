@@ -32,7 +32,7 @@
         storageClassName: longhorn
         resources:
           requests:
-            storage: 1Gi
+            storage: 5Gi
 
 - name: Install/Upgrade sonarr with values.yaml
   kubernetes.core.helm:
