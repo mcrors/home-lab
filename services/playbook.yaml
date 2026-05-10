@@ -26,3 +26,12 @@
   roles:
     - sonarr
   tags: sonarr
+
+- name: Install Radarr into K3s
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  roles:
+    - radarr
+  tags: radarr

@@ -1,0 +1,58 @@
+---
+
+- name: Ensure radarr namespace exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ radarr_namespace }}"
+        labels:
+          app.kubernetes.io/managed-by: ansible
+
+- name: Ensure radarr pvc exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: "{{ radarr_pvc }}"
+        namespace: "{{ radarr_namespace }}"
+        annotations:
+          # Prevent accidental deletion during chart uninstall;
+          # this PVC is managed by Ansible, not Helm.
+          helm.sh/resource-policy: keep
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 5Gi
+
+- name: Install/Upgrade radarr with values.yaml
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: radarr
+    chart_ref: "{{ playbook_dir }}/helm/radarr"
+    release_namespace: "{{ radarr_namespace }}"
+    create_namespace: false
+    wait: true
+    values_files:
+      - "{{ role_path }}/files/values.yaml"
+    values:
+      persistence:
+        existingClaim: "{{ radarr_pvc }}"
+      nfsVolumes:
+        downloads:
+          server: "{{ nfs_server_ip }}"
+          path: "{{ nfs_downloads_path }}"
+          capacity: "{{ nfs_downloads_capacity }}"
+        media:
+          server: "{{ nfs_server_ip }}"
+          path: "{{ nfs_media_path }}"
+          capacity: "{{ nfs_media_capacity }}"

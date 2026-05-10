@@ -1,0 +1,2 @@
+radarr_namespace: radarr
+radarr_pvc: "pvc-radarr"

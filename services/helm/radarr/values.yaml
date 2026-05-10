@@ -1,0 +1,148 @@
+# Default values for radarr.
+
+# Override the chart name (used in app.kubernetes.io/name label).
+# Leave empty to use the chart name from Chart.yaml.
+nameOverride: ""
+
+# Override the full resource name (used as metadata.name on resources).
+# Leave empty to use the standard release-name + chart-name pattern.
+fullnameOverride: ""
+
+serviceAccount:
+  # Whether the chart should create a ServiceAccount.
+  # Set to false if you want to pre-create one via Ansible, or use the namespace default.
+  create: true
+
+  # Name of the ServiceAccount to use or create.
+  # If create=true and name is empty, the fullname is used.
+  # If create=false and name is empty, "default" is used.
+  name: ""
+
+  # Annotations to add to the ServiceAccount (only applied if create=true).
+  annotations: {}
+
+  # radarr doesn't talk to the Kubernetes API, so don't mount the SA token.
+  automountServiceAccountToken: false
+
+persistence:
+  # Whether radarr's config directory should be persisted.
+  # If false, an emptyDir is used and data is lost on pod restart.
+  enabled: true
+
+  # Use an existing PersistentVolumeClaim instead of letting the chart create one.
+  # Useful when the PVC is pre-provisioned (e.g. by Ansible for a data migration)
+  # or when you want the PVC lifecycle decoupled from the Helm release.
+  # If set, all other fields in this block except mountPath are ignored.
+  existingClaim: ""
+
+  # StorageClass for the PVC the chart creates.
+  # Leave empty to use the cluster default.
+  storageClass: "longhorn"
+
+  # Access mode. radarr is a single-writer app, so RWO is correct.
+  accessMode: ReadWriteOnce
+
+  # Size of the volume the chart creates.
+  size: 1Gi
+
+  # Annotations applied to the PVC the chart creates.
+  # Useful for things like helm.sh/resource-policy: keep to survive helm uninstall.
+  annotations: {}
+
+  # Where the volume is mounted inside the container.
+  # This is independent of whether the PVC is chart-created or existing —
+  # it's about the container side, not the storage side.
+  mountPath: /config
+
+nfsVolumes:
+  downloads:
+    enabled: true
+    # Set to skip PV creation (e.g. if managed externally)
+    createPV: true
+    pvName: ""          # auto-generated from fullname + volume name if empty
+    server: ""
+    path: ""
+    capacity: 100Gi
+    accessMode: ReadWriteMany
+    mountOptions:
+      - hard
+      - nfsvers=4.1
+    # Set to use a pre-existing PVC instead of chart-created one
+    existingClaim: ""
+    mountPath: /data/downloads
+  media:
+    enabled: true
+    createPV: true
+    pvName: ""
+    server: ""
+    path: ""
+    capacity: 10Ti
+    accessMode: ReadWriteMany
+    mountOptions:
+      - hard
+      - nfsvers=4.1
+    existingClaim: ""
+    mountPath: /data/media
+
+service:
+  type: ClusterIP
+  port: 7878
+  annotations: {}
+
+image:
+  repository: lscr.io/linuxserver/radarr
+  tag: ""
+  pullPolicy: IfNotPresent
+
+env:
+  PUID: "1000"
+  PGID: "1000"
+  TZ: "Etc/UTC"
+  UMASK: "002"
+
+# Additional environment variables injected into the container.
+# Example:
+#   extraEnv:
+#     - name: MY_VAR
+#       value: "foo"
+extraEnv: []
+
+# Pod-level security context. fsGroup ensures the mounted PVC is
+# group-writable by PGID, which is what linuxserver's s6-init expects.
+podSecurityContext:
+  fsGroup: 1000
+
+# Container-level security context. Linuxserver images run s6-init as root
+# at startup to chown /config and drop privileges, so runAsNonRoot and
+# readOnlyRootFilesystem cannot be enabled. See README for details.
+securityContext:
+  allowPrivilegeEscalation: false
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations: {}
+  hosts:
+    - host: radarr.local
+      paths:
+        - path: /
+          pathType: Prefix
+  # TLS configuration. Leave secretName empty to rely on the ingress
+  # controller's default certificate (e.g. Traefik TLSStore). Set it
+  # explicitly to reference a secret in this namespace.
+  tls:
+    - secretName: ""
+      hosts:
+        - radarr.local
