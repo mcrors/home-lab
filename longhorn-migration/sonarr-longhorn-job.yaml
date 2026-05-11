@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-sonarr
+  namespace: sonarr
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: longhorn
+  resources:
+    requests:
+      storage: 1Gi  # adjust to match your old volume
+
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: migration-job
+  namespace: sonarr
+spec:
+  template:
+    spec:
+      nodeName: lib-pi-05
+      containers:
+        - name: migrate
+          image: alpine:latest
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              apk add --no-cache rsync
+              rsync -av --progress /old-data/ /new-data/
+              echo "Migration complete"
+          volumeMounts:
+            - name: old-data
+              mountPath: /old-data
+            - name: new-data
+              mountPath: /new-data
+      restartPolicy: Never
+      volumes:
+        - name: old-data
+          persistentVolumeClaim:
+            claimName: pvc-migrate-iscsi-sonarr
+        - name: new-data
+          persistentVolumeClaim:
+            claimName: pvc-sonarr
+  backoffLimit: 0

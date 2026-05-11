@@ -1,0 +1,36 @@
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-migrate-iscsi-sonarr
+spec:
+  capacity:
+    storage: 1Gi  # match your volume size
+  volumeMode: Filesystem
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""   # important: static PV, don't let a dynamic SC match
+  accessModes:
+    - ReadWriteOnce
+  iscsi:
+    targetPortal: 192.168.1.226:3260
+    iqn: iqn.2025-02.home.lib-pi-06:lib-pi-06-target
+    lun: 0
+    fsType: ext4
+    readOnly: false
+    chapAuthDiscovery: false
+    chapAuthSession: false
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-migrate-iscsi-sonarr
+  namespace: sonarr
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+  volumeName: pv-migrate-iscsi-sonarr
+  storageClassName: ""

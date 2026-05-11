@@ -55,7 +55,7 @@ member remove 88c1774a39fb9220
 ```
 * `kubectl delete node <node>` — removes the node object from the cluster
 
-## Adding a server
+## Adding a server or worker
 * When adding a new server, k3s attempts to update the labels on the node.
 * However, to do this, it must first check with the longhorn validating webhook to make sure that this is ok
 * However, because the CNI for the node has not yet been bootstrapped, it is unable to communicate with the webhook
