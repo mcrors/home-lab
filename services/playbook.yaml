@@ -35,3 +35,12 @@
   roles:
     - radarr
   tags: radarr
+
+- name: Install Uptime-kuma into K3s
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  roles:
+    - uptime-kuma
+  tags: uptime-kuma

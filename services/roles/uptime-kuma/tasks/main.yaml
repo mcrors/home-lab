@@ -1,0 +1,36 @@
+---
+
+- name: Ensure uptime-kuma namespace exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ uptime_kuma_namespace }}"
+
+- name: Add uptime-kuma Helm repo
+  kubernetes.core.helm_repository:
+    name: uptime-kuma
+    repo_url: https://helm.irsigler.cloud
+
+- name: Update Helm repo cache
+  kubernetes.core.helm:
+    name: cache-refresh
+    namespace: kube-system
+    state: absent
+    update_repo_cache: true
+    kubeconfig: "{{ kubeconfig_path }}"
+
+- name: Install/Upgrade uptime-kuma with values.yaml
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: uptime-kuma
+    chart_ref: uptime-kuma/uptime-kuma
+    chart_version: "{{ uptime_kuma_chart_version }}"
+    release_namespace: "{{ uptime_kuma_namespace }}"
+    create_namespace: false
+    wait: true
+    values_files:
+      - "{{ role_path }}/files/values.yaml"
