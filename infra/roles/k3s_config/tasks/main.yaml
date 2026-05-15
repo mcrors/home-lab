@@ -13,6 +13,8 @@
       data:
         houli.override: |
           forward houli.eu {{ pihole_dns_ip }}
+        home.override: |
+          forward home {{ pihole_dns_ip }}
 
 - name: Scale CoreDNS to 2 replicas
   kubernetes.core.k8s:
