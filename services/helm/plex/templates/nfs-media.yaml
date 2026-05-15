@@ -1,0 +1,49 @@
+{{- if .Values.persistence.media.nfs.enabled }}
+{{- if and (not .Values.persistence.media.nfs.createPV) (not .Values.persistence.media.nfs.existingClaim) }}
+{{- fail "persistence.media.nfs: either createPV must be true or existingClaim must be set" }}
+{{- end }}
+{{- if .Values.persistence.media.nfs.createPV }}
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: {{ default (printf "%s-media" (include "plex.fullname" .)) .Values.persistence.media.nfs.pvName }}
+  labels:
+    {{- include "plex.labels" . | nindent 4 }}
+spec:
+  capacity:
+    storage: {{ .Values.persistence.media.nfs.capacity | quote }}
+  volumeMode: Filesystem
+  accessModes:
+    - {{ .Values.persistence.media.nfs.accessMode | quote }}
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs
+  {{- with .Values.persistence.media.nfs.mountOptions }}
+  mountOptions:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  nfs:
+    server: {{ .Values.persistence.media.nfs.server }}
+    path: {{ .Values.persistence.media.nfs.path }}
+{{- end }}
+{{- if not .Values.persistence.media.nfs.existingClaim }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "plex.fullname" . }}-media
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plex.labels" . | nindent 4 }}
+spec:
+  storageClassName: nfs
+  accessModes:
+    - {{ .Values.persistence.media.nfs.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.persistence.media.nfs.capacity | quote }}
+  {{- if .Values.persistence.media.nfs.createPV }}
+  volumeName: {{ default (printf "%s-media" (include "plex.fullname" .)) .Values.persistence.media.nfs.pvName }}
+  {{- end }}
+{{- end }}
+{{- end }}

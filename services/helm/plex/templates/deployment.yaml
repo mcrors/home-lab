@@ -1,0 +1,107 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "plex.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "plex.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "plex.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "plex.selectorLabels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "plex.serviceAccountName" . }}
+      restartPolicy: Always
+      {{- if .Values.hardwareTranscoding.enabled }}
+      securityContext:
+        supplementalGroups:
+          - {{ .Values.hardwareTranscoding.renderGroupId }}
+      {{- end }}
+      containers:
+        - name: plex
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 32400
+              protocol: TCP
+          env:
+            - name: PUID
+              value: {{ .Values.env.puid | quote }}
+            - name: PGID
+              value: {{ .Values.env.pgid | quote }}
+            - name: TZ
+              value: {{ .Values.env.timezone | quote }}
+            - name: HOSTNAME
+              value: {{ .Values.env.hostname | quote }}
+            {{- if .Values.env.advertiseIp }}
+            - name: ADVERTISE_IP
+              value: {{ .Values.env.advertiseIp | quote }}
+            {{- end }}
+            {{- if .Values.env.claimToken.enabled }}
+            - name: PLEX_CLAIM
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.env.claimToken.secretName }}
+                  key: {{ .Values.env.claimToken.secretKey }}
+            {{- end }}
+          volumeMounts:
+            - name: config
+              mountPath: {{ .Values.persistence.config.mountPath }}
+            - name: transcode
+              mountPath: /transcode
+            {{- if .Values.persistence.media.nfs.enabled }}
+            - name: media
+              mountPath: {{ .Values.persistence.media.nfs.mountPath }}
+            {{- end }}
+            {{- if .Values.hardwareTranscoding.enabled }}
+            - name: dri
+              mountPath: /dev/dri
+            {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      volumes:
+        - name: config
+          {{- if .Values.persistence.config.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ default (include "plex.pvcName" .) .Values.persistence.config.existingClaim }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
+        - name: transcode
+          emptyDir:
+            sizeLimit: {{ .Values.transcode.sizeLimit }}
+        {{- if .Values.persistence.media.nfs.enabled }}
+        - name: media
+          persistentVolumeClaim:
+            claimName: {{ default (printf "%s-media" (include "plex.fullname" .)) .Values.persistence.media.nfs.existingClaim }}
+        {{- end }}
+        {{- if .Values.hardwareTranscoding.enabled }}
+        - name: dri
+          hostPath:
+            path: /dev/dri
+        {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

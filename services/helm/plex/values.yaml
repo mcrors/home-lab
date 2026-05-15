@@ -1,0 +1,123 @@
+# Default values for plex.
+
+# Override the chart name (used in app.kubernetes.io/name label).
+# Leave empty to use the chart name from Chart.yaml.
+nameOverride: ""
+
+# Override the full resource name (used as metadata.name on resources).
+# Leave empty to use the standard release-name + chart-name pattern.
+fullnameOverride: ""
+
+serviceAccount:
+  # Whether the chart should create a ServiceAccount.
+  # Set to false if you want to pre-create one via Ansible, or use the namespace default.
+  create: true
+
+  # Name of the ServiceAccount to use or create.
+  # If create=true and name is empty, the fullname is used.
+  # If create=false and name is empty, "default" is used.
+  name: ""
+
+  # Annotations to add to the ServiceAccount (only applied if create=true).
+  annotations: {}
+
+  # plex doesn't talk to the Kubernetes API, so don't mount the SA token.
+  automountServiceAccountToken: false
+
+persistence:
+  config:
+    # Whether plex's config directory should be persisted.
+    # If false, an emptyDir is used and data is lost on pod restart.
+    enabled: true
+
+    # Use an existing PersistentVolumeClaim instead of letting the chart create one.
+    # Useful when the PVC is pre-provisioned (e.g. by Ansible for a data migration)
+    # or when you want the PVC lifecycle decoupled from the Helm release.
+    # If set, all other fields in this block except mountPath are ignored.
+    existingClaim: ""
+
+    # StorageClass for the PVC the chart creates.
+    # Leave empty to use the cluster default.
+    storageClass: "longhorn"
+
+    # Access mode. plex is a single-writer app, so RWO is correct.
+    accessMode: ReadWriteOnce
+
+    # Size of the volume the chart creates.
+    size: 12Gi
+
+    # Annotations applied to the PVC the chart creates.
+    # Useful for things like helm.sh/resource-policy: keep to survive helm uninstall.
+    annotations: {}
+
+    # Where the volume is mounted inside the container.
+    # This is independent of whether the PVC is chart-created or existing —
+    # it's about the container side, not the storage side.
+    mountPath: /config
+
+  media:
+    nfs:
+      enabled: true
+      createPV: true
+      pvName: ""
+      server: ""
+      path: ""
+      capacity: 10Ti
+      accessMode: ReadWriteMany
+      mountOptions:
+        - hard
+        - nfsvers=4.1
+      existingClaim: ""
+      mountPath: /media
+
+service:
+  type: ClusterIP
+  port: 32400
+  annotations: {}
+
+image:
+  repository: linuxserver/plex
+  tag: ""
+  pullPolicy: IfNotPresent
+
+env:
+  puid: "1000"
+  pgid: "1000"
+  timezone: "Europe/Prague"
+  hostname: "PlexServer"
+  advertiseIp: ""
+  claimToken:
+    enabled: false
+    secretName: ""
+    secretKey: "PLEX_CLAIM"
+
+transcode:
+  sizeLimit: 8Gi
+
+hardwareTranscoding:
+  enabled: true
+  # This value is based on my NUC, for your own target node check out
+  # stat /dev/dri/renderD128
+  renderGroupId: 993
+
+podLabels: {}
+resources: {}
+affinity: {}
+nodeSelector: {}
+tolerations: []
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations: {}
+  hosts:
+    - host: plex.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: ""
+      hosts:
+        - plex.local
+  tcpPassthrough:
+    enabled: false
