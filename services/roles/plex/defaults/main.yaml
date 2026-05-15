@@ -1,0 +1,4 @@
+plex_namespace: plex
+plex_pvc: "pvc-plex"
+plex_claim_enabled: false
+plex_claim_secret_name: plex-claim-token

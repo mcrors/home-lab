@@ -36,6 +36,15 @@
     - radarr
   tags: radarr
 
+- name: Install Plex into K3s
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  roles:
+    - plex
+  tags: plex
+
 - name: Install Uptime-kuma into K3s
   hosts: localhost
   connection: local

@@ -1,0 +1,74 @@
+---
+
+- name: Ensure plex namespace exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ plex_namespace }}"
+        labels:
+          app.kubernetes.io/managed-by: ansible
+
+- name: Ensure plex pvc exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: "{{ plex_pvc }}"
+        namespace: "{{ plex_namespace }}"
+        annotations:
+          # Prevent accidental deletion during chart uninstall;
+          # this PVC is managed by Ansible, not Helm.
+          helm.sh/resource-policy: keep
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 12Gi
+
+- name: Ensure plex claim token secret exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: "{{ plex_claim_secret_name }}"
+        namespace: "{{ plex_namespace }}"
+      type: Opaque
+      data:
+        PLEX_CLAIM: "{{ vault_plex_claim_token | b64encode }}"
+  when: plex_claim_enabled | default(false)
+
+- name: Install/Upgrade plex with values.yaml
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: plex
+    chart_ref: "{{ playbook_dir }}/helm/plex"
+    release_namespace: "{{ plex_namespace }}"
+    create_namespace: false
+    wait: true
+    values_files:
+      - "{{ role_path }}/files/values.yaml"
+    values:
+      persistence:
+        config:
+          existingClaim: "{{ plex_pvc }}"
+        media:
+          nfs:
+            server: "{{ nfs_server_ip }}"
+            path: "{{ nfs_media_path }}"
+            capacity: "{{ nfs_media_capacity }}"
+      env:
+        claimToken:
+          enabled: "{{ plex_claim_enabled }}"
+          secretName: "{{ plex_claim_secret_name }}"

@@ -1,0 +1,18 @@
+ingress:
+  hosts:
+    - host: plex.houli.eu
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: ""
+      hosts:
+        - plex.houli.eu
+  tcpPassthrough:
+    enabled: true
+nodeSelector:
+  node_type: nuc
+podLabels:
+  workload-class: heavy
+env:
+  advertiseIp: "http://plex.houli.eu:32400,http://192.168.1.250:32400"
