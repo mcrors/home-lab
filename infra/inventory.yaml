@@ -19,18 +19,6 @@ prometheus:
   hosts:
     lib-pi-06.home:
 
-iscsi_targets:
-  hosts:
-    lib-pi-06.home:
-
-iscsi_initiators:
-  hosts:
-    lib-pi-01.home:
-    lib-pi-02.home:
-    lib-pi-03.home:
-    lib-pi-05.home:
-    lib-nuc-01.home:
-
 longhorn:
   hosts:
     lib-pi-01.home:
