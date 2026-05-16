@@ -1,0 +1,71 @@
+---
+
+- name: Ensure kube-state-metrics namespace exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ kube_state_metrics_namespace  }}"
+
+- name: Add prometheus Helm repo
+  kubernetes.core.helm_repository:
+    name: prometheus
+    repo_url: https://prometheus-community.github.io/helm-charts
+
+- name: Update Helm repo cache
+  kubernetes.core.helm:
+    name: cache-refresh
+    namespace: kube-system
+    state: absent
+    update_repo_cache: true
+    kubeconfig: "{{ kubeconfig_path }}"
+
+- name: Install/Upgrade kube-state-metrics with values.yaml
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: kube-state-metrics
+    chart_ref: prometheus/kube-state-metrics
+    chart_version: "{{ kube_state_metrics_chart_version }}"
+    release_namespace: "{{ kube_state_metrics_namespace }}"
+    create_namespace: false
+    wait: true
+    values_files:
+      - "{{ role_path }}/files/values.yaml"
+
+- name: Apply kube-state-metrics Ingress
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: kube-state-metrics
+        namespace: "{{ kube_state_metrics_namespace }}"
+        annotations:
+          traefik.ingress.kubernetes.io/router.tls: "true"
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/name: "kube-state-metrics"
+          gethomepage.dev/group: "Infra"
+          gethomepage.dev/icon: "prometheus"
+          gethomepage.dev/description: "Kubernetes object state metrics"
+      spec:
+        ingressClassName: traefik
+        rules:
+          - host: "{{ kube_state_metrics_host }}"
+            http:
+              paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: kube-state-metrics
+                      port:
+                        number: 8080
+        tls:
+          - hosts:
+              - "{{ kube_state_metrics_host }}"
+

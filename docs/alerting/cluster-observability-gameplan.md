@@ -13,7 +13,7 @@
 
 ## Phase 1: Metrics Collection
 
-### 1.1 — kube-state-metrics
+### 1.1 — kube-state-metrics - DONE
 
 **Goal**: Kubernetes object state metrics (pod phase, node conditions, deployment replicas, etc.)
 

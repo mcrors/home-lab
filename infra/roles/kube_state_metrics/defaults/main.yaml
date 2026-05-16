@@ -1,0 +1,3 @@
+kube_state_metrics_namespace: kube-state-metrics
+kube_state_metrics_chart_version: 7.3.0
+kube_state_metrics_host: ksm.houli.eu
