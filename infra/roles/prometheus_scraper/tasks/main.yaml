@@ -1,0 +1,70 @@
+---
+
+- name: Create "{{ prometheus_scraper_namespace }}" namespace
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ prometheus_scraper_namespace }}"
+
+- name: Create prometheus-scraper ServiceAccount
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ServiceAccount
+      metadata:
+        name: prometheus-scraper
+        namespace: "{{ prometheus_scraper_namespace }}"
+
+- name: Create prometheus-scraper ClusterRole
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRole
+      metadata:
+        name: prometheus-scraper
+      rules:
+        - apiGroups: [""]
+          resources:
+            - nodes/metrics
+            - nodes/proxy
+          verbs: ["get"]
+
+- name: Create prometheus-scraper ClusterRoleBinding
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: rbac.authorization.k8s.io/v1
+      kind: ClusterRoleBinding
+      metadata:
+        name: prometheus-scraper
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: prometheus-scraper
+      subjects:
+        - kind: ServiceAccount
+          name: prometheus-scraper
+          namespace: "{{ prometheus_scraper_namespace }}"
+
+- name: Create long-lived token for prometheus-scraper
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: prometheus-scraper-token
+        namespace: "{{ prometheus_scraper_namespace }}"
+        annotations:
+          kubernetes.io/service-account.name: prometheus-scraper
+      type: kubernetes.io/service-account-token

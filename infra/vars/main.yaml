@@ -30,3 +30,5 @@ journald_max_retention: "7day"
 watchdog_timeout: 15           # seconds
 watchdog_max_load1: 24         # optional extra check
 
+# prometheus_scraper_namespace used by both prometheus_scraper and prometheus
+prometheus_scraper_namespace: prometheus-access

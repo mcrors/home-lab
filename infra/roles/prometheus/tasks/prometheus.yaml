@@ -1,4 +1,20 @@
 ---
+
+- name: Get prometheus-scraper token
+  kubernetes.core.k8s_info:
+    kubeconfig: "{{ kubeconfig_path }}"
+    api_version: v1
+    kind: Secret
+    name: prometheus-scraper-token
+    namespace: prometheus-access
+  register: scraper_token_secret
+  delegate_to: localhost
+  become: false
+
+- name: Set token fact
+  set_fact:
+    prometheus_scraper_token: "{{ scraper_token_secret.resources[0].data.token | b64decode }}"
+
 - name: Ensure Prometheus config directory exists
   file:
     path: /mnt/prometheus/config

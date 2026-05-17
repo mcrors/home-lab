@@ -11,6 +11,26 @@ scrape_configs:
           {% endfor %}
           - 'lib-hp-01.home:9100'  # manually adding this node as it doesn't play well with the ansible role
 
+  - job_name: 'kubelet-cadvisor'
+    scheme: https
+    tls_config:
+      insecure_skip_verify: true
+    bearer_token: '{{ prometheus_scraper_token }}'
+    metrics_path: /metrics/cadvisor
+    static_configs:
+      - targets:
+          {% for host in groups['k3s_cluster'] %}
+          - '{{ host }}:10250'
+          {% endfor %}
+
+  - job_name: 'kube-state-metrics'
+    scheme: https
+    tls_config:
+      insecure_skip_verify: true
+    static_configs:
+      - targets:
+          - ksm.houli.eu:443'
+
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
@@ -22,7 +42,7 @@ scrape_configs:
       - targets:
         - blackbox.houli.eu
 
-  - job_name: blackbox-http #
+  - job_name: blackbox-http
     scheme: https
     metrics_path: /probe
     params:
@@ -35,9 +55,12 @@ scrape_configs:
       - https://prowlarr.houli.eu
       - https://grafana.houli.eu
       - https://prometheus.houli.eu
-      - https://jenkins.houli.eu/login
       - http://omv.houli.eu
-      - http://plex.home
+      - https://ksm.houli.eu
+      - https://blackbox.houli.eu
+      - https://longhorn.houli.eu
+      - https://plex.houli.eu/web/index.html
+      - https://jenkins.houli.eu/login
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

@@ -22,6 +22,17 @@
       - ../vars/main.yaml
   tags: blackbox
 
+- name: Setup Prometheus access to k3s metrics
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  roles:
+    - prometheus_scraper
+  vars_files:
+    - ../vars/main.yaml
+  tags: prometheus
+
 - name: Install & Setup Prometheus
   hosts: prometheus
   become: true
