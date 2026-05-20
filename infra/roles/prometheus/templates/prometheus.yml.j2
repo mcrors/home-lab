@@ -29,7 +29,7 @@ scrape_configs:
       insecure_skip_verify: true
     static_configs:
       - targets:
-          - ksm.houli.eu:443'
+          - 'ksm.houli.eu:443'
 
   - job_name: 'prometheus'
     static_configs:
@@ -73,3 +73,11 @@ scrape_configs:
 
 rule_files:
   - "rules/*.yml"
+
+alerting:
+  alertmanagers:
+    - scheme: https
+      tls_config:
+        insecure_skip_verify: true
+      static_configs:
+        - targets: ['alertmanager.houli.eu:443']
