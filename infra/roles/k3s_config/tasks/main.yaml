@@ -34,3 +34,32 @@
     kubeconfig: "{{ kubeconfig_path }}"
     state: present
     src: "{{ role_path }}/files/traefik-helm-chart-config.yaml"
+
+- name: Apply Traefik Dashboard IngressRoute
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: traefik.io/v1alpha1
+      kind: IngressRoute
+      metadata:
+        name: traefik-dashboard
+        namespace: kube-system
+        annotations:
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/name: "Traefik"
+          gethomepage.dev/group: "Infra"
+          gethomepage.dev/icon: "traefik"
+          gethomepage.dev/description: "Reverse proxy and ingress controller"
+      spec:
+        entryPoints:
+          - websecure
+        routes:
+          - match: "Host(`{{ traefik_host }}`)"
+            kind: Rule
+            services:
+              - name: api@internal
+                kind: TraefikService
+        tls:
+          secretName: houli-eu-wildcard
+

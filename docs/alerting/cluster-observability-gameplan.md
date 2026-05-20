@@ -17,11 +17,11 @@
 
 **Goal**: Kubernetes object state metrics (pod phase, node conditions, deployment replicas, etc.)
 
-- [ ] Deploy via Helm into `monitoring` namespace
-- [ ] Expose via Traefik IngressRoute at `ksm.houli.eu` (or similar)
+- [X] Deploy via Helm into `monitoring` namespace
+- [X] Expose via Traefik IngressRoute at `ksm.houli.eu` (or similar)
   - TLS via existing `houli-eu-wildcard` cert
   - Consider: restrict access via Traefik middleware (IP allowlist to lib-pi-06 and local network)
-- [ ] Add scrape job to `prometheus.yml` on lib-pi-06:
+- [X] Add scrape job to `prometheus.yml` on lib-pi-06:
   ```yaml
   - job_name: 'kube-state-metrics'
     scheme: https
@@ -30,8 +30,8 @@
     static_configs:
       - targets: ['ksm.houli.eu:443']
   ```
-- [ ] Validate: `curl -s https://ksm.houli.eu/metrics | head` returns metrics
-- [ ] Validate: Prometheus targets page shows kube-state-metrics as UP
+- [X] Validate: `curl -s https://ksm.houli.eu/metrics | head` returns metrics
+- [X] Validate: Prometheus targets page shows kube-state-metrics as UP
 
 **Key metrics unlocked**: `kube_node_status_condition`, `kube_pod_status_phase`, `kube_pod_deletion_timestamp`, `kube_pod_container_status_waiting_reason`, `kube_deployment_status_replicas`, `kube_persistentvolumeclaim_status_phase`, etc.
 
@@ -41,20 +41,20 @@
 
 The kubelet (embedded in the k3s agent process) exposes cAdvisor metrics at `:10250/metrics/cadvisor`. These are already there — no additional software to install.
 
-- [ ] Verify kubelet is running: `ps aux | grep k3s` (not `grep kubelet` — k3s bundles it)
-- [ ] Verify the metrics endpoint responds from a node:
+- [X] Verify kubelet is running: `ps aux | grep k3s` (not `grep kubelet` — k3s bundles it)
+- [X] Verify the metrics endpoint responds from a node:
   ```bash
   # From inside a pod with the right service account:
   curl -k https://localhost:10250/metrics/cadvisor \
     -H "Authorization: Bearer <token>"
   ```
-- [ ] Create RBAC for Prometheus scraping:
+- [X] Create RBAC for Prometheus scraping:
   - ServiceAccount `prometheus-scraper` in `monitoring` namespace
   - ClusterRole with rules:
     - `apiGroups: [""]`, `resources: ["nodes/metrics", "nodes/proxy"]`, `verbs: ["get"]`
   - ClusterRoleBinding binding the above
   - Create a long-lived token (Secret of type `kubernetes.io/service-account-token`) or use `kubectl create token` with `--duration`
-- [ ] Add scrape job to `prometheus.yml` on lib-pi-06:
+- [X] Add scrape job to `prometheus.yml` on lib-pi-06:
   ```yaml
   - job_name: 'kubelet-cadvisor'
     scheme: https
@@ -73,8 +73,8 @@ The kubelet (embedded in the k3s agent process) exposes cAdvisor metrics at `:10
           - '<lib-potato-02>:10250'
           - '<nuc-ip>:10250'
   ```
-- [ ] Validate: Prometheus targets page shows all nodes as UP for `kubelet-cadvisor` job
-- [ ] Validate: query `container_cpu_usage_seconds_total` in Prometheus returns data
+- [X] Validate: Prometheus targets page shows all nodes as UP for `kubelet-cadvisor` job
+- [X] Validate: query `container_cpu_usage_seconds_total` in Prometheus returns data
 
 **Key metrics unlocked**: `container_cpu_usage_seconds_total`, `container_memory_working_set_bytes`, `container_network_receive_bytes_total`, `container_network_transmit_bytes_total`, `container_fs_usage_bytes`, etc.
 
@@ -88,11 +88,11 @@ The kubelet (embedded in the k3s agent process) exposes cAdvisor metrics at `:10
 
 **Goal**: receive firing alerts from Prometheus, route to notification channels.
 
-- [ ] Deploy Alertmanager in-cluster via Helm (`monitoring` namespace)
-- [ ] Expose via Traefik IngressRoute at `alertmanager.houli.eu`
+- [X] Deploy Alertmanager in-cluster via Helm (`monitoring` namespace)
+- [X] Expose via Traefik IngressRoute at `alertmanager.houli.eu`
   - TLS via wildcard cert
   - IP allowlist middleware (lib-pi-06 + local network)
-- [ ] Configure Prometheus on lib-pi-06 to send alerts to Alertmanager:
+- [X] Configure Prometheus on lib-pi-06 to send alerts to Alertmanager:
   ```yaml
   alerting:
     alertmanagers:
@@ -103,7 +103,7 @@ The kubelet (embedded in the k3s agent process) exposes cAdvisor metrics at `:10
           - targets: ['alertmanager.houli.eu:443']
   ```
 - [ ] Configure Alertmanager to route to Ntfy (Phase 3) via webhook receiver
-- [ ] Validate: Prometheus status page shows Alertmanager as connected
+- [X] Validate: Prometheus status page shows Alertmanager as connected
 
 ### 2.2 — Alert Rules
 
