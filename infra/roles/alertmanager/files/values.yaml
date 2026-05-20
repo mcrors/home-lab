@@ -1,0 +1,59 @@
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: node_type
+              operator: In
+              values:
+                - potato
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: node_type
+              operator: NotIn
+              values:
+                - nuc
+
+persistence:
+  enabled: false
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations:
+    traefik.ingress.kubernetes.io/router.tls: "true"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Alertmanager"
+    gethomepage.dev/group: "Infra"
+    gethomepage.dev/icon: "alertmanager"
+    gethomepage.dev/description: "Alert routing and notification"
+  hosts:
+    - host: alertmanager.houli.eu
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - hosts:
+        - alertmanager.houli.eu
+
+config:
+  enabled: true
+  global:
+    resolve_timeout: 5m
+  route:
+    receiver: 'null'
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
+  receivers:
+    - name: 'null'

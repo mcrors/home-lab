@@ -13,7 +13,7 @@
 
 ## Phase 1: Metrics Collection
 
-### 1.1 — kube-state-metrics - DONE
+### 1.1 — kube-state-metrics  - DONE
 
 **Goal**: Kubernetes object state metrics (pod phase, node conditions, deployment replicas, etc.)
 
@@ -35,7 +35,7 @@
 
 **Key metrics unlocked**: `kube_node_status_condition`, `kube_pod_status_phase`, `kube_pod_deletion_timestamp`, `kube_pod_container_status_waiting_reason`, `kube_deployment_status_replicas`, `kube_persistentvolumeclaim_status_phase`, etc.
 
-### 1.2 — Kubelet / cAdvisor Metrics
+### 1.2 — Kubelet / cAdvisor Metrics - DONE
 
 **Goal**: actual container resource consumption (CPU, memory, network, filesystem)
 

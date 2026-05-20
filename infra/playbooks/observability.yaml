@@ -68,3 +68,16 @@
   vars_files:
       - ../vars/main.yaml
   tags: ksm
+
+- name: Install alertmanager into K3s
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  roles:
+    - alertmanager
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
+  vars_files:
+      - ../vars/main.yaml
+  tags: alertmanager

@@ -1,0 +1,36 @@
+---
+
+- name: Add alertmanager Helm repo
+  kubernetes.core.helm_repository:
+    name: prometheus
+    repo_url: https://prometheus-community.github.io/helm-charts
+
+- name: Update Helm repo cache
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: cache-refresh
+    namespace: kube-system
+    state: absent
+    update_repo_cache: true
+
+- name: Ensure alertmanager namespace exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ alertmanager_namespace }}"
+
+- name: Install/Upgrade alertmanager with values.yaml
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: alertmanager
+    chart_ref: prometheus/alertmanager
+    chart_version: "{{ chart_version }}"
+    release_namespace: "{{ alertmanager_namespace }}"
+    create_namespace: false
+    wait: true
+    values_files:
+      - "{{ role_path }}/files/values.yaml"
