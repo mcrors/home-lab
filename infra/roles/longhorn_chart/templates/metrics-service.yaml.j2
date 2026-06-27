@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: longhorn-metrics
+  namespace: {{ longhorn_namespace }}
+  labels:
+    app: longhorn-manager
+spec:
+  type: NodePort
+  externalTrafficPolicy: Local
+  selector:
+    app: longhorn-manager
+  ports:
+    - port: 9500
+      targetPort: 9500
+      nodePort: 30950
+      name: metrics
+

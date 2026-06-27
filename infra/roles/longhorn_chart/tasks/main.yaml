@@ -41,6 +41,18 @@
     state: present
     template: "{{ role_path }}/templates/ingress.yaml.j2"
 
+- name: Create longhorn-ingress
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    template: "{{ role_path }}/templates/ingress.yaml.j2"
+
+- name: Create metrics-service
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    template: "{{ role_path }}/templates/metrics-service.yaml.j2"
+
 - name: Remove default annotation from local-path StorageClass
   kubernetes.core.k8s:
     state: patched
