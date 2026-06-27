@@ -24,3 +24,10 @@
     name: iscsid
     enabled: yes
     state: started
+
+- name: Disable multipathd (conflicts with Longhorn iSCSI)
+  systemd:
+    name: multipathd
+    state: stopped
+    enabled: false
+  when: ansible_facts.services['multipathd.service'] is defined
