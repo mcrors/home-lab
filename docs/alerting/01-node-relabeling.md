@@ -1,4 +1,4 @@
-# Task: Relabel Cluster Nodes with Size-Based Labels
+# Task: Relabel Cluster Nodes with Size-Based Labels — DONE
 
 Replace the current ad-hoc `node_type` label values with a consistent size-based scheme so workload affinity rules are meaningful and portable.
 

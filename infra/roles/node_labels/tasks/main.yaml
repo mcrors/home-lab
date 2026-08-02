@@ -1,0 +1,29 @@
+---
+
+- name: Validate node_type is a known value
+  assert:
+    that:
+      - node_type in ['potato', 'pi', 'nuc']
+    fail_msg: "Unexpected node_type '{{ node_type }}' on {{ inventory_hostname }}. Expected: potato, pi, nuc."
+
+- name: Set node name
+  set_fact:
+    k3s_node_name: "{{ inventory_hostname | regex_replace('\\.home$', '') }}"
+
+- name: Derive node_size from node_type and memory
+  set_fact:
+    node_size: "{% if node_type == 'nuc' %}x-large{% elif node_type == 'potato' %}small{% elif (ansible_memtotal_mb | int) <= 4500 %}medium{% else %}large{% endif %}"
+
+- name: Apply node labels via kubectl on control node
+  block:
+    - name: Set node_type label
+      command: >
+        kubectl label node {{ k3s_node_name }} node_type={{ node_type }} --overwrite
+
+    - name: Set node_size label
+      command: >
+        kubectl label node {{ k3s_node_name }} node_size={{ node_size }} --overwrite
+
+  delegate_to: localhost
+  connection: local
+  become: false
