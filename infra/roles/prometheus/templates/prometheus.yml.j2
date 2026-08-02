@@ -23,6 +23,14 @@ scrape_configs:
           - '{{ host }}:10250'
           {% endfor %}
 
+  - job_name: longhorn
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          {% for host in groups['longhorn'] %}
+          - '{{ host }}:30950'
+          {% endfor %}
+
   - job_name: 'kube-state-metrics'
     scheme: https
     tls_config:
@@ -58,8 +66,8 @@ scrape_configs:
       - http://omv.houli.eu
       - https://ksm.houli.eu
       - https://blackbox.houli.eu
-      - https://longhorn.houli.eu
       - https://traefik.houli.eu
+      - https://longhorn.houli.eu
       - https://plex.houli.eu/web/index.html
       - https://jenkins.houli.eu/login
     relabel_configs:

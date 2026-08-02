@@ -1,34 +1,90 @@
 groups:
-  - name: availability
+  - name: kubernetes
     rules:
-      - alert: NodeDown
-        expr: up{job=~"node-exporter|node"} == 0
-        for: 2m
+      - alert: KubeNodeNotReady
+        expr: kube_node_status_condition{condition="Ready", status="true"} == 0
+        for: 5m
         labels:
           severity: critical
         annotations:
-          summary: "Node down: {{ $labels.instance }}"
-          description: "Prometheus cannot scrape {{ $labels.instance }} (job={{ $labels.job }}) for 2 minutes."
+          summary: "Node not ready: {{ $labels.node }}"
+          description: "{{ $labels.node }} has been in a non-Ready state for 5 minutes."
+
+      - alert: PodCrashLooping
+        expr: increase(kube_pod_container_status_restarts_total[1h]) > 5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod crash looping: {{ $labels.namespace }}/{{ $labels.pod }}"
+          description: "Container {{ $labels.container }} has restarted {{ $value }} times in the last hour."
+
+      - alert: PodStuckPending
+        expr: kube_pod_status_phase{phase="Pending"} == 1
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod stuck pending: {{ $labels.namespace }}/{{ $labels.pod }}"
+          description: "Pod has been in Pending state for 15 minutes."
+
+      - alert: ContainerOOMKilled
+        expr: kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container OOM killed: {{ $labels.namespace }}/{{ $labels.pod }}"
+          description: "Container {{ $labels.container }} was OOM killed. Memory limit needs tuning."
+
+  - name: longhorn
+    rules:
+      - alert: LonghornVolumeDegraded
+        expr: longhorn_volume_robustness == 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Longhorn volume degraded: {{ $labels.volume }}"
+          description: "Volume {{ $labels.volume }} has fewer healthy replicas than configured."
+
+      - alert: LonghornVolumeFaulted
+        expr: longhorn_volume_robustness == 3
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Longhorn volume faulted: {{ $labels.volume }}"
+          description: "Volume {{ $labels.volume }} is inaccessible."
+
+      - alert: LonghornDiskSpaceLow
+        expr: (longhorn_disk_usage_bytes / longhorn_disk_capacity_bytes) > 0.80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Longhorn disk space low on {{ $labels.node }}"
+          description: "Longhorn storage on {{ $labels.node }} is above 80% usage."
 
   - name: events
     rules:
-      - alert: HostHardwareTempHigh
-        expr: max by (instance, chip) (node_hwmon_temp_celsius{chip="platform_coretemp_0"}) > 70
+      - alert: HostHardwareTemp
+        expr: node_thermal_zone_temp{type=~"cpu-thermal|x86_pkg_temp"} > 70
         for: 10m
         labels:
           severity: warning
         annotations:
           summary: "High CPU temperature on {{ $labels.instance }}"
-          description: "CPU ({{ $labels.chip }}) max core temp > 70°C for 10m (current: {{ $value }}°C)"
+          description: "CPU temp > 70°C for 10m (current: {{ $value }}°C)"
 
-      - alert: HostHardwareTempCritical
-        expr: max by (instance, chip) (node_hwmon_temp_celsius{chip="platform_coretemp_0"}) > 80
+      - alert: HostHardwareTemp
+        expr: node_thermal_zone_temp{type=~"cpu-thermal|x86_pkg_temp"} > 80
         for: 5m
         labels:
           severity: critical
         annotations:
           summary: "CRITICAL CPU temperature on {{ $labels.instance }}"
-          description: "CPU ({{ $labels.chip }}) max core temp > 80°C for 5m (current: {{ $value }}°C)"
+          description: "CPU temp > 80°C for 5m (current: {{ $value }}°C)"
 
       - alert: NodeRecentlyRebooted
         expr: (up{job=~"node-exporter|node"} == 1) * (time() - node_boot_time_seconds) < 300
@@ -39,37 +95,26 @@ groups:
           summary: "Node rebooted: {{ $labels.instance }}"
           description: "Uptime is {{ humanizeDuration $value }}."
 
-      # (K3s/k8s) Container restarts (needs kube-state-metrics)
-      # - alert: PodContainerRestarted
-      #   expr: increase(kube_pod_container_status_restarts_total[5m]) > 0
-      #   for: 0m
-      #   labels:
-      #     severity: warning
-      #   annotations:
-      #     summary: "Pod container restarted in {{ $labels.namespace }}: {{ $labels.pod }} / {{ $labels.container }}"
-      #     description: "Restart count increased in the last 5 minutes."
-
-      # (Docker/cAdvisor) Container restarted (needs cAdvisor on hosts)
-      # - alert: ContainerRestarted
-      #   expr: changes(container_start_time_seconds{image!=""}[5m]) > 0
-      #   for: 0m
-      #   labels:
-      #     severity: warning
-      #   annotations:
-      #     summary: "Container restarted: {{ $labels.instance }} {{ $labels.name }}"
-      #     description: "Container start time changed in the last 5 minutes."
-
   - name: health
     rules:
       # CPU: average utilization over 5m (1 - idle)
       - alert: HighCPUUsage
         expr: (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 0.90
-        for: 5m
+        for: 15m
         labels:
           severity: warning
         annotations:
           summary: "High CPU on {{ $labels.instance }}"
-          description: "Average CPU > 90% for 5 minutes."
+          description: "Average CPU > 90% for 15 minutes."
+
+      - alert: HighCPUUsage
+        expr: (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 0.95
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Critical CPU on {{ $labels.instance }}"
+          description: "Average CPU > 95% for 5 minutes."
 
       # Memory pressure (MemAvailable < 10%)
       - alert: LowMemoryAvailable
@@ -118,3 +163,49 @@ groups:
           summary: "Read-only filesystem on {{ $labels.instance }} ({{ $labels.mountpoint }})"
           description: "Filesystem flipped to read-only."
 
+  - name: networking
+    rules:
+      - alert: BlackboxProbeFailed
+        expr: probe_success == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Probe failed: {{ $labels.instance }}"
+          description: "Blackbox probe to {{ $labels.instance }} has been failing for 5 minutes."
+
+      - alert: SSLCertExpiringSoon
+        expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 14
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "SSL cert expiring soon: {{ $labels.instance }}"
+          description: "Certificate for {{ $labels.instance }} expires in less than 14 days."
+
+      - alert: SSLCertExpiringSoon
+        expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 7
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: "SSL cert expiring: {{ $labels.instance }}"
+          description: "Certificate for {{ $labels.instance }} expires in less than 7 days."
+
+      - alert: TraefikHighErrorRate
+        expr: sum(rate(traefik_service_requests_total{code=~"5.."}[5m])) / sum(rate(traefik_service_requests_total[5m])) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Traefik high 5xx error rate"
+          description: "More than 5% of requests returning 5xx for 10 minutes."
+
+      - alert: DNSResolutionFailed
+        expr: probe_success{job="blackbox-dns"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "DNS resolution failed: {{ $labels.instance }}"
+          description: "DNS probe failing for 2 minutes. Pi-hole may be down."

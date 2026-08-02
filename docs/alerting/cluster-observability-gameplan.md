@@ -84,7 +84,7 @@ The kubelet (embedded in the k3s agent process) exposes cAdvisor metrics at `:10
 
 ## Phase 2: Alerting
 
-### 2.1 — Alertmanager
+### 2.1 — Alertmanager - DONE
 
 **Goal**: receive firing alerts from Prometheus, route to notification channels.
 
@@ -102,7 +102,6 @@ The kubelet (embedded in the k3s agent process) exposes cAdvisor metrics at `:10
         static_configs:
           - targets: ['alertmanager.houli.eu:443']
   ```
-- [ ] Configure Alertmanager to route to Ntfy (Phase 3) via webhook receiver
 - [X] Validate: Prometheus status page shows Alertmanager as connected
 
 ### 2.2 — Alert Rules
