@@ -1,0 +1,5 @@
+---
+ntfy_namespace: ntfy
+ntfy_pvc: pvc-ntfy
+ntfy_image: binwiederhier/ntfy:v2.26.3
+ntfy_host: ntfy.houli.eu

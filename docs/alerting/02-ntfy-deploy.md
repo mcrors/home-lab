@@ -24,10 +24,43 @@ Deploy the Ntfy notification server in-cluster via Helm, following the same Ansi
 
 3. Add `vault_ntfy_access_token` to the appropriate vault file (`infra/group_vars/k3s_cluster/vault.yaml`)
 
+## Post-deploy: token bootstrapping (one-time)
+
+The server starts with `auth-default-access: deny-all` — nothing can publish or subscribe until a user and token are created. Do this once after the pod is Running:
+
+```bash
+# Create an admin user (you'll be prompted for a password)
+kubectl exec -n ntfy deploy/ntfy -- ntfy user add --role=admin admin
+
+# Generate an access token for that user
+kubectl exec -n ntfy deploy/ntfy -- ntfy token add admin
+```
+
+The second command prints a token like `tk_xxxxxxxxxxxxxxxxxxxxxxxxxx`. **Store it in Ansible Vault:**
+
+```bash
+# Edit the vault file
+ansible-vault edit infra/group_vars/k3s_cluster/vault.yaml
+# Add: vault_ntfy_access_token: "tk_xxxxxxxxxxxxxxxxxxxxxxxxxx"
+```
+
+This token is used by:
+- **Ticket 04** (`alertmanager-ntfy-config.md`) — Alertmanager authenticates to the bridge with this token
+- **Ticket 05** (`uptime-kuma-ntfy.md`) — Uptime Kuma notification config
+- **iOS app** — subscribe to `homelab-alerts` topic using Bearer token auth
+
+The token persists in the Longhorn PVC (`auth.db`), so it survives pod restarts. If you ever need to rotate it:
+```bash
+kubectl exec -n ntfy deploy/ntfy -- ntfy token remove admin <token>
+kubectl exec -n ntfy deploy/ntfy -- ntfy token add admin
+# Update vault_ntfy_access_token and re-run tickets 04 and 05
+```
+
 ## Validation
 
-- `curl -u :<token> https://ntfy.houli.eu/homelab-alerts/json` returns SSE stream
-- Install Ntfy iOS app, subscribe to `homelab-alerts` topic with token auth
+- Pod is Running: `kubectl get pods -n ntfy`
+- `curl -H "Authorization: Bearer <token>" https://ntfy.houli.eu/homelab-alerts/json` returns SSE stream
+- Install Ntfy iOS app, subscribe to `homelab-alerts` topic with the Bearer token
 - `curl -H "Authorization: Bearer <token>" -d "test" https://ntfy.houli.eu/homelab-alerts` → notification on phone
 
 ## Dependencies

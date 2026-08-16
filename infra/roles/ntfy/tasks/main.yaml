@@ -1,0 +1,171 @@
+---
+
+- name: Ensure ntfy namespace exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ ntfy_namespace }}"
+
+- name: Ensure ntfy PVC exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: "{{ ntfy_pvc }}"
+        namespace: "{{ ntfy_namespace }}"
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 2Gi
+
+- name: Apply ntfy ConfigMap
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: ntfy-config
+        namespace: "{{ ntfy_namespace }}"
+      data:
+        server.yml: |
+          base-url: "https://{{ ntfy_host }}"
+          listen-http: ":80"
+          cache-file: /var/cache/ntfy/cache.db
+          cache-duration: 24h
+          auth-file: /var/lib/ntfy/auth.db
+          auth-default-access: deny-all
+          upstream-base-url: "https://ntfy.sh"
+          log-level: info
+
+- name: Apply ntfy Deployment
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: ntfy
+        namespace: "{{ ntfy_namespace }}"
+      spec:
+        replicas: 1
+        strategy:
+          type: Recreate
+        selector:
+          matchLabels:
+            app: ntfy
+        template:
+          metadata:
+            labels:
+              app: ntfy
+          spec:
+            affinity:
+              nodeAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    preference:
+                      matchExpressions:
+                        - key: node_size
+                          operator: In
+                          values: [small, medium]
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: node_size
+                          operator: NotIn
+                          values: [large, x-large]
+            containers:
+              - name: ntfy
+                image: "{{ ntfy_image }}"
+                args: ["serve"]
+                ports:
+                  - containerPort: 80
+                resources:
+                  requests:
+                    cpu: 25m
+                    memory: 64Mi
+                  limits:
+                    cpu: 200m
+                    memory: 128Mi
+                volumeMounts:
+                  - name: config
+                    mountPath: /etc/ntfy/server.yml
+                    subPath: server.yml
+                  - name: data
+                    mountPath: /var/cache/ntfy
+                    subPath: cache
+                  - name: data
+                    mountPath: /var/lib/ntfy
+                    subPath: data
+            volumes:
+              - name: config
+                configMap:
+                  name: ntfy-config
+              - name: data
+                persistentVolumeClaim:
+                  claimName: "{{ ntfy_pvc }}"
+
+- name: Apply ntfy Service
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: ntfy
+        namespace: "{{ ntfy_namespace }}"
+      spec:
+        selector:
+          app: ntfy
+        ports:
+          - port: 80
+            targetPort: 80
+        type: ClusterIP
+
+- name: Apply ntfy Ingress
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: ntfy
+        namespace: "{{ ntfy_namespace }}"
+        annotations:
+          traefik.ingress.kubernetes.io/router.tls: "true"
+          gethomepage.dev/enabled: "true"
+          gethomepage.dev/name: "Ntfy"
+          gethomepage.dev/group: "Infra"
+          gethomepage.dev/icon: "ntfy"
+          gethomepage.dev/description: "Push notification server"
+      spec:
+        ingressClassName: traefik
+        rules:
+          - host: "{{ ntfy_host }}"
+            http:
+              paths:
+                - path: /
+                  pathType: Prefix
+                  backend:
+                    service:
+                      name: ntfy
+                      port:
+                        number: 80
+        tls:
+          - hosts:
+              - "{{ ntfy_host }}"
+            secretName: houli-eu-wildcard
