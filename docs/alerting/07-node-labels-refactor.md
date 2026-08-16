@@ -17,12 +17,15 @@ These only run on `k3s_workers`, so server nodes (potato-01/02/03) have never re
 ## What to do
 
 1. Move the `memory`, `iscsi_initiator`, and `node_type` label tasks from `k3s/worker/tasks/main.yaml` into `infra/roles/node_labels/tasks/main.yaml`
-2. Remove the labeling block from the worker task
-3. Verify all nodes (servers + workers) get all labels after the change
+2. Move the `longhorn-storage` and `node.longhorn.io/create-default-disk` label tasks out of the inline block in `infra/playbooks/longhorn.yaml` and into `node_labels` as well (gated on a `longhorn_storage_node` group var or host var)
+3. Remove the labeling block from the worker task and the longhorn playbook
+4. Verify all nodes (servers + workers) get all labels after the change
 
 ## Note
 
 `node_type` is already set by `node_labels` as of the work in `01-node-relabeling.md` — remove the duplicate from the worker task as part of this ticket.
+
+The longhorn labels were previously only applied by running the full longhorn playbook, which also does disk setup. Moving them into `node_labels` means labeling can be re-run safely without risking disk operations.
 
 ## Dependencies
 

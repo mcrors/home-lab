@@ -14,13 +14,12 @@ nodeSelector:
 
 affinity:
   nodeAffinity:
-    preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 100
-        preference:
-          matchExpressions:
-            - key: node_type
-              operator: NotIn
-              values: ["potato"]
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: node_size
+              operator: In
+              values: ["medium", "large"]
 
 env:
   TZ: "Europe/Prague"

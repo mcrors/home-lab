@@ -4,16 +4,20 @@ Once nodes are relabelled with `node_size` (small/medium/large/x-large), update 
 
 ## Roles to audit
 
-| Role                  | Current affinity                              |
-|-----------------------|-----------------------------------------------|
-| `alertmanager`        | prefer `node_type=potato`, avoid `node_type=nuc` |
-| `grafana`             | check `files/values.yaml`                     |
-| `kube_state_metrics`  | check `files/values.yaml`                     |
-| `blackbox_exporter`   | check `files/values.yaml`                     |
-| `longhorn_chart`      | check `files/values.yaml`                     |
-| `metallb`             | check `files/values.yaml`                     |
-| `ntfy`                | set to prefer small/medium (new — see `ntfy-deploy.md`) |
-| `ntfy_bridge`         | set to prefer small/medium (new — see `ntfy-bridge-deploy.md`) |
+| Role                  | Current affinity                              | Status |
+|-----------------------|-----------------------------------------------|--------|
+| `alertmanager`        | prefer `node_type=potato`, avoid `node_type=nuc` | pending |
+| `grafana`             | check `files/values.yaml`                     | pending |
+| `kube_state_metrics`  | check `files/values.yaml`                     | pending |
+| `blackbox_exporter`   | check `files/values.yaml`                     | pending |
+| `longhorn_chart`      | check `files/values.yaml`                     | pending |
+| `metallb`             | check `files/values.yaml`                     | pending |
+| `ntfy`                | set to prefer small/medium (new — see `ntfy-deploy.md`) | pending |
+| `ntfy_bridge`         | set to prefer small/medium (new — see `ntfy-bridge-deploy.md`) | pending |
+| `prowlarr`            | `required: node_size In [medium, large]`      | done |
+| `radarr`              | `required: node_size In [medium, large]`      | done |
+| `sonarr`              | `required: node_size In [medium, large]`      | done |
+| `uptime-kuma`         | `required: node_size In [medium, large]`      | done |
 
 ## For each role
 
