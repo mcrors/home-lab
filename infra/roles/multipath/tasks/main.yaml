@@ -1,0 +1,23 @@
+---
+
+- name: Configure multipath blacklist for Longhorn iSCSI
+  copy:
+    dest: /etc/multipath.conf
+    content: |
+      defaults {
+          user_friendly_names yes
+      }
+
+      blacklist {
+          device {
+              vendor  "IET"
+              product "VIRTUAL-DISK"
+          }
+      }
+  notify: reload multipathd
+
+- name: Ensure multipathd is running
+  systemd:
+    name: multipathd
+    state: started
+    enabled: true

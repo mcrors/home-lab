@@ -1,5 +1,7 @@
 # Task: Scale Down Longhorn-Dependent Workloads
 
+Status: DONE
+
 Scale all workloads that hold Longhorn PVCs to zero replicas before any Longhorn changes.
 Restarting the instance-manager takes all volumes offline simultaneously — scaling down first
 means a clean, intentional detach rather than a hard drop mid-operation.
@@ -15,7 +17,7 @@ Scaling to zero first lets the kubelet unmount the volumes cleanly before anythi
 
 ## Workloads to scale down
 
-All six consume Longhorn PVCs and are scheduled on lib-nuc-01 or lib-pi-05:
+All seven consume Longhorn PVCs and are scheduled on lib-nuc-01 or lib-pi-05:
 
 | Workload | Namespace | PVC | Size |
 |----------|-----------|-----|------|
@@ -25,6 +27,7 @@ All six consume Longhorn PVCs and are scheduled on lib-nuc-01 or lib-pi-05:
 | Sonarr | sonarr | pvc-sonarr | 5Gi |
 | Radarr | radarr | pvc-radarr | 5Gi |
 | Uptime Kuma | uptime-kuma | uptime-kuma-pvc | 2Gi |
+| Ntfy | ntfy | pvc-ntfy | 2Gi |
 
 ## Steps
 
@@ -35,12 +38,13 @@ kubectl scale deploy -n prowlarr prowlarr --replicas=0
 kubectl scale deploy -n sonarr sonarr --replicas=0
 kubectl scale deploy -n radarr radarr --replicas=0
 kubectl scale deploy -n uptime-kuma uptime-kuma --replicas=0
+kubectl scale deploy -n ntfy ntfy --replicas=0
 ```
 
 Confirm all pods are gone before proceeding:
 
 ```bash
-kubectl get pods -n plex -n grafana -n prowlarr -n sonarr -n radarr -n uptime-kuma
+kubectl get pods -n plex -n grafana -n prowlarr -n sonarr -n radarr -n uptime-kuma -n ntfy
 ```
 
 Confirm all Longhorn volumes are detached:

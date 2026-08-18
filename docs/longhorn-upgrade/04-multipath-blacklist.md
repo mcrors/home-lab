@@ -1,5 +1,7 @@
 # Task: Blacklist Longhorn iSCSI Devices in multipathd
 
+Status: DONE
+
 Prevent `multipathd` from claiming Longhorn iSCSI block devices by adding a blacklist rule
 to `/etc/multipath.conf` on lib-nuc-01. Without this, any instance-manager restart (including
 upgrades) can leave workload pods stuck in `ContainerCreating`.

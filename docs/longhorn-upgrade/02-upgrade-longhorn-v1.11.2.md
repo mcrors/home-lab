@@ -1,5 +1,7 @@
 # Task: Upgrade Longhorn from v1.11.0 to v1.11.2
 
+Status: DONE
+
 Upgrade Longhorn to v1.11.2 to permanently fix the proxy connection leak in the
 instance-manager that caused lib-nuc-01 to grow from 20GB to 47GB of memory over ~7 weeks.
 
@@ -54,7 +56,7 @@ Leave the CSI sidecar tags unchanged — they are not Longhorn-versioned.
 ```bash
 cd infra
 workon ansible
-ansible-playbook playbooks/k3s.yaml -i inventory.yaml --tags longhorn
+ansible-playbook playbooks/longhorn.yaml -i inventory.yaml
 ```
 
 **3. Watch the rollout**

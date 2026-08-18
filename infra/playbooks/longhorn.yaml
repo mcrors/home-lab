@@ -1,4 +1,12 @@
 
+- name: Configure multipath blacklist on NUC nodes
+  hosts: nucs
+  become: true
+  roles:
+    - multipath
+  vars_files:
+    - ../vars/main.yaml
+
 - name: Install longhorn pre-reqs
   hosts: longhorn
   become: true

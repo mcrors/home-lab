@@ -1,5 +1,7 @@
 # Task: Verify Longhorn Health and Scale Workloads Back Up
 
+Status: DONE
+
 After the upgrade, confirm Longhorn is healthy and bring all workloads back up.
 
 ## Steps
