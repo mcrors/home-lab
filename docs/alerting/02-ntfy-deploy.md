@@ -1,4 +1,4 @@
-# Task: Deploy Ntfy
+# Task: Deploy Ntfy ✅ DONE (2026-08-18)
 
 Deploy the Ntfy notification server in-cluster via Helm, following the same Ansible role pattern as Grafana and Alertmanager.
 

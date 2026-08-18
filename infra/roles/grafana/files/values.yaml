@@ -126,19 +126,12 @@ extraLabels:
 ## Affinity for pod assignment (evaluated as template)
 affinity:
   nodeAffinity:
-    preferredDuringSchedulingIgnoredDuringExecution:
-      - weight: 30
-        preference:
-          matchExpressions:
-            - key: node_type
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: node_size
               operator: In
-              values: ["nuc"]
-      - weight: 100
-        preference:
-          matchExpressions:
-            - key: node_type
-              operator: NotIn
-              values: ["potato"]
+              values: ["x-large"]
   podAntiAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
       - weight: 80

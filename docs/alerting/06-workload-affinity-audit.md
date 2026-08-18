@@ -7,7 +7,7 @@ Once nodes are relabelled with `node_size` (small/medium/large/x-large), update 
 | Role                  | Current affinity                              | Status |
 |-----------------------|-----------------------------------------------|--------|
 | `alertmanager`        | prefer `node_type=potato`, avoid `node_type=nuc` | pending |
-| `grafana`             | check `files/values.yaml`                     | pending |
+| `grafana`             | `required: node_size In [x-large]`            | done |
 | `kube_state_metrics`  | check `files/values.yaml`                     | pending |
 | `blackbox_exporter`   | check `files/values.yaml`                     | pending |
 | `longhorn_chart`      | check `files/values.yaml`                     | pending |
