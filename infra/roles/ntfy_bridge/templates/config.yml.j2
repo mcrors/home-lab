@@ -1,0 +1,18 @@
+http:
+  addr: ":{{ ntfy_bridge_port }}"
+
+ntfy:
+  baseurl: http://ntfy.ntfy.svc.cluster.local
+  auth:
+    token: "{{ vault_ntfy_access_token }}"
+  notification:
+    topic: homelab-alerts
+    priority: |
+      labels.severity == "critical" ? "urgent" :
+      labels.severity == "warning" ? "default" :
+      labels.severity == "info" ? "low" : "default"
+    tags:
+      - tag: rotating_light
+        condition: 'status == "firing"'
+      - tag: white_check_mark
+        condition: 'status == "resolved"'

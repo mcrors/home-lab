@@ -1,0 +1,5 @@
+---
+ntfy_bridge_namespace: ntfy
+ntfy_bridge_image: ghcr.io/alexbakker/alertmanager-ntfy
+ntfy_bridge_image_tag: "1.2.1"
+ntfy_bridge_port: 8000

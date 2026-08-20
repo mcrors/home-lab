@@ -1,0 +1,101 @@
+---
+
+- name: Ensure ntfy namespace exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ ntfy_bridge_namespace }}"
+
+- name: Apply ntfy-bridge config Secret
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: ntfy-bridge-config
+        namespace: "{{ ntfy_bridge_namespace }}"
+      stringData:
+        config.yml: "{{ lookup('template', 'config.yml.j2') }}"
+  no_log: true
+
+- name: Apply ntfy-bridge Deployment
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: ntfy-bridge
+        namespace: "{{ ntfy_bridge_namespace }}"
+      spec:
+        replicas: 1
+        selector:
+          matchLabels:
+            app: ntfy-bridge
+        template:
+          metadata:
+            labels:
+              app: ntfy-bridge
+          spec:
+            affinity:
+              nodeAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    preference:
+                      matchExpressions:
+                        - key: node_size
+                          operator: In
+                          values: [small, medium]
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: node_size
+                          operator: NotIn
+                          values: [large, x-large]
+            containers:
+              - name: ntfy-bridge
+                image: "{{ ntfy_bridge_image }}:{{ ntfy_bridge_image_tag }}"
+                args: ["--configs", "/etc/alertmanager-ntfy/config.yml"]
+                ports:
+                  - containerPort: 8000
+                resources:
+                  requests:
+                    cpu: 10m
+                    memory: 32Mi
+                  limits:
+                    cpu: 100m
+                    memory: 64Mi
+                volumeMounts:
+                  - name: config
+                    mountPath: /etc/alertmanager-ntfy/config.yml
+                    subPath: config.yml
+                    readOnly: true
+            volumes:
+              - name: config
+                secret:
+                  secretName: ntfy-bridge-config
+
+- name: Apply ntfy-bridge Service
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: ntfy-bridge
+        namespace: "{{ ntfy_bridge_namespace }}"
+      spec:
+        selector:
+          app: ntfy-bridge
+        ports:
+          - port: 8000
+            targetPort: 8000
+        type: ClusterIP

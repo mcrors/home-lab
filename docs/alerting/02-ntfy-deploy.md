@@ -22,7 +22,7 @@ Deploy the Ntfy notification server in-cluster via Helm, following the same Ansi
 
 2. Add a play to `infra/playbooks/observability.yaml` with tag `ntfy`
 
-3. Add `vault_ntfy_access_token` to the appropriate vault file (`infra/group_vars/k3s_cluster/vault.yaml`)
+3. Add `vault_ntfy_access_token` to `infra/group_vars/all/vault.yaml` — **not** `k3s_cluster/vault.yaml`. The bridge play targets `localhost`, which is not in the `k3s_cluster` group, so Ansible only loads `group_vars/all/` for it.
 
 ## Post-deploy: token bootstrapping (one-time)
 
@@ -39,8 +39,8 @@ kubectl exec -n ntfy deploy/ntfy -- ntfy token add admin
 The second command prints a token like `tk_xxxxxxxxxxxxxxxxxxxxxxxxxx`. **Store it in Ansible Vault:**
 
 ```bash
-# Edit the vault file
-ansible-vault edit infra/group_vars/k3s_cluster/vault.yaml
+# Edit the vault file — must be group_vars/all/, not k3s_cluster/
+ansible-vault edit infra/group_vars/all/vault.yaml
 # Add: vault_ntfy_access_token: "tk_xxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
