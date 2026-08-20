@@ -1,4 +1,4 @@
-# Task: Deploy Ntfy-Alertmanager Bridge
+# Task: Deploy Ntfy-Alertmanager Bridge ✅ DONE (2026-08-20)
 
 Deploy a small adapter that translates Alertmanager's webhook JSON payload into Ntfy's HTTP format, and maps severity labels to Ntfy priorities.
 
@@ -41,3 +41,11 @@ Configure this mapping in the bridge (env vars or config file depending on chose
 ## Dependencies
 
 - `ntfy-deploy.md` must be complete (bridge needs Ntfy running to forward to)
+
+## Notes
+
+- Chose **alexbakker/alertmanager-ntfy** (`ghcr.io/alexbakker/alertmanager-ntfy:1.2.1`) — de-facto standard, supports gval expressions for severity→priority mapping.
+- Bridge config stored as a K8s **Secret** (not ConfigMap) because it contains the ntfy Bearer token. Rendered from `templates/config.yml.j2` at apply time via `lookup('template', ...)` with `no_log: true`.
+- `vault_ntfy_access_token` must be in `group_vars/all/vault.yaml`, not `k3s_cluster/vault.yaml` — the bridge play targets `localhost` which is not in the `k3s_cluster` group.
+- The `templates` block in the bridge config is **required** even if you don't need custom templates. The bridge panics with a nil pointer dereference if `Notification.Templates` is nil (bug in v1.2.1). Minimal config must include at least `title` and `description`.
+- Go template syntax (`{{ }}`) in `config.yml.j2` must be wrapped in `{% raw %}...{% endraw %}` to prevent Jinja2 from interpreting it.

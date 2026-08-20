@@ -1,4 +1,4 @@
-# Task: Configure Alertmanager to Route Alerts to Ntfy
+# Task: Configure Alertmanager to Route Alerts to Ntfy ✅ DONE (2026-08-20)
 
 Update the Alertmanager Helm values to replace the current `null` receiver with a live ntfy receiver via the bridge, add severity-based routing, and add inhibit rules.
 
@@ -71,3 +71,8 @@ Alternatively, if the bridge handles auth internally (token configured on the br
 
 - `ntfy-deploy.md` complete
 - `ntfy-bridge-deploy.md` complete
+
+## Notes
+
+- No token needed in Alertmanager config. Alertmanager calls the bridge over plain cluster-internal HTTP with no auth — the bridge owns the ntfy token and handles auth to ntfy itself. The secret handling section above is superseded.
+- Pipeline confirmed working end-to-end: Alertmanager → bridge → ntfy. Messages appear in ntfy with correct topic and priority. Viewing the topic in the browser requires logging into the ntfy web UI (admin credentials) since `auth-default-access: deny-all`.

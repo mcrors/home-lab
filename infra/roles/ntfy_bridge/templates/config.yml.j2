@@ -16,3 +16,8 @@ ntfy:
         condition: 'status == "firing"'
       - tag: white_check_mark
         condition: 'status == "resolved"'
+    templates:
+{% raw %}
+      title: '{{ if eq .Status "resolved" }}[Resolved] {{ end }}{{ index .Labels "alertname" }}'
+      description: '{{ index .Annotations "summary" }}'
+{% endraw %}
