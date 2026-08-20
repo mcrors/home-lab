@@ -35,6 +35,17 @@
     values_files:
       - "{{ role_path }}/files/values.yaml"
 
+- name: Patch Longhorn webhook failurePolicy to Ignore
+  kubernetes.core.k8s_json_patch:
+    kubeconfig: "{{ kubeconfig_path }}"
+    api_version: admissionregistration.k8s.io/v1
+    kind: ValidatingWebhookConfiguration
+    name: longhorn-webhook-validator
+    patch:
+      - op: replace
+        path: /webhooks/0/failurePolicy
+        value: Ignore
+
 - name: Create longhorn-ingress
   kubernetes.core.k8s:
     kubeconfig: "{{ kubeconfig_path }}"
