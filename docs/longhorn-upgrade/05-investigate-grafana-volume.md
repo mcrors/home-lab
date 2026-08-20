@@ -1,5 +1,12 @@
 # Task: Investigate Grafana Volume Instability
 
+Status: MONITORING — no issues since v1.11.2 upgrade (2026-08-18). Close if clean after 2026-08-25.
+
+The Grafana PVC (`pvc-22d72383`, 1Gi) had its engine die unexpectedly 6 times over the
+31 days prior to the upgrade. The most likely cause was memory pressure on lib-nuc-01 from
+the Longhorn proxy connection leak bug (fixed in v1.11.2). Volume has been attached and
+healthy with no errors for 72h post-upgrade. Continuing to monitor.
+
 The Grafana PVC (`pvc-22d72383`, 1Gi) has had its engine die unexpectedly 6 times over the
 last 31 days, independently of the instance-manager memory issue. This needs investigation
 to rule out a flaky replica, a bad disk, or a networking issue between the engine and its
