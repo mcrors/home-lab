@@ -12,14 +12,14 @@ affinity:
       - weight: 100
         preference:
           matchExpressions:
-            - key: node_type
+            - key: node_size
               operator: In
               values:
-                - potato
+                - small
     requiredDuringSchedulingIgnoredDuringExecution:
       nodeSelectorTerms:
         - matchExpressions:
-            - key: node_type
+            - key: node_size
               operator: NotIn
               values:
-                - nuc
+                - x-large

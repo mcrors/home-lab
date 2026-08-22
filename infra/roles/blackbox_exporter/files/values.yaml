@@ -44,13 +44,21 @@ readinessProbe:
 
 affinity:
   nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: node_size
+              operator: In
+              values:
+                - small
     requiredDuringSchedulingIgnoredDuringExecution:
       nodeSelectorTerms:
         - matchExpressions:
-            - key: node_type
-              operator: In
+            - key: node_size
+              operator: NotIn
               values:
-                - "potato"
+                - x-large
 
 config:
   modules:

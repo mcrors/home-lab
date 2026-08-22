@@ -21,10 +21,10 @@ controller:
         - weight: 100
           preference:
             matchExpressions:
-              - key: node_type
+              - key: node_size
                 operator: In
                 values:
-                  - "potato"
+                  - small
         - weight: 50
           preference:
             matchExpressions:
@@ -32,5 +32,5 @@ controller:
                 operator: DoesNotExist
 speaker:
   tolerations:
-    - key: "node_type"
+    - key: "node_size"
       operator: "Exists"

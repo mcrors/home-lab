@@ -79,13 +79,13 @@
                       matchExpressions:
                         - key: node_size
                           operator: In
-                          values: [small, medium]
+                          values: [medium]
                 requiredDuringSchedulingIgnoredDuringExecution:
                   nodeSelectorTerms:
                     - matchExpressions:
                         - key: node_size
                           operator: NotIn
-                          values: [large, x-large]
+                          values: [small, x-large]
             containers:
               - name: ntfy
                 image: "{{ ntfy_image }}"

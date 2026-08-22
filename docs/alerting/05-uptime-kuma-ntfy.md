@@ -1,4 +1,4 @@
-# Task: Configure Uptime Kuma to Push to Ntfy
+# Task: Configure Uptime Kuma to Push to Ntfy ✅ DONE (2026-08-22)
 
 Wire up Uptime Kuma's node-down alerts to Ntfy. This is a manual step in the Uptime Kuma UI — no Ansible changes needed.
 
