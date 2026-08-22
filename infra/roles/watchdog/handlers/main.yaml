@@ -1,0 +1,3 @@
+---
+- name: restart watchdog
+  shell: systemctl stop watchdog && sleep 1 && systemctl start watchdog

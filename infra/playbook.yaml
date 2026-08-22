@@ -1,21 +1,24 @@
 ---
+- import_playbook: "{{ playbook_dir }}/playbooks/common.yaml"
+  tags:
+    - common
 
-import_playbook: "{{ playbook_dir }}/playbooks/common.yaml"
-tags:
-  - common
+- import_playbook: "{{ playbook_dir }}/playbooks/k3s.yaml"
+  tags:
+    - k3s
 
-import_playbook: "{{ playbook_dir }}/playbooks/k3s.yaml"
-tags:
-  - k3s
+- import_playbook: "{{ playbook_dir }}/playbooks/longhorn.yaml"
+  tags:
+    - longhorn
 
-import_playbook: "{{ playbook_dir }}/playbooks/longhorn.yaml"
-tags:
-  - longhorn
+- import_playbook: "{{ playbook_dir }}/playbooks/observability.yaml"
+  tags:
+    - observability
 
-import_playbook: "{{ playbook_dir }}/playbooks/observability.yaml"
-tags:
-  - observability
+- import_playbook: "{{ playbook_dir }}/playbooks/security.yaml"
+  tags:
+    - security
 
-import_playbook: "{{ playbook_dir }}/playbooks/security.yaml"
-tags:
-  - security
+- import_playbook: "{{ playbook_dir }}/playbooks/watchdog.yaml"
+  tags:
+    - watchdog

@@ -1,3 +1,4 @@
 node_type: pi
 boot_cmdline_path: "/boot/firmware/cmdline.txt"
 root_param_key: "root"
+watchdog_kernel_module: bcm2835_wdt

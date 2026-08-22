@@ -1,0 +1,58 @@
+---
+- name: Install watchdog
+  apt:
+    name: watchdog
+    state: present
+    update_cache: true
+
+- name: Check watchdog device
+  stat:
+    path: /dev/watchdog
+  register: wd_dev
+
+- name: Persist kernel module across reboots
+  copy:
+    dest: /etc/modules-load.d/watchdog.conf
+    content: "{{ watchdog_kernel_module }}\n"
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Load kernel module now if /dev/watchdog missing
+  modprobe:
+    name: "{{ watchdog_kernel_module }}"
+    state: present
+  when: not wd_dev.stat.exists
+
+- name: Verify /dev/watchdog is present
+  stat:
+    path: /dev/watchdog
+  register: wd_dev_final
+
+- name: Fail if watchdog device is still missing
+  fail:
+    msg: >
+      /dev/watchdog not found after loading {{ watchdog_kernel_module }}.
+      Check kernel support for this board.
+  when: not wd_dev_final.stat.exists
+
+- name: Configure watchdog
+  blockinfile:
+    path: /etc/watchdog.conf
+    marker: "# {mark} ANSIBLE WATCHDOG"
+    block: |
+      watchdog-device = /dev/watchdog
+      interval        = {{ watchdog_interval }}
+      realtime        = {{ watchdog_realtime }}
+      priority        = {{ watchdog_priority }}
+      max-load-1      = {{ watchdog_max_load1 }}
+      min-memory      = {{ watchdog_min_memory }}
+      ping            = {{ watchdog_ping_target }}
+      ping-count      = {{ watchdog_ping_count }}
+  notify: restart watchdog
+
+- name: Enable and start watchdog
+  systemd:
+    name: watchdog
+    enabled: true
+    state: started

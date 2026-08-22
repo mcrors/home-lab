@@ -1,0 +1,9 @@
+---
+- name: Setup hardware watchdog on SBC worker nodes
+  hosts: pis:lib-potato-04.home
+  become: true
+  gather_facts: true
+  roles:
+    - watchdog
+  vars_files:
+    - ../vars/main.yaml

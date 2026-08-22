@@ -1,0 +1,7 @@
+---
+watchdog_interval: 15
+watchdog_realtime: "no"
+watchdog_priority: 1
+watchdog_min_memory: 0
+watchdog_ping_count: 3
+watchdog_ping_target: "{{ gateway }}"
