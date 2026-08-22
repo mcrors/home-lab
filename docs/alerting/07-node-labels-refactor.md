@@ -1,4 +1,4 @@
-# Task: Consolidate Node Labeling into node_labels Role (Tech Debt)
+# Task: Consolidate Node Labeling into node_labels Role (Tech Debt) ✅ DONE (2026-08-22)
 
 Move all remaining node labeling out of `k3s/worker/tasks/main.yaml` and into the dedicated `node_labels` role, so labeling logic lives in one place and runs on all cluster nodes (servers and workers).
 

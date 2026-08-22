@@ -14,6 +14,10 @@
   set_fact:
     node_size: "{% if node_type == 'nuc' %}x-large{% elif node_type == 'potato' %}small{% elif (ansible_memtotal_mb | int) <= 4500 %}medium{% else %}large{% endif %}"
 
+- name: Calculate memory rounded to nearest 2GB
+  set_fact:
+    rounded_memory: "{{ (((ansible_memtotal_mb / 1024) + 2) // 2 * 2) | int | string }}"
+
 - name: Apply node labels via kubectl on control node
   block:
     - name: Set node_type label
@@ -23,6 +27,20 @@
     - name: Set node_size label
       command: >
         kubectl label node {{ k3s_node_name }} node_size={{ node_size }} --overwrite
+
+    - name: Set memory label
+      command: >
+        kubectl label node {{ k3s_node_name }} memory={{ rounded_memory }}GB --overwrite
+
+    - name: Set iscsi_initiator label
+      command: >
+        kubectl label node {{ k3s_node_name }} iscsi_initiator=true --overwrite
+      when: (rounded_memory | int) > 3
+
+    - name: Set longhorn storage labels
+      command: >
+        kubectl label node {{ k3s_node_name }} longhorn-storage=true node.longhorn.io/create-default-disk=true --overwrite
+      when: "'longhorn' in group_names"
 
   delegate_to: localhost
   connection: local
