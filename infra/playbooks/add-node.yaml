@@ -1,0 +1,31 @@
+---
+# Onboard a single new or replacement node.
+#
+# Usage:
+#   ansible-playbook -i inventory.yaml playbooks/add-node.yaml --limit <host>.home
+#
+# Every play in the imported playbooks gates on host-group membership, so
+# --limit alone controls what runs. Cluster-wide bootstrap (Helm charts,
+# k3s server bring-up) targets localhost or k3s_servers[0] and is skipped
+# automatically for a worker limit. For a full-cluster bootstrap use
+# playbook.yaml instead.
+
+- name: Guard — require --limit
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  tasks:
+    - name: Fail if no --limit was passed
+      fail:
+        msg: |
+          add-node.yaml must be run with --limit <hostname>.
+          Without it, this would re-run onboarding against every host in
+          inventory. If you actually want a full-cluster run, use
+          playbook.yaml instead.
+      when: ansible_limit is not defined
+
+- import_playbook: common.yaml
+- import_playbook: k3s.yaml
+- import_playbook: longhorn.yaml
+- import_playbook: observability.yaml
+- import_playbook: watchdog.yaml

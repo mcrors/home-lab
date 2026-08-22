@@ -27,7 +27,14 @@ inventory file.
 * create file /etc/sudoers.d/hla
 * add this to the file hla ALL=(ALL) NOPASSWD: ALL
 * if you are reflashing an existing node, wipe the fs and lvs on the ssd
-* Run common playbook
+   ```bash
+   lsblk -bdno NAME,SIZE,TYPE | awk '$3=="disk"'
+   sudo wipefs -a /dev/sdX
+   sudo dd if=/dev/zero of=/dev/sdX bs=1M count=100
+   ```
+   `wipefs` clears partition/LVM signatures; the `dd` guarantees nothing auto-detects stale metadata.
+
+* run the add-node with --limit option for adding a new k3s worker or server node
 * Update DNS table again with static ip
 
 
