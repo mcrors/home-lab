@@ -106,13 +106,13 @@ flowchart TD
     end
 
     subgraph P2["Pod: signal-cli"]
-        D["signal-cli daemon<br/>--http 0.0.0.0:3000"]
+        D["bbernhard/signal-cli-rest-api<br/>MODE=json-rpc"]
         PVC[("Longhorn PVC<br/>account keys")]
         D --- PVC
     end
 
     NTFY -->|WebSocket| CLI
-    SH -->|"HTTP JSON-RPC<br/>send"| SVC[ClusterIP<br/>signal-cli:3000]
+    SH -->|"HTTP REST<br/>POST /v2/send"| SVC[ClusterIP<br/>signal-cli:8080]
     SVC --> D
     D -->|linked device| SIG[Signal servers]
     SIG --> PHONE[iPhone<br/>one group per topic]
@@ -130,7 +130,7 @@ The pod runs on any node. The pod has no architecture constraint.
 
 ### Pod 2: the signal daemon
 
-The image is `bbernhard/signal-cli-rest-api` in `json-rpc` mode, or a plain signal-cli image. The container runs a JVM.
+The image is `bbernhard/signal-cli-rest-api`. Run with `MODE=json-rpc` for daemon operation. The container runs a JVM.
 
 The pod mounts a Longhorn PVC. The PVC holds the account keys. A lost PVC needs a new device link.
 
@@ -144,8 +144,8 @@ The pod uses the `Recreate` strategy. The PVC is ReadWriteOnce. Two replicas wou
 2. The ntfy CLI receives the message over the WebSocket connection.
 3. The CLI checks the `if:` filter for that topic. The CLI drops the message if the filter fails.
 4. The CLI runs `forward.sh`. The CLI sets the message fields as environment variables.
-5. The script builds a JSON-RPC request with `jq`.
-6. The script POSTs the request to the ClusterIP service.
+5. The script builds a REST request body with `jq`.
+6. The script POSTs to the `/v2/send` endpoint on the ClusterIP service.
 7. The daemon sends the message to the Signal group.
 8. The phone shows the message in that group.
 
@@ -154,7 +154,7 @@ The pod uses the `Recreate` strategy. The PVC is ReadWriteOnce. Two replicas wou
 Both pods run in the `ntfy` namespace. The short name works from the subscriber:
 
 ```
-http://signal-cli:3000/api/v1/rpc
+http://signal-cli:8080/v2/send
 ```
 
 The full name is `signal-cli.ntfy.svc.cluster.local`. A ClusterIP service resolves inside the cluster only. Nothing outside the cluster reaches this port.
@@ -397,67 +397,61 @@ The Deployment references one exact tag. An upgrade changes that tag.
 
 ## 8. Registration procedure
 
-The device link runs once. Run every step from the laptop terminal.
+The device link runs once. Run every step from the laptop.
 
 Do not register the number. Registration removes the number from the phone. Link the daemon as a secondary device instead.
 
-The daemon must start in multi-account mode. A daemon started with `-a <number>` exposes single-account methods only. No account exists at link time.
-
 ### Prepare
 
-1. Install `qrencode` on the laptop.
-2. Confirm that the `signal-cli` Deployment runs.
-3. Confirm that the PVC mounts at the signal-cli data path.
-4. Open a port-forward to the daemon:
+1. Confirm that the `signal-cli` Deployment runs.
+2. Confirm that the PVC mounts at the signal-cli data path.
+3. Open a port-forward to the daemon:
 
 ```
-kubectl -n ntfy port-forward deploy/signal-cli 3000:3000
+kubectl -n ntfy port-forward deploy/signal-cli 8080:8080
 ```
 
 A port-forward goes through the API server. The NetworkPolicy needs no change.
 
 ### Link
 
-1. Request a link URI in a second terminal:
+1. Open a browser on the laptop and navigate to:
 
 ```
-curl -s -H 'content-type: application/json' \
-  -d '{"jsonrpc":"2.0","id":"1","method":"startLink","params":{}}' \
-  http://127.0.0.1:3000/api/v1/rpc | jq -r '.result.deviceLinkUri'
+http://localhost:8080/v1/qrcodelink?device_name=signal-bridge
 ```
 
-2. Render the URI as a QR code:
+The page displays a QR code.
 
-```
-echo '<uri>' | qrencode -t ANSI
-```
+2. Open Signal on the iPhone. Open **Settings**, then **Linked devices**, then **Link New Device**.
+3. Scan the QR code on the laptop screen.
+4. Confirm that the iPhone lists a device named `signal-bridge`.
 
-3. Open Signal on the iPhone. Open **Settings**, then **Linked devices**, then **Link New Device**.
-4. Scan the code on the laptop screen.
-5. Finish the link:
-
-```
-curl -s -H 'content-type: application/json' \
-  -d '{"jsonrpc":"2.0","id":"2","method":"finishLink","params":{"deviceLinkUri":"<uri>","deviceName":"signal-bridge"}}' \
-  http://127.0.0.1:3000/api/v1/rpc
-```
-
-6. Confirm that the iPhone lists a device named `signal-bridge`.
-
-The URI is a linking credential. Anyone who scans it first gains a device on the account. Keep the URI on the laptop screen. Do not paste it into a website.
+The QR code is a linking credential. Anyone who scans it first gains a device on the account. Do not share the screen or the URL during this step.
 
 ### Verify and record
 
-1. Send one test message through the same port-forward.
+1. Send one test message through the port-forward:
+
+```
+curl -s -X POST \
+  -H 'content-type: application/json' \
+  -d '{"message":"test","number":"<account>","recipients":["<group-id>"]}' \
+  http://127.0.0.1:8080/v2/send
+```
+
 2. Confirm that the message arrives on the phone.
 3. List the groups and read each group ID:
 
 ```
-curl -s -H 'content-type: application/json' \
-  -d '{"jsonrpc":"2.0","id":"3","method":"listGroups","params":{"account":"<number>"}}' \
-  http://127.0.0.1:3000/api/v1/rpc | jq '.result[] | {id, name}'
+curl -s http://127.0.0.1:8080/v1/groups/<account> | jq '.[] | {id, name}'
 ```
 
+If a newly created group does not appear, trigger a receive first:
+
+```
+curl -s http://127.0.0.1:8080/v1/receive/<account>
+```
 4. Store each group ID in Ansible Vault.
 5. Close the port-forward.
 6. Add the PVC to the Longhorn backup target.
@@ -483,12 +477,12 @@ A lost PVC needs a new link. Delete the stale device on the iPhone first. Then r
 | 2 | The bridge fails without a visible sign. | Silence looks the same as a quiet week. | Publish a daily heartbeat message to one topic. Alert on a stale forward count. Route that alert through a second path. |
 | 3 | The PVC is lost. | The account keys are gone. The daemon cannot send. | Keep the PVC on the Longhorn backup target. Snapshot before each upgrade. Follow section 8 to link again. |
 | 4 | The JSON-RPC port has no authentication. | Another workload sends Signal messages as the account holder. | Restrict ingress to the subscriber pod with a NetworkPolicy. Expose no Ingress and no hostPort. |
-| 5 | A group message from a linked device raises no notification on the phone. | The bridge delivers, but the phone stays quiet. | Test this first in M0. A negative result needs a different delivery target. |
+| 5 | A group message from a linked device raises no notification on the phone. | The bridge delivers, but the phone stays quiet. | Verified in M0: group messages from a linked device raise notifications on the iPhone. Risk closed. |
 | 6 | The Secret sits in the `ntfy` namespace. | Anything that reads secrets in that namespace sends as the account. | Accept for a single-operator cluster. Revisit if the cluster gains other users. |
 | 7 | The subscriber restarts. | Messages published during the outage never arrive. | Accept for version 1. The CLI does not replay. Section 12 holds the fix. |
 | 8 | An alert storm floods a group. | The phone becomes unusable. Alerts lose value. | Filter on priority in `client.yml`. Add a rate limit to the script if a storm happens. |
 | 9 | signal-cli is unofficial software. Signal does not support automated sending. | The account gets a restriction. | Keep volume low. Send to groups only. Accept the risk. |
-| 10 | The `startLink` field names differ from section 8. | The link procedure fails at the first step. | Check the method signature during M0. Correct section 8. |
+| 10 | The bbernhard REST API endpoint paths differ from the native signal-cli JSON-RPC paths. | The link and send procedures fail. | Verified in M0: bbernhard uses its own REST API. Section 8 updated to reflect confirmed endpoints. Risk closed. |
 
 ### Accepted without mitigation
 
