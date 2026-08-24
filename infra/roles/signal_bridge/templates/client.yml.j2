@@ -1,0 +1,6 @@
+default-host: http://ntfy.ntfy.svc.cluster.local
+auth:
+  token: {{ vault_ntfy_access_token }}
+subscribe:
+  - topic: homelab-alerts
+    command: '/opt/forward.sh "$GROUP_HOMELAB_ALERTS"'

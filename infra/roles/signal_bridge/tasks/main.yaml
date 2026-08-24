@@ -1,0 +1,188 @@
+---
+
+- name: Apply signal-cli-data PVC
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: signal-cli-data
+        namespace: "{{ signal_bridge_namespace }}"
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: 1Gi
+
+- name: Apply signal-bridge-config Secret
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: signal-bridge-config
+        namespace: "{{ signal_bridge_namespace }}"
+      stringData:
+        client.yml: "{{ lookup('template', 'client.yml.j2') }}"
+        SIGNAL_ACCOUNT: "{{ vault_signal_account_number | string }}"
+        GROUP_HOMELAB_ALERTS: "{{ vault_signal_group_homelab_alerts }}"
+  no_log: true
+
+- name: Apply signal-cli Deployment
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: signal-cli
+        namespace: "{{ signal_bridge_namespace }}"
+      spec:
+        replicas: 1
+        strategy:
+          type: Recreate
+        selector:
+          matchLabels:
+            app: signal-cli
+        template:
+          metadata:
+            labels:
+              app: signal-cli
+          spec:
+            nodeSelector:
+              node_size: x-large
+            containers:
+              - name: signal-cli
+                image: "{{ signal_cli_image }}:{{ signal_cli_image_tag }}"
+                env:
+                  - name: MODE
+                    value: json-rpc
+                ports:
+                  - containerPort: 8080
+                resources:
+                  requests:
+                    cpu: 100m
+                    memory: 512Mi
+                  limits:
+                    memory: 768Mi
+                volumeMounts:
+                  - name: data
+                    mountPath: /home/.local/share/signal-cli
+            volumes:
+              - name: data
+                persistentVolumeClaim:
+                  claimName: signal-cli-data
+
+- name: Apply signal-bridge Deployment
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: signal-bridge
+        namespace: "{{ signal_bridge_namespace }}"
+      spec:
+        replicas: 1
+        selector:
+          matchLabels:
+            app: signal-bridge
+        template:
+          metadata:
+            labels:
+              app: signal-bridge
+          spec:
+            affinity:
+              nodeAffinity:
+                preferredDuringSchedulingIgnoredDuringExecution:
+                  - weight: 100
+                    preference:
+                      matchExpressions:
+                        - key: node_size
+                          operator: In
+                          values: [small]
+                requiredDuringSchedulingIgnoredDuringExecution:
+                  nodeSelectorTerms:
+                    - matchExpressions:
+                        - key: node_size
+                          operator: NotIn
+                          values: [large, x-large]
+            containers:
+              - name: signal-bridge
+                image: "{{ signal_bridge_image }}:{{ signal_bridge_image_tag }}"
+                env:
+                  - name: SIGNAL_ACCOUNT
+                    valueFrom:
+                      secretKeyRef:
+                        name: signal-bridge-config
+                        key: SIGNAL_ACCOUNT
+                  - name: GROUP_HOMELAB_ALERTS
+                    valueFrom:
+                      secretKeyRef:
+                        name: signal-bridge-config
+                        key: GROUP_HOMELAB_ALERTS
+                resources:
+                  requests:
+                    cpu: 10m
+                    memory: 32Mi
+                  limits:
+                    memory: 64Mi
+                volumeMounts:
+                  - name: config
+                    mountPath: /etc/ntfy/client.yml
+                    subPath: client.yml
+                    readOnly: true
+            volumes:
+              - name: config
+                secret:
+                  secretName: signal-bridge-config
+
+- name: Apply signal-cli Service
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: signal-cli
+        namespace: "{{ signal_bridge_namespace }}"
+      spec:
+        selector:
+          app: signal-cli
+        ports:
+          - port: 8080
+            targetPort: 8080
+        type: ClusterIP
+
+- name: Apply signal-cli NetworkPolicy
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: signal-cli-ingress
+        namespace: "{{ signal_bridge_namespace }}"
+      spec:
+        podSelector:
+          matchLabels:
+            app: signal-cli
+        policyTypes:
+          - Ingress
+        ingress:
+          - from:
+              - podSelector:
+                  matchLabels:
+                    app: signal-bridge
+            ports:
+              - protocol: TCP
+                port: 8080

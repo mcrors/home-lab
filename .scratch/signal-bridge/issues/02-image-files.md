@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: resolved
 
 # M1: write signal-bridge image files
 
@@ -10,7 +10,7 @@ See `docs/alerting/signal-bridge-prd.md` sections 7.1 (Image build) and 5 (Featu
 
 ## Scope
 
-Write the following four files to a local staging directory (e.g. `scratch/signal-bridge-image/`). Ticket 03 creates the GitHub repo and pushes them.
+Write the following four files directly into the cloned `signal-bridge` GitHub repo created in ticket 03.
 
 ### `Dockerfile`
 
@@ -42,9 +42,9 @@ Requirements:
 
 Follow the `arr-exporter` Jenkins pipeline pattern in this repo:
 - Use the DinD sidecar for the Docker build.
-- Tag the image with the short git SHA: `ghcr.io/<user>/signal-bridge:<sha>`.
+- Tag the image with the short git SHA: `rhoulihan/nfty-signal-bridge:<sha>`.
 - Never push a `latest` tag.
-- Push to GHCR.
+- Push to Docker Hub.
 
 ### `README.md`
 

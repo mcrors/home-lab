@@ -1,0 +1,6 @@
+---
+signal_bridge_namespace: ntfy
+signal_bridge_image: rhoulihan/nfty-signal-bridge
+signal_bridge_image_tag: cad878b
+signal_cli_image: bbernhard/signal-cli-rest-api
+signal_cli_image_tag: 1786917513-ci

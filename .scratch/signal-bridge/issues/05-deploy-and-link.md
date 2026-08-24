@@ -5,7 +5,7 @@ Blocked by: 01, 03, 04
 
 ## Context
 
-With the image in GHCR and the Ansible role written, deploy the signal-bridge to the cluster. Then link the signal-cli daemon as a secondary device on the iPhone. This is the first end-to-end test on the cluster.
+With the image on Docker Hub and the Ansible role written, deploy the signal-bridge to the cluster. Then link the signal-cli daemon as a secondary device on the iPhone. This is the first end-to-end test on the cluster.
 
 See `docs/alerting/signal-bridge-prd.md` section 8 (Registration procedure) for the full link procedure.
 

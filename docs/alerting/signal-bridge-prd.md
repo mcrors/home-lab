@@ -126,7 +126,7 @@ The image holds three binaries: `ntfy`, `jq`, and `curl`. The base is Alpine. Th
 
 The pod is stateless. A restart loses no data. The pod mounts `client.yml` from a Secret.
 
-The pod runs on any node. The pod has no architecture constraint.
+The pod prefers nodes labelled `node_size=small` and avoids `node_size=large` and `node_size=x-large`. The pod has no architecture constraint.
 
 ### Pod 2: the signal daemon
 
@@ -379,11 +379,9 @@ Jenkins builds the image. The existing DinD sidecar does the build. The pattern 
 
 ### The registry
 
-Jenkins pushes the image to GHCR. The path is `ghcr.io/<user>/signal-bridge`.
+Jenkins pushes the image to Docker Hub. The path is `rhoulihan/nfty-signal-bridge`.
 
-The cluster pulls from GHCR. This is the one external dependency that the bridge adds. GitHub already hosts the repositories, so the bridge adds no new account.
-
-A public GHCR package needs no pull secret. A private package needs an `imagePullSecret` in the `ntfy` namespace. The image holds no secret, so a public package is acceptable.
+The cluster pulls from Docker Hub. No `imagePullSecret` is needed for a public image.
 
 ### Tags
 
@@ -486,7 +484,7 @@ A lost PVC needs a new link. Delete the stale device on the iPhone first. Then r
 
 ### Accepted without mitigation
 
-- The bridge depends on GHCR for image pulls.
+- The bridge depends on Docker Hub for image pulls.
 - The bridge depends on the Signal servers.
 - A message that fails three sends is dropped.
 

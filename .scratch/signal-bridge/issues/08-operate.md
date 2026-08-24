@@ -23,7 +23,7 @@ Set a recurring monthly calendar reminder: "Check for a new signal-cli release a
 
 ### README for the signal-bridge repo
 
-Write the full README for the `signal-bridge` GitHub repo. It should cover:
+Write the full README for the `ntfy-signal-bridge` GitHub repo. It must stand alone — no references to the home-lab repo or the PRD. Someone should be able to deploy and operate this image using only the README. It should cover:
 
 **Device link procedure** (condensed from PRD section 8):
 - When to use it (first setup, or after a lost PVC).

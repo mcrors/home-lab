@@ -25,7 +25,7 @@ Create an Ansible role at `infra/roles/signal_bridge/`. The role deploys to the 
 
 ### `signal-cli` Deployment
 
-- Image: `bbernhard/signal-cli-rest-api:latest` (pin to a specific tag once M0 confirms the version)
+- Image: `bbernhard/signal-cli-rest-api:1786917513-ci`
 - Env: `MODE=json-rpc`
 - `nodeSelector: node_size: x-large`
 - `strategy: Recreate`
@@ -38,13 +38,14 @@ Create an Ansible role at `infra/roles/signal_bridge/`. The role deploys to the 
 
 ### `signal-bridge` Deployment
 
-- Image: `ghcr.io/<user>/signal-bridge:<tag>` (exact SHA tag, set as a role variable)
+- Image: `rhoulihan/nfty-signal-bridge:<tag>` (exact SHA tag, set as a role variable)
 - 1 replica
 - Secret `signal-bridge-config` mounted at `/etc/ntfy/client.yml` (the `client.yml` key)
 - Env vars from the same Secret: `SIGNAL_ACCOUNT`, `GROUP_HOMELAB_ALERTS`
 - No PVC, no hostPort, no Ingress
 - Memory limit: 64 MiB
 - Memory request: 32 MiB
+- Node affinity: prefer `node_size=small`; avoid `node_size=large` and `node_size=x-large`
 
 ### PVC
 
@@ -77,7 +78,7 @@ No `if:` priority filter. Forward all priorities.
 
 ### NetworkPolicy
 
-Allow ingress to the `signal-cli` pods on port 3000 only from pods with the label `app: signal-bridge`. Deny all other ingress to port 3000.
+Allow ingress to the `signal-cli` pods on port 8080 only from pods with the label `app: signal-bridge`. Deny all other ingress to port 8080.
 
 ### Vault variables required
 
