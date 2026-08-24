@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: resolved
 
 # M2: write Ansible role for signal-bridge K8s objects
 

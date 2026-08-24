@@ -1,5 +1,4 @@
-Status: ready-for-agent
-Blocked by: 05
+Status: resolved
 
 # M3: harden the bridge
 

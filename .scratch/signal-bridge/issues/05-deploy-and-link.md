@@ -1,5 +1,4 @@
-Status: ready-for-human
-Blocked by: 01, 03, 04
+Status: resolved
 
 # M2: deploy to cluster and link device
 

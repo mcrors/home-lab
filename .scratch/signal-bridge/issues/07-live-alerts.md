@@ -1,5 +1,4 @@
-Status: ready-for-human
-Blocked by: 06
+Status: resolved
 
 # M4: connect Alertmanager and confirm live alerts reach Signal
 

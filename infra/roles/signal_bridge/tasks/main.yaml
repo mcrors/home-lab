@@ -29,7 +29,7 @@
         namespace: "{{ signal_bridge_namespace }}"
       stringData:
         client.yml: "{{ lookup('template', 'client.yml.j2') }}"
-        SIGNAL_ACCOUNT: "{{ vault_signal_account_number | string }}"
+        SIGNAL_ACCOUNT: "{{ vault_signal_account_number }}"
         GROUP_HOMELAB_ALERTS: "{{ vault_signal_group_homelab_alerts }}"
   no_log: true
 
