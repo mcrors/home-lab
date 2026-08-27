@@ -337,15 +337,12 @@ The repository holds the template. The repository holds no rendered file and no 
 
 ### Upgrades
 
-1. Snapshot the `signal-cli-data` PVC in Longhorn.
-2. Update `signal_cli_image_tag` in `infra/roles/signal_bridge/defaults/main.yaml`.
-3. Run Ansible:
-   ```
-   ansible-playbook infra/playbooks/observability.yaml --tags signal-bridge
-   ```
-4. Send a test message and confirm it arrives in the Signal group.
+1. Snapshot the PVC.
+2. Change the image tag.
+3. Apply the Deployment.
+4. Send a test message.
 
-A failed upgrade: revert `signal_cli_image_tag` and re-run Ansible. A corrupted session: restore the PVC snapshot from Longhorn and re-run Ansible.
+A failed upgrade needs a rollback of the image tag. A corrupted session needs a PVC restore.
 
 ---
 
