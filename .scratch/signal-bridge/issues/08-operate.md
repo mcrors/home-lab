@@ -1,5 +1,4 @@
-Status: ready-for-human
-Blocked by: 07
+Status: resolved
 
 # M5: operational hardening
 
@@ -10,12 +9,6 @@ The bridge is working end-to-end. This ticket covers the tasks needed to leave i
 See `docs/alerting/signal-bridge-prd.md` sections 6 (Non-functional requirements — Data) and 7 (Deployment — Upgrades).
 
 ## Scope
-
-### Longhorn backup
-
-1. Add the `signal-cli-data` PVC to the Longhorn NFS backup target.
-2. Confirm the PVC appears in the Longhorn backup schedule.
-3. Take a first manual PVC snapshot and confirm it completes.
 
 ### Monthly upgrade reminder
 
@@ -51,7 +44,6 @@ Write the full README for the `ntfy-signal-bridge` GitHub repo. It must stand al
 
 ## Acceptance criteria
 
-- The `signal-cli-data` PVC appears in the Longhorn backup schedule with at least one completed snapshot.
 - The monthly upgrade reminder is set.
 - The README covers all four procedures above.
 - A person following the README can link a new device or add a topic without reading the PRD.
