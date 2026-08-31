@@ -94,3 +94,36 @@ ordering on the unit. Both are specified in ticket 07, and the grace period belo
 Raising the priority: until ticket 07 lands, every reboot of a watchdog node costs a
 second unplanned reboot, and a slow network at boot means a loop with nothing to break
 it.
+
+### 2026-08-31 — this ticket also fixes ticket 08, and the ping removal is now mandatory
+
+Ticket 08 established that the daemon's built-in `ping` check is defective, not merely
+badly targeted. `watchdog` 5.16 stamps outgoing ICMP echoes with its PID truncated to the
+16-bit identifier field, then compares replies against the untruncated PID
+(`src/net.c`). Any daemon with a PID above 65535 discards every reply it receives and
+scores every ping as a failure, then shuts the node down after `retry-timeout`. `pid_max`
+on these nodes is 4194304, so any daemon started on a node with real uptime is affected.
+Verified across 16 daemon instances on all five watchdog nodes and both board families:
+every PID below 65536 pinged cleanly, every PID above it failed 100%.
+
+Moving to `test-binary` removes that code path entirely, because the script calls iputils
+`ping`, which handles the identifier correctly. So this ticket fixes 08 incidentally.
+
+Two consequences for the work here:
+
+- **Removing `ping` and `ping-count` is now required, not just preferred.** They are unsafe
+  on any node whose PID counter has passed 65535, independent of what they point at. Do not
+  leave them in place as a fallback alongside `test-binary`.
+- **Add a high-PID case to the acceptance criteria.** Confirm the isolation check succeeds
+  when run by a process with a PID above 65535. Testing only on a freshly booted node
+  cannot catch this class of bug, since a boot-time daemon always draws a low PID.
+
+Note for the record: 08 also cleared the watchdog role's restart handler and `wd_keepalive`
+of suspicion. The Debian `OnFailure=`/`Conflicts=` handoff works, `/dev/watchdog` is petted
+across the restart gap, and `meson_gxbb_wdt` advertises `WDIOF_MAGICCLOSE` with
+`nowayout = 0`. Leave the handler alone.
+
+The 2026-08-27 motivating event was checked against this defect and is not it. The git log
+shows the watchdog role deployed 2026-08-22 and untouched until 2026-08-31, so no daemon
+restarted on 2026-08-27; the daemons running that day held low PIDs and were matching ping
+replies correctly. Those ping failures were real. This ticket's premise is unaffected.
