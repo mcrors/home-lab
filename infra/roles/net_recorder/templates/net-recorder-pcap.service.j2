@@ -1,0 +1,13 @@
+[Unit]
+Description=Local rotating packet capture (ARP/ICMP)
+After=local-fs.target
+Wants=local-fs.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/net-recorder-pcap.sh "{{ net_recorder_interface }}" "{{ net_recorder_dir }}/pcap" "{{ net_recorder_pcap_snaplen }}" "{{ net_recorder_pcap_files }}" "{{ net_recorder_pcap_size_mb }}" "{{ net_recorder_pcap_filter }}"
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

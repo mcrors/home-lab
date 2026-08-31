@@ -1,0 +1,124 @@
+---
+
+# ----------------------------------------------------------
+# net_recorder — local network forensics
+#
+# Prometheus scrapes these nodes across the network from lib-pi-06, so when a
+# node's network fails the monitoring goes blind at exactly the moment the data
+# matters. Every lib-pi-05 outage so far (2026-08-22, twice on 2026-08-30,
+# 2026-08-31) has left us with a perfect record up to the last scrape and
+# nothing at all afterwards.
+#
+# This role puts the recording on the node itself, writing to local disk, so it
+# survives a total loss of connectivity and is still there after the watchdog
+# reboots the node.
+# ----------------------------------------------------------
+
+- name: Install capture and driver-statistics tools
+  apt:
+    name:
+      - tcpdump    # packet capture
+      - ethtool    # driver-level counters the kernel does not expose in /proc
+    state: present
+    update_cache: true
+
+# ----------------------------------------------------------
+# Hard dependency on ADR 0001
+#
+# Under armbian-ramlog, /var/log is a zram device flushed to disk only on clean
+# shutdown — so a watchdog reboot would destroy these recordings along with
+# everything else, and the role would quietly produce nothing. Fail loudly
+# rather than record into RAM.
+# ----------------------------------------------------------
+- name: Get the current /var/log mount source
+  command: findmnt -no SOURCE /var/log
+  register: net_recorder_varlog
+  changed_when: false
+  failed_when: false
+  check_mode: false
+
+- name: Assert /var/log is not on zram
+  assert:
+    that:
+      - "'/dev/zram' not in net_recorder_varlog.stdout"
+    fail_msg: >-
+      /var/log is on {{ net_recorder_varlog.stdout }}, which means armbian-ramlog
+      is active again. These recordings would be destroyed by the very reboot
+      they exist to explain. Run the common role first — see
+      docs/adr/0001-disable-armbian-ramlog.md.
+    success_msg: "/var/log is on persistent storage"
+
+- name: Create the recorder directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0750"
+  loop:
+    - "{{ net_recorder_dir }}"
+    - "{{ net_recorder_dir }}/pcap"
+
+- name: Install the sampler script
+  template:
+    src: net-recorder.sh.j2
+    dest: /usr/local/bin/net-recorder.sh
+    owner: root
+    group: root
+    mode: "0755"
+  notify: restart net-recorder
+
+- name: Install the packet capture script
+  template:
+    src: net-recorder-pcap.sh.j2
+    dest: /usr/local/bin/net-recorder-pcap.sh
+    owner: root
+    group: root
+    mode: "0755"
+  notify: restart net-recorder-pcap
+
+- name: Install the sampler unit
+  template:
+    src: net-recorder.service.j2
+    dest: "{{ systemd_dir }}/net-recorder.service"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart net-recorder
+
+- name: Install the packet capture unit
+  template:
+    src: net-recorder-pcap.service.j2
+    dest: "{{ systemd_dir }}/net-recorder-pcap.service"
+    owner: root
+    group: root
+    mode: "0644"
+  notify: restart net-recorder-pcap
+
+# samples.log only; tcpdump rotates its own captures via -W/-C.
+- name: Install logrotate config for the sample log
+  template:
+    src: net-recorder.logrotate.j2
+    dest: /etc/logrotate.d/net-recorder
+    owner: root
+    group: root
+    mode: "0644"
+
+# Skipped under --check for the same reason as the ramlog assert: in a dry run
+# the unit files were never actually written, so systemd cannot find the
+# services and every dry run would fail on a problem that does not exist.
+- name: Enable and start the sampler
+  systemd:
+    name: net-recorder
+    enabled: true
+    state: started
+    daemon_reload: true
+  when: not ansible_check_mode
+
+- name: Enable and start the packet capture
+  systemd:
+    name: net-recorder-pcap
+    enabled: "{{ net_recorder_pcap_enabled }}"
+    state: "{{ 'started' if net_recorder_pcap_enabled else 'stopped' }}"
+    daemon_reload: true
+  when: not ansible_check_mode

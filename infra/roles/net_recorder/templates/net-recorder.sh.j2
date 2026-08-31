@@ -1,0 +1,182 @@
+#!/bin/sh
+#
+# net-recorder — local network forensics sampler. Managed by Ansible.
+#
+# Prometheus scrapes this node from lib-pi-06, over the network. That means the
+# instant the network fails, monitoring goes blind — precisely when we need the
+# data. This script is the answer: it records the interface's own counters to
+# local disk, needs nothing but the kernel to do it, and so keeps recording
+# straight through a total loss of connectivity.
+#
+# One line per sample. The fields that matter are the deltas: d_rx_pkts and
+# d_tx_pkts say whether each direction is still moving. Interpreting them:
+#
+#   d_rx=0, d_tx>0    nothing arriving, we are still talking. Either the
+#                     receive path has seized or nothing is reaching us.
+#                     Check d_rx_errs and the ETHTOOL line to tell those apart:
+#                     climbing CRC/frame errors mean packets ARE arriving but
+#                     garbled, which points at the PoE hat or cable rather
+#                     than the driver.
+#   d_rx=0, d_tx=0    the driver stopped entirely.
+#   both normal       the datapath is fine and the fault is above it
+#                     (routing, firewall, or the peers themselves).
+#
+# carrier_changes is the other decisive field: it counts physical link
+# transitions. If it does NOT move during an outage, the link never dropped —
+# which is what we have seen every time so far, and what makes a plain cable
+# fault unlikely.
+#
+set -u
+
+IFACE_PREF="${1:-}"
+LOG_DIR="${2:-/var/log/net-recorder}"
+INTERVAL="${3:-10}"
+GW="${4:-}"
+
+STATE_DIR=/run/net-recorder
+LOG="${LOG_DIR}/samples.log"
+
+mkdir -p "$STATE_DIR" "$LOG_DIR"
+: >> "$LOG"
+
+# Resolve the interface at runtime rather than trusting a name baked in at
+# deploy time. Falls back to whichever interface carries the default route.
+resolve_iface() {
+    if [ -n "$IFACE_PREF" ] && [ -e "/sys/class/net/${IFACE_PREF}" ]; then
+        printf '%s' "$IFACE_PREF"
+        return
+    fi
+    ip -4 route show default 2>/dev/null |
+        awk '/^default/ {for(i=1;i<=NF;i++) if($i=="dev"){print $(i+1); exit}}'
+}
+
+# Pick the cheapest durable write available. A plain append only reaches the
+# page cache, and if the hardware watchdog ever resets the board outright
+# (rather than the daemon shutting it down cleanly) the last samples would be
+# lost — the ones we actually care about. "sync -d" flushes just this file;
+# full "sync" is the fallback on older coreutils.
+if sync -d "$LOG" 2>/dev/null; then
+    SYNC_ONE=1
+else
+    SYNC_ONE=0
+fi
+
+read_sysfs() {
+    cat "/sys/class/net/${IF}/$1" 2>/dev/null || printf 'NA'
+}
+
+# Pull named counters out of /proc/net/snmp, which is laid out as alternating
+# header and value rows per protocol.
+snmp_val() {
+    awk -v want="$2" -v proto="$1:" '
+        $1==proto {
+            if (!(proto in seen)) { for (i=2;i<=NF;i++) col[$i]=i; seen[proto]=1; next }
+            print $(col[want]); exit
+        }' /proc/net/snmp 2>/dev/null || printf 'NA'
+}
+
+IF="$(resolve_iface)"
+if [ -z "$IF" ]; then
+    printf '%s net-recorder: no interface resolved, retrying\n' "$(date -Is)" >> "$LOG"
+    sleep 30
+    exit 1
+fi
+
+# One-off baseline. The per-sample ETHTOOL lines below only record counters that
+# CHANGED, which keeps them silent in normal operation — so without this snapshot
+# there would be nothing to compare an incident against.
+{
+    printf '=== net-recorder started %s on %s ===\n' "$(date -Is)" "$IF"
+    printf -- '--- ethtool -i ---\n'; timeout 5 ethtool -i "$IF" 2>&1
+    printf -- '--- ethtool -S (baseline) ---\n'; timeout 5 ethtool -S "$IF" 2>&1
+    printf -- '--- ip addr ---\n'; ip addr show "$IF" 2>&1
+    printf -- '--- ip route ---\n'; ip route show 2>&1
+} > "${LOG_DIR}/context.log" 2>&1
+
+prev_rxp=""; prev_txp=""; prev_rxb=""; prev_txb=""; prev_rxe=""; prev_retr=""
+
+while : ; do
+    ts="$(date -Is)"
+
+    # /proc/net/dev never blocks, unlike an ioctl into a wedged driver.
+    # Strip the "iface:" prefix so the columns line up even when a huge byte
+    # count runs into the colon.
+    stats="$(sed -n "s/^[[:space:]]*${IF}:[[:space:]]*/ /p" /proc/net/dev)"
+    if [ -z "$stats" ]; then
+        printf '%s iface=%s MISSING\n' "$ts" "$IF" >> "$LOG"
+        IF="$(resolve_iface)"
+        sleep "$INTERVAL"
+        continue
+    fi
+
+    # rx: bytes packets errs drop fifo frame compressed multicast
+    # tx: bytes packets errs drop fifo colls carrier compressed
+    set -- $stats
+    rxb=$1; rxp=$2; rxe=$3; rxd=$4; rxf=$5; rxfr=$6
+    txb=$9; txp=${10}; txe=${11}; txd=${12}; txcar=${15}
+
+    oper="$(read_sysfs operstate)"
+    carrier="$(read_sysfs carrier)"
+    cchanges="$(read_sysfs carrier_changes)"
+    speed="$(read_sysfs speed)"
+
+    # ARP state of the gateway. INCOMPLETE or FAILED means our address
+    # resolution is going unanswered — the symptom seen in every outage so far.
+    gw_state="NONE"; gw_mac="-"
+    if [ -n "$GW" ]; then
+        n="$(ip neigh show "$GW" 2>/dev/null | head -1)"
+        [ -n "$n" ] && {
+            gw_state="$(printf '%s' "$n" | awk '{print $NF}')"
+            gw_mac="$(printf '%s' "$n" | awk '{for(i=1;i<=NF;i++) if($i=="lladdr"){print $(i+1); exit}}')"
+            [ -z "$gw_mac" ] && gw_mac="-"
+        }
+    fi
+
+    retr="$(snmp_val Tcp RetransSegs)"
+
+    d() { [ -n "$2" ] && [ "$1" -ge "$2" ] 2>/dev/null && echo $(( $1 - $2 )) || echo NA; }
+    d_rxp="$(d "$rxp" "$prev_rxp")"; d_txp="$(d "$txp" "$prev_txp")"
+    d_rxb="$(d "$rxb" "$prev_rxb")"; d_txb="$(d "$txb" "$prev_txb")"
+    d_rxe="$(d "$rxe" "$prev_rxe")"; d_retr="$(d "$retr" "$prev_retr")"
+
+    printf '%s iface=%s oper=%s carrier=%s carrier_changes=%s speed=%s d_rx_pkts=%s d_tx_pkts=%s d_rx_bytes=%s d_tx_bytes=%s d_rx_errs=%s d_retrans=%s rx_errs=%s rx_drop=%s rx_fifo=%s rx_frame=%s tx_errs=%s tx_drop=%s tx_carrier=%s gw=%s gw_state=%s gw_mac=%s rx_pkts=%s tx_pkts=%s\n' \
+        "$ts" "$IF" "$oper" "$carrier" "$cchanges" "$speed" \
+        "$d_rxp" "$d_txp" "$d_rxb" "$d_txb" "$d_rxe" "$d_retr" \
+        "$rxe" "$rxd" "$rxf" "$rxfr" "$txe" "$txd" "$txcar" \
+        "${GW:--}" "$gw_state" "$gw_mac" "$rxp" "$txp" >> "$LOG"
+
+    # Driver-level counters. These are the ones that distinguish a receive-path
+    # wedge (buffer exhaustion, DMA/hresp errors) from a clean silence. The
+    # ioctl can in principle block on a sick driver, hence the timeout; only
+    # counters that actually moved are logged, to keep the file small.
+    if timeout 5 ethtool -S "$IF" > "${STATE_DIR}/eth.new" 2>/dev/null; then
+        sed -i 's/^[[:space:]]*//; s/:[[:space:]]*/ /' "${STATE_DIR}/eth.new"
+        if [ -f "${STATE_DIR}/eth.prev" ]; then
+            # Skip the volume counters — frame-size histograms, octet totals and
+            # per-queue packet counts all move constantly and would bury the
+            # signal. What is left is almost entirely error and resource
+            # counters, so in a healthy state this line is absent entirely and
+            # its mere presence is meaningful. The ones to watch on macb:
+            # rx_fcs_errors (CRC — packets arriving garbled, points at the hat
+            # or cable), rx_resource_errors and rx_overruns (the chip had
+            # nowhere to put incoming packets), and hresp_errors (the DMA
+            # engine faulted on the bus — a driver-side wedge).
+            chg="$(awk 'NR==FNR{p[$1]=$2;next}
+                        $1 ~ /(_byte_frames|_octets)$/ {next}
+                        $1 ~ /^q[0-9]+_(rx|tx)_(bytes|packets)$/ {next}
+                        $1 ~ /^(rx|tx)_(frames|broadcast_frames|multicast_frames|pause_frames)$/ {next}
+                        ($1 in p) && $2 ~ /^[0-9]+$/ && p[$1] ~ /^[0-9]+$/ && p[$1]!=$2 {
+                            printf "%s=%s(%+d) ", $1, $2, $2-p[$1] }' \
+                    "${STATE_DIR}/eth.prev" "${STATE_DIR}/eth.new")"
+            [ -n "$chg" ] && printf '%s ETHTOOL %s\n' "$ts" "$chg" >> "$LOG"
+        fi
+        mv -f "${STATE_DIR}/eth.new" "${STATE_DIR}/eth.prev"
+    fi
+
+    if [ "$SYNC_ONE" = 1 ]; then sync -d "$LOG" 2>/dev/null; else sync; fi
+
+    prev_rxp=$rxp; prev_txp=$txp; prev_rxb=$rxb; prev_txb=$txb
+    prev_rxe=$rxe; prev_retr=$retr
+
+    sleep "$INTERVAL"
+done

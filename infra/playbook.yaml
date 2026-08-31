@@ -22,3 +22,7 @@
 - import_playbook: "{{ playbook_dir }}/playbooks/watchdog.yaml"
   tags:
     - watchdog
+
+- import_playbook: "{{ playbook_dir }}/playbooks/net-recorder.yaml"
+  tags:
+    - net-recorder

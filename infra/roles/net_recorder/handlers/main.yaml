@@ -1,0 +1,18 @@
+---
+
+# Both guarded for --check: a dry run never writes the unit files, so systemd
+# has nothing to restart and the handler would fail on an imaginary problem.
+
+- name: restart net-recorder
+  systemd:
+    name: net-recorder
+    state: restarted
+    daemon_reload: true
+  when: not ansible_check_mode
+
+- name: restart net-recorder-pcap
+  systemd:
+    name: net-recorder-pcap
+    state: restarted
+    daemon_reload: true
+  when: not ansible_check_mode
