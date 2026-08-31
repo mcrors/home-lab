@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# net-recorder-pcap — rotating packet capture. Managed by Ansible.
+#
+# Records the actual packets on the wire, so that after an outage we can see
+# whether ARP requests physically left the node and whether anything ever came
+# back. The counters in samples.log say how much moved; this says what.
+#
+set -u
+
+IFACE_PREF="${1:-}"
+PCAP_DIR="${2:-/var/log/net-recorder/pcap}"
+SNAPLEN="${3:-96}"
+FILES="${4:-4}"
+SIZE_MB="${5:-5}"
+FILTER="${6:-arp or icmp}"
+
+mkdir -p "$PCAP_DIR"
+
+if [ -n "$IFACE_PREF" ] && [ -e "/sys/class/net/${IFACE_PREF}" ]; then
+    IF="$IFACE_PREF"
+else
+    IF="$(ip -4 route show default 2>/dev/null |
+          awk '/^default/ {for(i=1;i<=NF;i++) if($i=="dev"){print $(i+1); exit}}')"
+fi
+[ -n "$IF" ] || { echo "net-recorder-pcap: no interface resolved" >&2; exit 1; }
+
+# -p  stay out of promiscuous mode: we only want this node's own traffic plus
+#     broadcast ARP, which arrives anyway, and promiscuous mode adds load.
+# -n  never resolve names. A DNS lookup during a network outage would block
+#     the capture at exactly the wrong moment.
+# -U  write each packet through as it is captured rather than buffering. The
+#     packets immediately before the failure are the whole point, and a
+#     buffered capture would still be holding them in memory when the watchdog
+#     reboots the node.
+# -Z root
+#     keep running as root instead of dropping to the "tcpdump" user. A
+#     forensic recorder that silently fails on a permissions error is worse
+#     than useless; the strict filter and 96-byte snaplen keep the exposure
+#     small. Revisit if this ever moves beyond diagnostic use.
+exec tcpdump -i "$IF" -p -n -s "$SNAPLEN" -U -Z root \
+     -W "$FILES" -C "$SIZE_MB" \
+     -w "${PCAP_DIR}/net.pcap" "$FILTER"

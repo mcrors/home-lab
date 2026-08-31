@@ -1,0 +1,13 @@
+---
+# Scoped to lib-pi-05 by default — it is the only node with the recurring
+# network wedge, and keeping the blast radius to one machine while the role
+# proves itself is deliberate. Widen with:
+#   -e 'net_recorder_hosts=pis:lib-potato-04.home'
+- name: Install local network forensics recorder
+  hosts: "{{ net_recorder_hosts | default('lib-pi-05.home') }}"
+  become: true
+  gather_facts: true
+  roles:
+    - net_recorder
+  vars_files:
+    - ../vars/main.yaml

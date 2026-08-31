@@ -1,0 +1,23 @@
+[Unit]
+Description=Local network forensics sampler
+Documentation=file://{{ net_recorder_dir }}/context.log
+# Deliberately not ordered after network-online.target. The recorder must be
+# running before and during network failures, including one that never lets the
+# network come up at all.
+After=local-fs.target
+Wants=local-fs.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/net-recorder.sh "{{ net_recorder_interface }}" "{{ net_recorder_dir }}" "{{ net_recorder_interval }}" "{{ net_recorder_ping_target }}"
+Restart=always
+RestartSec=5
+# Stay scheduled when the node is under load — a sampler that stops sampling
+# during the incident defeats the purpose. Same reasoning as the watchdog
+# daemon's priority setting, one notch less aggressive.
+Nice=-5
+IOSchedulingClass=best-effort
+IOSchedulingPriority=2
+
+[Install]
+WantedBy=multi-user.target

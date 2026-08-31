@@ -1,0 +1,35 @@
+---
+
+# Interface to watch. Empty means "resolve the default-route interface at
+# runtime", which is what we want — the scripts re-resolve on every start, so a
+# rename (eth0 -> end0, as happened on the Pi 5s) does not silently stop the
+# recording. Set this only to pin a non-default interface.
+net_recorder_interface: ""
+
+# Everything lands under /var/log, which is on the SSD now that armbian-ramlog
+# is disabled (docs/adr/0001-disable-armbian-ramlog.md). That ADR is a hard
+# dependency: under ramlog these files would live in zram and be destroyed by
+# the very reboot whose cause they exist to explain.
+net_recorder_dir: /var/log/net-recorder
+
+# Seconds between samples. 10s is a deliberate floor — the watchdog's
+# retry-timeout is 240s, so a 10s cadence puts ~24 samples inside the window
+# between "network died" and "node rebooted".
+net_recorder_interval: 10
+
+# Neighbour whose ARP state we track. The gateway is the simplest possible
+# peer on the LAN: if its ARP entry goes FAILED, nothing on the subnet is
+# answering us.
+net_recorder_ping_target: "{{ gateway }}"
+
+# Rotating packet capture. Filtered hard on purpose — ARP and ICMP are the
+# diagnostic core (address resolution and the watchdog's own pings) and cost
+# almost nothing, where capturing k3s traffic would be gigabytes an hour.
+net_recorder_pcap_enabled: true
+net_recorder_pcap_files: 4          # rotate through this many files
+net_recorder_pcap_size_mb: 5        # ... of this size, so 20MB total
+net_recorder_pcap_snaplen: 96       # headers only; we need addresses, not payloads
+net_recorder_pcap_filter: "arp or icmp"
+
+# samples.log is ~3MB/day at a 10s cadence.
+net_recorder_logrotate_keep: 14

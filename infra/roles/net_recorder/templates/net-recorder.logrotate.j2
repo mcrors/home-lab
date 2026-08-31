@@ -1,0 +1,12 @@
+{{ net_recorder_dir }}/samples.log {
+    daily
+    rotate {{ net_recorder_logrotate_keep }}
+    compress
+    delaycompress
+    missingok
+    notifempty
+    # copytruncate, not create: the sampler holds the file open for its whole
+    # lifetime, so rotating out from under it would leave it writing to an
+    # unlinked inode and the log would appear to stop.
+    copytruncate
+}
