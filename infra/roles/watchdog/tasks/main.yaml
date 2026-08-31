@@ -37,19 +37,12 @@
   when: not wd_dev_final.stat.exists
 
 - name: Configure watchdog
-  blockinfile:
-    path: /etc/watchdog.conf
-    marker: "# {mark} ANSIBLE WATCHDOG"
-    block: |
-      watchdog-device = /dev/watchdog
-      interval        = {{ watchdog_interval }}
-      retry-timeout   = {{ watchdog_retry_timeout }}
-      realtime        = {{ watchdog_realtime }}
-      priority        = {{ watchdog_priority }}
-      max-load-1      = {{ watchdog_max_load1 }}
-      min-memory      = {{ watchdog_min_memory }}
-      ping            = {{ watchdog_ping_target }}
-      ping-count      = {{ watchdog_ping_count }}
+  template:
+    src: watchdog.conf.j2
+    dest: /etc/watchdog.conf
+    owner: root
+    group: root
+    mode: "0644"
   notify: restart watchdog
 
 - name: Enable and start watchdog
