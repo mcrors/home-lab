@@ -8,3 +8,23 @@
   service:
     name: systemd-journald
     state: restarted
+
+# Restarting journald is not enough to move it onto the SSD. journald
+# writes to the volatile /run/log/journal until it is told to flush, and
+# the unit that normally does that (systemd-journal-flush.service) runs
+# once at boot and then stays active(exited) — so a restart mid-life
+# leaves it on /run regardless of Storage=persistent. Verified on
+# lib-potato-04: /run journal ONLINE, /var/log journal OFFLINE.
+#
+# Must stay defined after 'restart journald': handlers run in the order
+# they appear in this file, not the order they were notified.
+- name: flush journal to persistent storage
+  command: journalctl --flush
+
+# Needed after /var/log is unmounted: ramlog unmounts lazily, so rsyslog
+# keeps writing into the detached zram device through its open file
+# handles until it is restarted, and does so without reporting an error.
+- name: restart rsyslog
+  service:
+    name: rsyslog
+    state: restarted

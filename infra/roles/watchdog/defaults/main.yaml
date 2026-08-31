@@ -1,5 +1,18 @@
 ---
 watchdog_interval: 15
+
+# How long a check must keep failing before the daemon reboots the node.
+# Unset previously, so the daemon's built-in 60s applied — which is why
+# lib-potato-04 rebooted itself 75s into a boot on 2026-08-30, before its
+# network was up. 240s sits deliberately under Kubernetes' ~300s unreachable
+# eviction, so a node that is coming back reboots and rejoins before the
+# control plane starts relocating its pods.
+#
+# This does not touch the hardware timer (60s). The daemon keeps petting
+# /dev/watchdog throughout the retry window, so the board is not reset while
+# a check is merely failing — only when the daemon or the kernel stops
+# responding entirely.
+watchdog_retry_timeout: 240
 watchdog_realtime: "no"
 watchdog_priority: 1
 watchdog_min_memory: 0

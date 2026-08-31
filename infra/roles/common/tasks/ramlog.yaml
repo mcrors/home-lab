@@ -1,0 +1,154 @@
+---
+
+# ----------------------------------------------------------
+# Disable armbian-ramlog so /var/log lives on the SSD
+#
+# ramlog mounts a zram device over /var/log and only flushes it to
+# disk on a clean shutdown. It ships enabled by default to spare SD
+# cards from write wear; these nodes boot from ssd_vg-root_lv, so all
+# it does is cap /var/log at 47MB and make the logs volatile.
+# See docs/adr/0001-disable-armbian-ramlog.md.
+#
+# Must run BEFORE journald.yaml, so that the journal directory is
+# created on the SSD rather than inside the zram device.
+# ----------------------------------------------------------
+
+- name: Check whether armbian-ramlog is installed
+  stat:
+    path: /etc/default/armbian-ramlog
+  register: ramlog_default
+
+# findmnt exits non-zero when the path is not a mountpoint, which is
+# the state we want to end in — so the return code is the signal here,
+# not a failure.
+#
+# check_mode: false on every findmnt below. They only read, and the
+# facts derived from them decide which branch the rest of the file
+# takes — skipping them under --check leaves those facts undefined.
+- name: Get the current /var/log mount source
+  command: findmnt -no SOURCE /var/log
+  register: ramlog_varlog_before
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: ramlog_default.stat.exists
+
+- name: Record whether ramlog still owns /var/log
+  set_fact:
+    ramlog_mounted: "{{ ramlog_varlog_before.rc == 0 and '/dev/zram' in ramlog_varlog_before.stdout }}"
+  when: ramlog_default.stat.exists
+
+- name: Record that ramlog is absent on non-Armbian nodes
+  set_fact:
+    ramlog_mounted: false
+  when: not ramlog_default.stat.exists
+
+# ----------------------------------------------------------
+# Unmount the zram device
+#
+# Ordering is load-bearing. The service's stop hook is what runs
+# syncToDisk and both umounts, but line 16 of
+# /usr/lib/armbian/armbian-ramlog is:
+#
+#     [ "$ENABLED" != true ] && exit 0
+#
+# so disabling first turns stop into a no-op that strands the live
+# logs in zram and leaves the mounts in place. Setting ENABLED=true
+# here means a re-run after a half-finished attempt still recovers.
+# ----------------------------------------------------------
+
+- name: Ensure ramlog is enabled so that stopping it actually syncs and unmounts
+  lineinfile:
+    path: /etc/default/armbian-ramlog
+    regexp: '^ENABLED='
+    line: 'ENABLED=true'
+  when: ramlog_mounted
+
+- name: Stop armbian-ramlog (syncs zram to disk, then unmounts)
+  service:
+    name: armbian-ramlog
+    state: stopped
+  when: ramlog_mounted
+  notify:
+    - restart rsyslog
+    - restart journald
+    - flush journal to persistent storage
+
+- name: Disable ramlog for subsequent boots
+  lineinfile:
+    path: /etc/default/armbian-ramlog
+    regexp: '^ENABLED='
+    line: 'ENABLED=false'
+  when: ramlog_default.stat.exists
+
+- name: Disable the armbian-ramlog service
+  service:
+    name: armbian-ramlog
+    enabled: false
+  when: ramlog_default.stat.exists
+
+# ----------------------------------------------------------
+# Verify, and stop the play if the node is half-migrated
+# ----------------------------------------------------------
+
+- name: Re-read the /var/log mount source
+  command: findmnt -no SOURCE /var/log
+  register: ramlog_varlog_after
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: ramlog_default.stat.exists
+
+- name: Re-read the /var/log.hdd mount source
+  command: findmnt -no SOURCE /var/log.hdd
+  register: ramlog_hdd_after
+  changed_when: false
+  failed_when: false
+  check_mode: false
+  when: ramlog_default.stat.exists
+
+- name: Assert that both ramlog mounts are gone
+  assert:
+    that:
+      - ramlog_varlog_after.rc != 0
+      - ramlog_hdd_after.rc != 0
+    fail_msg: >-
+      Node is half-migrated. /var/log source is
+      '{{ ramlog_varlog_after.stdout | default("") }}' and /var/log.hdd source is
+      '{{ ramlog_hdd_after.stdout | default("") }}' — both should be unmounted.
+      Logs written since the last sync may still be stranded in zram.
+      Re-running this play will retry the sync and unmount.
+    success_msg: "/var/log is on the root filesystem"
+  when:
+    - ramlog_default.stat.exists
+    # Under --check nothing was actually unmounted, so this post-condition
+    # cannot hold. Asserting it there would fail every dry run.
+    - not ansible_check_mode
+
+# ----------------------------------------------------------
+# Clear ramlog's journal symlink
+#
+# ramlog points /var/log/journal at /var/log.hdd/journal, which
+# dangles once the bind mount is gone. Removing it here lets the
+# journald tasks that follow create a real directory on the SSD with
+# the right ownership and mode.
+# ----------------------------------------------------------
+
+- name: Check what /var/log/journal currently is
+  stat:
+    path: /var/log/journal
+    follow: false
+  register: ramlog_journal_path
+  when: ramlog_default.stat.exists
+
+- name: Remove the dangling ramlog journal symlink
+  file:
+    path: /var/log/journal
+    state: absent
+  when:
+    - ramlog_default.stat.exists
+    - ramlog_journal_path.stat.exists
+    - ramlog_journal_path.stat.islnk
+  notify:
+    - restart journald
+    - flush journal to persistent storage

@@ -1,6 +1,11 @@
 - name: Basic Tasks
   include_tasks: basic.yaml
 
+# Must precede journald.yaml — it moves /var/log off zram onto the SSD,
+# so the journal directory below is created in the right place.
+- name: Disable armbian-ramlog
+  include_tasks: ramlog.yaml
+
 - name: journald Log Tasks
   include_tasks: journald.yaml
 

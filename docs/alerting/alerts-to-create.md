@@ -11,7 +11,13 @@
 - [X] **KubeNodeNotReady** — node in cluster but not in Ready state. Catches kubelet/network issues.
 - [X] **PodCrashLooping** — pod restart count climbing. Something broken, k3s cycling it.
 - [X] **PodStuckPending** — pod can't be scheduled. Resource exhaustion or affinity mismatch.
+- [ ] **PodNotReady** — pod in phase `Running` but ready condition false for >15m. Catches faults
+      that no other rule sees: the pod is not crashlooping (phase stays `Running`), not pending,
+      and the node stays `Ready`, so nothing else fires. This is the gap that let the 2026-08-27
+      containerd name-reservation wedge run unnoticed for 6h on potato-04 and far longer on pi-01.
 - [ ] **DeploymentReplicaMismatch** — available replicas < desired. Service degraded.
+      Raised priority: on 2026-08-27 this would have caught metallb-controller, cert-manager-webhook,
+      alertmanager and signal-bridge all sitting at 0/1 with no alert firing.
 - [X] **ContainerOOMKilled** — container hit memory limit. Needs limit tuning.
 - [ ] **JobFailed** — CronJob or Job exited non-zero. Silent batch failures.
 
@@ -36,6 +42,12 @@
 ## New alerts — Node health
 
 - [ ] **SystemClockSkew** — node time drifted from NTP (`node_timex_offset_seconds`). Breaks TLS, cron, log correlation.
+- [ ] **NodeUnexpectedReboot** — `node_boot_time_seconds` changed without a planned maintenance
+      window. Surfaces watchdog trips, which are currently invisible: the reboot wipes the zram
+      `/var/log` before anything is persisted, so there is no post-hoc evidence of the cause.
+- [ ] **MultiNodeRebootWindow** — 2+ nodes rebooting within the same 10m window. A synchronised
+      reboot means a shared upstream cause (gateway/network blip tripping the watchdog ping check),
+      not independent hardware faults. Four nodes went down together at 15:00 on 2026-08-27.
 
 ## Alertmanager config
 

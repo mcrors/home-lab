@@ -43,6 +43,7 @@
     block: |
       watchdog-device = /dev/watchdog
       interval        = {{ watchdog_interval }}
+      retry-timeout   = {{ watchdog_retry_timeout }}
       realtime        = {{ watchdog_realtime }}
       priority        = {{ watchdog_priority }}
       max-load-1      = {{ watchdog_max_load1 }}

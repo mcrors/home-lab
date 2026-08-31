@@ -27,7 +27,11 @@ journald_system_max_file_size: "50M"
 journald_max_retention: "7day"
 
 # watchdog vars
-watchdog_timeout: 15           # seconds
+# watchdog_timeout deliberately absent. Both board families report a 60s hardware
+# timeout against the 15s interval — a 4:1 margin — so setting it here would only
+# restate the driver default and give us another number to keep in sync. Measured
+# 2026-08-30 on lib-potato-04 (Meson GXBB) and lib-pi-01 (Broadcom BCM2835); see
+# .scratch/node-hardening/issues/03-watchdog-config-cleanup.md.
 watchdog_max_load1: 24         # optional extra check
 
 # prometheus_scraper_namespace used by both prometheus_scraper and prometheus
