@@ -1,0 +1,24 @@
+# /etc/watchdog.conf — managed by Ansible (infra/roles/watchdog).
+# Local edits are overwritten on the next run; change the role's vars instead.
+# Settings reference: man 5 watchdog.conf
+#
+# The role owns this file outright rather than appending a block to the packaged
+# one. The package ships `realtime` and `priority` uncommented, so appending left
+# the file with two values for each key. The daemon takes the last one, so the
+# behaviour was correct but the file read as though it contradicted itself.
+
+watchdog-device = /dev/watchdog
+interval        = {{ watchdog_interval }}
+retry-timeout   = {{ watchdog_retry_timeout }}
+realtime        = {{ watchdog_realtime }}
+priority        = {{ watchdog_priority }}
+min-memory      = {{ watchdog_min_memory }}
+ping            = {{ watchdog_ping_target }}
+ping-count      = {{ watchdog_ping_count }}
+
+# No max-load-1, deliberately. Linux load average counts processes blocked on
+# disk and network I/O, not just processes using CPU, so an NFS server that
+# stops responding drives load into the dozens on a node that is otherwise
+# idle. A load limit therefore reboots nodes for being blocked rather than
+# broken, which is not what a watchdog is for. Removed 2026-08-31; see
+# .scratch/node-hardening/issues/03-watchdog-config-cleanup.md §3.

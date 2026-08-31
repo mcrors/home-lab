@@ -32,7 +32,11 @@ journald_max_retention: "7day"
 # restate the driver default and give us another number to keep in sync. Measured
 # 2026-08-30 on lib-potato-04 (Meson GXBB) and lib-pi-01 (Broadcom BCM2835); see
 # .scratch/node-hardening/issues/03-watchdog-config-cleanup.md.
-watchdog_max_load1: 24         # optional extra check
+#
+# watchdog_max_load1 deliberately absent too. It wrote a max-load-1 line that
+# rebooted the node above a 1-minute load average of 24 — and load average counts
+# processes blocked on I/O, not just CPU, so it fired on nodes that were merely
+# waiting on NFS. Removed 2026-08-31, §3 of the same ticket.
 
 # prometheus_scraper_namespace used by both prometheus_scraper and prometheus
 prometheus_scraper_namespace: prometheus-access
