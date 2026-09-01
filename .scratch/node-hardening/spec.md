@@ -75,7 +75,7 @@ Every layer failed open. The tickets here address each link independently.
 | 01 | Disable armbian-ramlog, move `/var/log` to SSD | resolved | — |
 | 02 | Replace watchdog gateway ping with peer-quorum isolation check | ready-for-agent | — |
 | 03 | Fix the watchdog config defects | resolved | — |
-| 04 | Pods do not come back after a node reboot | ready-for-human | — |
+| 04 | Pods do not come back after a node reboot | wontfix | — |
 | 05 | Reboot cleanly instead of cutting power on isolation | wontfix | — |
 | 06 | Make sure journald logs actually survive an outage | resolved | — |
 | 07 | Watchdog reboots the node ~75s after every boot | ready-for-human | 02 |
@@ -192,3 +192,18 @@ an unclean reboot again.
 
 This leaves the "hard reset" wording question in Context above open and now unlikely to be
 answered, since the force-reset half of the 04/05 experiment will not be run deliberately.
+
+## Update 2026-09-01 (ticket 04 closed wontfix)
+
+Closed on the same reasoning as 05: seen once, with a known one-command recovery
+(`kubectl delete pod`), and the candidate preventive fix is unverified and expensive to
+test. The recovery procedure and the `k3s-node.service` naming gotcha are preserved in
+04's closing comment.
+
+The alerting gap that turned this into a six-hour outage is untouched by the closure. It
+lives in `docs/alerting/alerts-to-create.md` and is listed as out of scope above.
+`PodNotReady` remains the main fix, and it must catch the `Error` presentation as well as
+the `Running`-but-never-ready one.
+
+**Project state: only tickets 02 and 07 remain open.** Both are watchdog work, both share
+`node-isolation-check`, and they should be built together.
