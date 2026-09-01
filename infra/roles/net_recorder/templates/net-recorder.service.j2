@@ -9,7 +9,7 @@ Wants=local-fs.target
 
 [Service]
 Type=simple
-ExecStart=/usr/local/bin/net-recorder.sh "{{ net_recorder_interface }}" "{{ net_recorder_dir }}" "{{ net_recorder_interval }}" "{{ net_recorder_ping_target }}"
+ExecStart=/usr/local/bin/net-recorder.sh "{{ net_recorder_interface }}" "{{ net_recorder_dir }}" "{{ net_recorder_interval }}" "{{ net_recorder_ping_target }}" "{{ net_recorder_stall_after }}" "{{ net_recorder_stall_max_dumps }}" "{{ net_recorder_regs_every }}"
 Restart=always
 RestartSec=5
 # Stay scheduled when the node is under load — a sampler that stops sampling

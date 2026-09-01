@@ -26,18 +26,30 @@
 # which is what we have seen every time so far, and what makes a plain cable
 # fault unlikely.
 #
+# The 2026-09-01 outage was the first one recorded end to end, and it was
+# d_tx=0 with d_rx>0: transmission stopped dead while reception carried on.
+# That case now triggers a register snapshot; see stall_snapshot below.
+#
 set -u
 
 IFACE_PREF="${1:-}"
 LOG_DIR="${2:-/var/log/net-recorder}"
 INTERVAL="${3:-10}"
 GW="${4:-}"
+STALL_AFTER="${5:-2}"
+STALL_MAX_DUMPS="${6:-6}"
+REGS_EVERY="${7:-6}"
 
 STATE_DIR=/run/net-recorder
 LOG="${LOG_DIR}/samples.log"
+STALL_LOG="${LOG_DIR}/stall.log"
+
+# tc lives in /sbin, which is not on a non-login PATH.
+TC=/sbin/tc
 
 mkdir -p "$STATE_DIR" "$LOG_DIR"
 : >> "$LOG"
+: >> "$STALL_LOG"
 
 # Resolve the interface at runtime rather than trusting a name baked in at
 # deploy time. Falls back to whichever interface carries the default route.
@@ -61,6 +73,10 @@ else
     SYNC_ONE=0
 fi
 
+sync_file() {
+    if [ "$SYNC_ONE" = 1 ]; then sync -d "$1" 2>/dev/null; else sync; fi
+}
+
 read_sysfs() {
     cat "/sys/class/net/${IF}/$1" 2>/dev/null || printf 'NA'
 }
@@ -73,6 +89,55 @@ snmp_val() {
             if (!(proto in seen)) { for (i=2;i<=NF;i++) col[$i]=i; seen[proto]=1; next }
             print $(col[want]); exit
         }' /proc/net/snmp 2>/dev/null || printf 'NA'
+}
+
+# ----------------------------------------------------------------------
+# stall_snapshot — called when transmission has stopped for several
+# consecutive samples.
+#
+# samples.log can show that the MAC stopped transmitting, but not why. This
+# reads the MAC registers directly, which can. The decisive field is the TX
+# queue pointer: on a healthy node it advances between every pair of dumps,
+# so if it is frozen while the RX pointer keeps moving, the TX DMA has halted
+# rather than merely having nothing to send.
+#
+# The dump is stored verbatim and NOT decoded here. "ethtool -d" on macb emits
+# the driver's own get_regs array rather than raw register offsets, so naming
+# the words would mean guessing at their order. Instead the last healthy dump,
+# taken up to a minute earlier, is written directly above the stalled one. The
+# diff between the two is what carries the meaning, and it depends on no
+# assumption about which word is which.
+#
+# Every command is wrapped in timeout: a sick driver can block an ioctl
+# indefinitely, and a forensic snapshot that hangs the sampler would cost us
+# the samples that matter more than the snapshot does.
+# ----------------------------------------------------------------------
+stall_snapshot() {
+    {
+        printf '\n===== TX STALL SNAPSHOT %s (zero-tx samples: %s) =====\n' \
+            "$(date -Is)" "$1"
+        printf -- '--- ethtool -d (last healthy) ---\n'
+        cat "${STATE_DIR}/regs.healthy" 2>/dev/null || printf '(none captured yet)\n'
+        printf -- '--- ethtool -d (now) ---\n'
+        timeout 5 ethtool -d "$IF" 2>&1
+        printf -- '--- ethtool -S ---\n'
+        timeout 5 ethtool -S "$IF" 2>&1
+        # A single shared TX/RX interrupt on the RP1, so RX traffic keeps it
+        # ticking. It corroborates rather than isolates.
+        printf -- '--- irq ---\n'
+        grep -E "[[:space:]]${IF}\$" /proc/interrupts 2>&1
+        printf -- '--- ip -s link ---\n'
+        ip -s link show "$IF" 2>&1
+        # Backlog here would mean packets are piling up above the driver, which
+        # would point somewhere else entirely.
+        printf -- '--- qdisc ---\n'
+        timeout 5 "$TC" -s qdisc show dev "$IF" 2>&1
+        printf -- '--- softnet ---\n'
+        cat /proc/net/softnet_stat 2>&1
+        printf -- '--- dmesg tail ---\n'
+        dmesg 2>/dev/null | tail -20
+    } >> "$STALL_LOG" 2>&1
+    sync_file "$STALL_LOG"
 }
 
 IF="$(resolve_iface)"
@@ -94,6 +159,11 @@ fi
 } > "${LOG_DIR}/context.log" 2>&1
 
 prev_rxp=""; prev_txp=""; prev_rxb=""; prev_txb=""; prev_rxe=""; prev_retr=""
+
+# Stall tracking. healthy_tick starts at the limit so the first healthy sample
+# captures a register baseline immediately rather than a minute in — a stall
+# arriving in the first minute would otherwise have nothing to compare against.
+zero_tx=0; stall_dumps=0; next_dump="$STALL_AFTER"; healthy_tick="$REGS_EVERY"
 
 while : ; do
     ts="$(date -Is)"
@@ -173,7 +243,41 @@ while : ; do
         mv -f "${STATE_DIR}/eth.new" "${STATE_DIR}/eth.prev"
     fi
 
-    if [ "$SYNC_ONE" = 1 ]; then sync -d "$LOG" 2>/dev/null; else sync; fi
+    sync_file "$LOG"
+
+    # Stall detection. d_txp is "NA" on the first sample after a start, which
+    # is a missing reading rather than a stall, so only a literal 0 counts.
+    if [ "$d_txp" = "0" ]; then
+        zero_tx=$(( zero_tx + 1 ))
+        if [ "$zero_tx" -ge "$next_dump" ] && [ "$stall_dumps" -lt "$STALL_MAX_DUMPS" ]; then
+            stall_snapshot "$zero_tx"
+            stall_dumps=$(( stall_dumps + 1 ))
+            # Back off exponentially. An episode runs ~27 samples before the
+            # watchdog reboots the node; snapshotting every one would bury the
+            # onset under repeats of a state that is no longer changing.
+            next_dump=$(( zero_tx * 2 ))
+        fi
+    else
+        # Note the recovery in samples.log too, so the stall's duration is
+        # visible without opening the snapshot file. A stall that ends on its
+        # own is a different animal from one that ends in a reboot.
+        if [ "$zero_tx" -ge "$STALL_AFTER" ]; then
+            printf '%s TX_RESUMED after=%s zero-tx samples\n' "$ts" "$zero_tx" >> "$LOG"
+            sync_file "$LOG"
+        fi
+        zero_tx=0; stall_dumps=0; next_dump="$STALL_AFTER"
+
+        # Refresh the healthy register baseline. Only ever taken while TX is
+        # known to be moving, so it is always a genuine "working" reference.
+        healthy_tick=$(( healthy_tick + 1 ))
+        if [ "$healthy_tick" -ge "$REGS_EVERY" ]; then
+            healthy_tick=0
+            if { printf '%s\n' "$ts"; timeout 5 ethtool -d "$IF" 2>&1; } \
+                   > "${STATE_DIR}/regs.new" 2>/dev/null; then
+                mv -f "${STATE_DIR}/regs.new" "${STATE_DIR}/regs.healthy"
+            fi
+        fi
+    fi
 
     prev_rxp=$rxp; prev_txp=$txp; prev_rxb=$rxb; prev_txb=$txb
     prev_rxe=$rxe; prev_retr=$retr
