@@ -73,12 +73,12 @@ Every layer failed open. The tickets here address each link independently.
 | # | Title | Status | Blocked by |
 | --- | --- | --- | --- |
 | 01 | Disable armbian-ramlog, move `/var/log` to SSD | resolved | — |
-| 02 | Replace watchdog gateway ping with peer-quorum isolation check | ready-for-agent | — |
+| 02 | Replace watchdog gateway ping with peer-quorum isolation check | resolved | — |
 | 03 | Fix the watchdog config defects | resolved | — |
 | 04 | Pods do not come back after a node reboot | wontfix | — |
 | 05 | Reboot cleanly instead of cutting power on isolation | wontfix | — |
 | 06 | Make sure journald logs actually survive an outage | resolved | — |
-| 07 | Watchdog reboots the node ~75s after every boot | ready-for-human | 02 |
+| 07 | Watchdog reboots the node ~75s after every boot | ready-for-agent | — |
 | 08 | Restarting the watchdog daemon reboots the node | resolved | — |
 
 Start with 01 and 06. Until logs survive a reboot, tickets 03, 04 and 05 are all
@@ -207,3 +207,22 @@ the `Running`-but-never-ready one.
 
 **Project state: only tickets 02 and 07 remain open.** Both are watchdog work, both share
 `node-isolation-check`, and they should be built together.
+
+## Update 2026-09-01 (ticket 02 resolved, rolled out to all five nodes)
+
+The peer-quorum isolation check is live on lib-pi-01/02/03/05 and lib-potato-04. Applied one
+node at a time with a watch after each; none rebooted. Four of the five daemons came back
+above PID 1,000,000, which under the old built-in ping check guaranteed a shutdown ~270s
+later, so this is a real test rather than a lucky draw.
+
+Proved the daemon actually invokes the check, which was the last open gap — success is
+silent, so an inert check looks identical to a passing one. Temporary logging on lib-pi-01
+showed five invocations exactly 15s apart, then the script was restored with no drift.
+
+**Ticket 08 is closed by this in practice as well as on paper.** Yesterday this same
+operation took all five nodes down. Today it changed the config on all five and nothing
+rebooted.
+
+**Ticket 07 is deployed but unverified.** Both guards are in place everywhere, but its
+acceptance criteria all require a boot and the rollout deliberately avoided one. Check it on
+the next planned reboot of a watchdog node.

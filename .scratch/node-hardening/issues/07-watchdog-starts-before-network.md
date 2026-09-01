@@ -130,3 +130,17 @@ Status moved to `ready-for-agent`, since the question that made this `ready-for-
 now settled. Still to verify on real nodes: one boot per `systemctl reboot` on both a pi
 and a potato, no `network is unreachable` lines at startup, and that a node isolated after
 boot still reboots.
+
+### 2026-09-01 — deployed to all five nodes; acceptance still needs a reboot
+
+Both guards are in place on all five watchdog nodes: the `watchdog.service.d` drop-in
+ordering after `network-online.target`, and the 180s uptime grace period inside
+`node-isolation-check`. `systemd-networkd-wait-online` reported `ok` rather than `changed`
+on every node, so it was already enabled on both board families and the drop-in adds no
+boot delay.
+
+**Not yet verified**, because nothing has rebooted since. This ticket's acceptance criteria
+all require a boot: exactly one entry in `journalctl --list-boots` after a `systemctl
+reboot`, no `network is unreachable` lines at startup, and a genuinely isolated node still
+rebooting. The rollout deliberately avoided reboots, so the boot-window fix is deployed but
+untested. Verify on the next planned reboot of a watchdog node, on both a pi and a potato.
