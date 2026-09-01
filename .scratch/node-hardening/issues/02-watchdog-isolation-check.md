@@ -162,3 +162,34 @@ fail every check and reboot the node after `retry-timeout`. Apply to one node fi
 Still to verify on real nodes: the `test-binary`-and-no-`ping` config check, the by-hand
 exit 0, the blackholed-targets failure case, the gateway-only regression case, the
 worst-case runtime against `test-timeout`, and the high-PID case added by ticket 08.
+
+### 2026-09-01 — review follow-up: guards against a broken probe tool
+
+Review raised the case of `ping` going missing: every target then fails, the daemon counts
+an error every interval, and `retry-timeout` later it reboots the node. Fleet-wide that is
+all five at once. Two guards added.
+
+**In-script, for `ping` being absent.** `command -v ping || exit 0`, with a `logger` line.
+Exiting 0 leaves the check inert rather than destructive, and the hardware timer still
+catches a hung kernel, which is the failure the watchdog exists for. The log line is not
+optional: a safety check that quietly disables itself is its own incident, and ticket 08's
+acceptance criteria explicitly rule out "fixing" this by leaving the device unarmed.
+
+**Rejected, and worth recording so nobody tries it.** The apparently stronger version keys
+off `ping`'s exit codes and treats 2 as "probe broken, exit 0". That is wrong. iputils
+returns 2 for `connect: Network is unreachable` as well, which is exactly the genuine
+isolation case in ticket 07's errno 101 evidence. Exit 2 cannot distinguish "my probe is
+broken" from "I really am cut off", so keying on it disables detection in precisely the
+situation this check exists for. Binary-absent is the only case cleanly separable from
+inside the script.
+
+**At deploy time, for everything else.** A task now runs the script and fails the play if
+it does not exit 0, placed before the config task that arms it. This is the only guard
+against `ping` being installed but unable to open a socket, observed on lib-potato-04 as
+`missing cap_net_raw+p capability`, which returns exit 2 and is therefore invisible from
+inside the script. It also catches a template bug or a missing target. Skipped under
+`--check`, where the script may not be on disk yet.
+
+Local branch tests re-run against the rendered script: ping absent returns 0 and logs the
+inert line; all targets failing returns 1 and logs the isolation line; a mid-list reply
+returns 0 silently; inside the boot grace returns 0 without probing even with ping absent.
