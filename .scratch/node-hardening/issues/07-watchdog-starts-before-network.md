@@ -1,4 +1,4 @@
-Status: ready-for-human
+Status: ready-for-agent
 
 # 07: The watchdog reboots the node ~75s after every boot, because it starts before the network
 
@@ -84,3 +84,49 @@ Two independent guards; do both, they fail differently:
   check outright.
 
 ## Comments
+
+### 2026-09-01 — implemented, not yet applied
+
+Code written and committed; nothing has been run against a node, so the acceptance criteria
+are all still open. Changes live in `infra/roles/watchdog/`:
+
+- `templates/node-isolation-check.sh.j2` (new), deployed to
+  `/usr/local/sbin/node-isolation-check` mode 0755.
+- `templates/watchdog.conf.j2`: `ping`/`ping-count` replaced by
+  `test-binary`/`test-timeout`, with the reasons recorded in the file.
+- `defaults/main.yaml`: `watchdog_ping_target`/`watchdog_ping_count` removed;
+  `watchdog_isolation_check_path`, `watchdog_test_timeout` (10) and
+  `watchdog_boot_grace` (180) added.
+- `tasks/main.yaml`: deploys the script before the config that references it, writes a
+  `watchdog.service.d/10-network-online.conf` drop-in, enables
+  `systemd-networkd-wait-online`, and adds `iputils-ping` to the package list.
+- `handlers/main.yaml`: added a `reload systemd` handler, defined before `restart watchdog`
+  so it runs first. The restart handler is unchanged, with a comment explaining why the
+  stop/sleep/start form is load-bearing.
+
+Verified locally only: YAML parses, the template renders to
+`TARGETS="192.168.1.230 192.168.1.231 192.168.1.232 192.168.1.249 192.168.1.1"` for a pi,
+the script passes `sh -n`, and all three branches behave correctly against a stubbed `ping`
+(inside grace returns 0 without probing, all-targets-fail returns 1 and logs one line, a
+mid-list reply returns 0 silently).
+
+**Rollout note.** The first apply should be safe: the config is written before the handler
+fires, so the restarted daemon reads the new file and uses the script rather than the
+defective built-in ping. The risk is inverted now, in that a broken or missing script would
+fail every check and reboot the node after `retry-timeout`. Apply to one node first with
+`--limit`, confirm `/usr/local/sbin/node-isolation-check` exits 0 by hand, then roll out.
+
+**Scope item 1's open question is answered.** The ticket asked which stack owns `eth0`
+before relying on a wait-online unit. `infra/roles/set_static_ip/templates/static-netplan.yaml.j2`
+renders netplan with `renderer: networkd`, and the handler restarts `systemd-networkd`, so
+`systemd-networkd` owns the interface and `systemd-networkd-wait-online` is the matching
+unit. That is what `tasks/main.yaml` now enables. Determined from the repo, not from a node.
+
+One consequence worth knowing: `systemd-networkd-wait-online` can hold boot for up to its
+own timeout, 120s by default, if a configured interface never comes up. That is a slower
+boot in exchange for not rebooting during it.
+
+Status moved to `ready-for-agent`, since the question that made this `ready-for-human` is
+now settled. Still to verify on real nodes: one boot per `systemctl reboot` on both a pi
+and a potato, no `network is unreachable` lines at startup, and that a node isolated after
+boot still reboots.

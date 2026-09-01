@@ -1,0 +1,84 @@
+#!/bin/sh
+# node-isolation-check — managed by Ansible (infra/roles/watchdog).
+# Local edits are overwritten on the next run; change the role's vars instead.
+#
+# Run by the watchdog daemon as `test-binary`, once every `interval` seconds.
+#
+#   exit 0   not isolated — some target answered, or we are still booting
+#   exit 1   isolated — every target failed
+#
+# A non-zero exit is one error, not a reboot. The daemon reboots only once the
+# errors have persisted for `retry-timeout`, so a single failed run costs
+# nothing and a brief blip is absorbed.
+#
+# Why peers instead of the gateway: `ping = <gateway>` answers "is the gateway
+# up?", when the question that should drive a reboot is "am I the isolated
+# one?". Peers sit on the same L2 subnet and answer without the gateway, so
+# they tell those two cases apart. If only the gateway is down, rebooting does
+# not help and rebooting every node at once actively hurts, which is what
+# happened on 2026-08-27.
+# See .scratch/node-hardening/issues/02-watchdog-isolation-check.md
+#
+# This script also replaces the daemon's built-in `ping` check, which is
+# defective: watchdog 5.16 stamps outgoing ICMP echoes with its PID truncated
+# to the 16-bit identifier field, then compares replies against the untruncated
+# PID, so any daemon above PID 65535 discards every reply and shuts the node
+# down. iputils `ping` handles the identifier correctly, and it runs as its own
+# short-lived process, so the daemon's PID stops mattering.
+# See .scratch/node-hardening/issues/08-watchdog-restart-reboots-the-node.md
+
+set -u
+
+# The daemon runs this with a minimal environment, so do not rely on inheriting
+# a usable PATH.
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+
+# Rendered from inventory at template time: every k3s control-plane node, then
+# the API VIP, then the gateway as a last resort. Order affects speed only,
+# since we stop at the first reply. A generous list can only ever reduce
+# spurious reboots — any answer at all proves we are not isolated. Even if the
+# gateway alone answers, exiting 0 is right, because rebooting would not bring
+# the cluster back.
+{% set targets = [] -%}
+{% for host in groups['k3s_servers'] | default([]) | sort -%}
+{%   if host != inventory_hostname and hostvars[host].static_ip is defined -%}
+{%     set _ = targets.append(hostvars[host].static_ip) -%}
+{%   endif -%}
+{% endfor -%}
+{% set _ = targets.append(master_ip) -%}
+{% set _ = targets.append(gateway) -%}
+TARGETS="{{ targets | unique | join(' ') }}"
+
+# Boot grace period. The daemon starts ~31s into boot, before eth0 has carrier,
+# and every probe then fails immediately with errno 101 (no route) rather than
+# timing out. Without this guard the node reboots ~75s into every boot, so one
+# reboot costs two, and a slow network becomes a loop with nothing to break it.
+# Ordering the unit after network-online.target is the other half of the fix.
+# Both are needed: that target can be reached before the link is genuinely
+# usable, and the worst case observed had eth0 still down 106s into the boot.
+#
+# A node that is genuinely isolated at boot is caught on the next cycle, so
+# this delays recovery by at most the grace period. It does not disable the
+# check.
+# See .scratch/node-hardening/issues/07-watchdog-starts-before-network.md
+GRACE={{ watchdog_boot_grace }}
+
+uptime_seconds=$(cut -d. -f1 /proc/uptime)
+if [ "${uptime_seconds}" -lt "${GRACE}" ]; then
+    exit 0
+fi
+
+count=0
+for target in ${TARGETS}; do
+    count=$((count + 1))
+    if ping -c1 -W1 -n -q "${target}" >/dev/null 2>&1; then
+        exit 0
+    fi
+done
+
+# One line, so the reason survives in the journal — which ticket 01 made
+# persistent. Without this the reboot has no explanation attached to it.
+logger -t watchdog-isolation \
+    "isolated: no reply from any of ${count} targets (${TARGETS})"
+exit 1

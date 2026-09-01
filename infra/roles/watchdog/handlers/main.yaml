@@ -1,3 +1,21 @@
 ---
+# Defined before "restart watchdog" so it runs first — Ansible runs handlers in
+# definition order, not notification order.
+- name: reload systemd
+  systemd:
+    daemon_reload: true
+
+# Deliberately a stop/start rather than `systemd: state=restarted`, and the
+# sleep is load-bearing. Stopping the unit makes its ExecStopPost exit non-zero
+# on purpose, which trips OnFailure=wd_keepalive.service, and wd_keepalive is
+# what keeps petting /dev/watchdog across the gap. That handoff is asynchronous,
+# so the sleep gives it time to land before the daemon comes back and
+# Conflicts= stops it again.
+#
+# This was suspected of causing the reboots that follow a playbook run and was
+# cleared: the handoff fires correctly and the device is petted throughout. The
+# reboots came from the daemon's built-in ping check instead. Do not "simplify"
+# this without reading
+# .scratch/node-hardening/issues/08-watchdog-restart-reboots-the-node.md
 - name: restart watchdog
   shell: systemctl stop watchdog && sleep 1 && systemctl start watchdog

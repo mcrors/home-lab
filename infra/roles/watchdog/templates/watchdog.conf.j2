@@ -13,8 +13,27 @@ retry-timeout   = {{ watchdog_retry_timeout }}
 realtime        = {{ watchdog_realtime }}
 priority        = {{ watchdog_priority }}
 min-memory      = {{ watchdog_min_memory }}
-ping            = {{ watchdog_ping_target }}
-ping-count      = {{ watchdog_ping_count }}
+test-binary     = {{ watchdog_isolation_check_path }}
+test-timeout    = {{ watchdog_test_timeout }}
+
+# No ping / ping-count, deliberately, and they must not come back. Two separate
+# reasons, either one sufficient:
+#
+# 1. The daemon's built-in ping check is broken above PID 65535. watchdog 5.16
+#    stamps outgoing ICMP echoes with its PID truncated to the 16-bit identifier
+#    field, then compares replies against the untruncated PID, so a daemon with a
+#    high PID discards every reply it receives and shuts the node down after
+#    retry-timeout. pid_max here is 4194304, so any daemon restarted on a node
+#    with real uptime is affected, while a boot-time daemon draws a low PID and
+#    works. That is why a playbook run used to shut down all five nodes ~270s
+#    later. See issue 08.
+# 2. Pointing every node at the one gateway turns a single router blip into a
+#    synchronised cluster-wide reboot, which is what happened on 2026-08-27.
+#    See issue 02.
+#
+# test-binary above replaces both. It asks "am I isolated?" across several peers
+# and runs iputils ping in its own process, which handles the identifier
+# correctly.
 
 # No max-load-1, deliberately. Linux load average counts processes blocked on
 # disk and network I/O, not just processes using CPU, so an NFS server that
