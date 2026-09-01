@@ -69,6 +69,25 @@ if [ "${uptime_seconds}" -lt "${GRACE}" ]; then
     exit 0
 fi
 
+# Never let a broken probe tool look like isolation. Without ping every target
+# "fails", the daemon counts an error every interval, and retry-timeout later it
+# reboots the node — on all five nodes at once if the package went missing
+# fleet-wide. Exiting 0 leaves this check inert rather than destructive; the
+# hardware timer still catches a hung kernel, which is the failure the watchdog
+# exists for. It logs, because a safety check that disables itself quietly is
+# its own incident.
+#
+# This only covers ping being absent. It cannot cover ping being present but
+# unable to open a socket, because iputils returns exit 2 both for that and for
+# a genuinely unreachable network (errno 101, the ticket 07 case). Those two are
+# indistinguishable from in here, so that case is caught at deploy time instead,
+# by the role running this script before the config that arms it.
+if ! command -v ping >/dev/null 2>&1; then
+    logger -t watchdog-isolation \
+        "ping not found: isolation check is inert, node will not reboot on isolation"
+    exit 0
+fi
+
 count=0
 for target in ${TARGETS}; do
     count=$((count + 1))

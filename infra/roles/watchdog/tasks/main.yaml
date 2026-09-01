@@ -52,6 +52,19 @@
     mode: "0755"
   notify: restart watchdog
 
+# Run the check before the config that arms it, so a script that cannot work on
+# this node aborts the play instead of reaching the daemon. This is the only
+# guard against ping being installed but unable to open a socket (observed on
+# lib-potato-04 as "missing cap_net_raw+p capability"), which is invisible from
+# inside the script because iputils returns exit 2 both for that and for a
+# genuinely unreachable network. Skipped under --check, where the script may not
+# be on disk yet.
+- name: Verify the isolation check runs and passes on this node
+  command: "{{ watchdog_isolation_check_path }}"
+  register: wd_isolation_check
+  changed_when: false
+  when: not ansible_check_mode
+
 # Half one of the boot-window fix; the grace period inside the check script is
 # half two. Both are needed — network-online.target can be reached before the
 # link is genuinely usable, and ordering alone does not cover that.
