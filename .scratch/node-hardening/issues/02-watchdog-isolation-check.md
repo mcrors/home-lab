@@ -193,3 +193,43 @@ inside the script. It also catches a template bug or a missing target. Skipped u
 Local branch tests re-run against the rendered script: ping absent returns 0 and logs the
 inert line; all targets failing returns 1 and logs the isolation line; a mid-list reply
 returns 0 silently; inside the boot grace returns 0 without probing even with ping absent.
+
+### 2026-09-01 — applied to lib-pi-01 and lib-potato-04, neither rebooted
+
+First two nodes done, one per board family. Both survived. Remaining: lib-pi-02, lib-pi-03,
+lib-pi-05.
+
+| | lib-pi-01 | lib-potato-04 |
+|---|---|---|
+| Applied | 15:29:39 | 15:42:54 |
+| Daemon PID after restart | 1743960 | 61919 |
+| Old behaviour would have shut down at | ~15:34:09 | ~15:47:24 |
+| Startup banner | `ping: no machine to check`, `test binary V0: /usr/local/sbin/node-isolation-check`, `test binary time-out = 10` | same |
+| Check run as root | exit 0 | exit 0 |
+| Isolation failures logged by the daemon | none | none |
+| Boot ID / uptime across the window | unchanged, climbing | unchanged, climbing |
+| Rebooted | no | no |
+
+lib-pi-01 is the meaningful test of the ticket 08 defect: at PID 1743960 the old built-in
+ping check would have discarded every reply and shut it down. lib-potato-04 drew PID 61919,
+just under the 65535 threshold, so that restart would probably have survived the old bug by
+luck rather than by design.
+
+`systemd-networkd-wait-online` reported `ok` rather than `changed` on both, so it was
+already enabled on both board families and the drop-in adds no boot delay.
+
+**Acceptance criterion 2 needs a `sudo`.** It currently reads "Running
+`/usr/local/sbin/node-isolation-check` by hand on a healthy node exits 0." On the potato
+image `ping` carries no `cap_net_raw` for unprivileged users, so running the check as the
+ordinary SSH user makes every probe fail, returns 1, and writes a false isolation line to
+the journal. On the pi image it works unprivileged, so the trap only appears on one family.
+The daemon runs as root on both, so operation is unaffected. Anyone verifying by hand must
+use `sudo`, or they will diagnose a healthy node as isolated. Confirmed on lib-potato-04:
+non-root gives `ping: socket: Operation not permitted / missing cap_net_raw+p capability`,
+root gives exit 0.
+
+**Still unproven: that the check is actively running rather than inert.** Success is
+silent, so a check that never executes looks identical to one that always passes. The
+daemon accepted the binary at startup and the hand-run works, but the positive proof is the
+blackhole test in criterion 3, and that has not been run *after* the config was armed. Run
+it on one node before calling this ticket done.
