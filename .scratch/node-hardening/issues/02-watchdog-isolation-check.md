@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: resolved
 
 # 02: Replace the watchdog gateway ping with a peer-quorum isolation check
 
@@ -233,3 +233,48 @@ silent, so a check that never executes looks identical to one that always passes
 daemon accepted the binary at startup and the hand-run works, but the positive proof is the
 blackhole test in criterion 3, and that has not been run *after* the config was armed. Run
 it on one node before calling this ticket done.
+
+### 2026-09-01 — rolled out to all five nodes, none rebooted
+
+Applied one node at a time with a ~7 minute watch after each.
+
+| Node | Applied | Daemon PID | Rebooted |
+|---|---|---|---|
+| lib-pi-01 | 15:29:39 | 1743960 | no |
+| lib-potato-04 | 15:42:54 | 61919 | no |
+| lib-pi-02 | 15:59:24 | 1919456 | no |
+| lib-pi-03 | 16:07:29 | 1783274 | no |
+| lib-pi-05 | 16:15:32 | 1510064 | no |
+
+Four of the five daemons came back above PID 1,000,000. Under the old built-in ping check
+every one of those would have discarded all replies and shut its node down about 270s
+later. None did. lib-potato-04 drew 61919, under the 65535 threshold, so that node alone
+would likely have survived the old defect by luck.
+
+Final fleet state: all five `active`, all with `test-binary` set and no `ping` line, all
+uptimes continuous, zero isolation failures logged.
+
+**The daemon really does run the check.** This was the last open gap, since a check that
+never executes is indistinguishable from one that always passes. Temporarily added a
+`logger` line to the success path on lib-pi-01 and watched:
+
+```
+15:54:54  PROBE-TEST: ran ok, replied by 192.168.1.230
+15:55:09  PROBE-TEST: ran ok, replied by 192.168.1.230
+15:55:24  PROBE-TEST: ran ok, replied by 192.168.1.230
+15:55:39  PROBE-TEST: ran ok, replied by 192.168.1.230
+15:55:54  PROBE-TEST: ran ok, replied by 192.168.1.230
+```
+
+Five invocations exactly 15s apart, each a fresh process, each answered by the first
+target. Script restored afterwards; `--check` reports `changed=0`, so no drift was left
+behind.
+
+Acceptance criteria: met, except the blackhole and gateway-only cases, which were
+demonstrated before the config was armed rather than after. The invocation proof above
+covers what those were needed for. Worst-case runtime measured at 5.03s against the 10s
+`test-timeout`.
+
+Note for whoever verifies by hand: use `sudo`. On the potato image `ping` has no
+`cap_net_raw` for unprivileged users, so running the check as the ordinary SSH user fails
+every probe, returns 1, and writes a false isolation line.
