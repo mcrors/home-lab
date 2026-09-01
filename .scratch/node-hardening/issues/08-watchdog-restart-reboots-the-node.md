@@ -36,6 +36,11 @@ close"; the magic is only that `V` is an arbitrary agreed-upon value.
 
 ## Mechanism
 
+> **Superseded. Everything in this section was investigated and disproved.**
+> The handler, `wd_keepalive` and magic close are all fine. Do not act on the
+> "open question" below. See the 2026-08-31 investigation further down for the
+> real cause.
+
 The role's handler (`infra/roles/watchdog/handlers/main.yaml`):
 
 ```yaml
