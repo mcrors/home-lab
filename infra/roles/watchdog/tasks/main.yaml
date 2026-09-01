@@ -1,7 +1,12 @@
 ---
 - name: Install watchdog
   apt:
-    name: watchdog
+    # iputils-ping is what node-isolation-check probes with, and the watchdog
+    # package does not depend on it. Without it every probe fails and the node
+    # reboots itself, so make the dependency explicit rather than assumed.
+    name:
+      - watchdog
+      - iputils-ping
     state: present
     update_cache: true
 
@@ -35,6 +40,58 @@
       /dev/watchdog not found after loading {{ watchdog_kernel_module }}.
       Check kernel support for this board.
   when: not wd_dev_final.stat.exists
+
+# Deployed before the config that references it, so the daemon never restarts
+# against a test-binary that does not exist yet.
+- name: Deploy node isolation check
+  template:
+    src: node-isolation-check.sh.j2
+    dest: "{{ watchdog_isolation_check_path }}"
+    owner: root
+    group: root
+    mode: "0755"
+  notify: restart watchdog
+
+# Half one of the boot-window fix; the grace period inside the check script is
+# half two. Both are needed — network-online.target can be reached before the
+# link is genuinely usable, and ordering alone does not cover that.
+- name: Ensure watchdog service drop-in directory exists
+  file:
+    path: "{{ systemd_dir }}/watchdog.service.d"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Order watchdog after the network is online
+  copy:
+    dest: "{{ systemd_dir }}/watchdog.service.d/10-network-online.conf"
+    owner: root
+    group: root
+    mode: "0644"
+    content: |
+      # Managed by Ansible (infra/roles/watchdog).
+      #
+      # The packaged unit has no ordering against the network, so it starts
+      # ~31s into boot while only lo has carrier. Every probe then fails with
+      # errno 101 and the node reboots ~75s in, making every reboot cost two.
+      # See .scratch/node-hardening/issues/07-watchdog-starts-before-network.md
+      [Unit]
+      Wants=network-online.target
+      After=network-online.target
+  notify:
+    - reload systemd
+    - restart watchdog
+
+# network-online.target only means anything if a wait-online unit is enabled to
+# hold it back. These nodes render netplan with `renderer: networkd`
+# (infra/roles/set_static_ip), so systemd-networkd owns eth0 and this is the
+# matching wait unit. Note it can delay boot by up to its own timeout (120s by
+# default) if a configured interface never comes up.
+- name: Enable systemd-networkd-wait-online
+  systemd:
+    name: systemd-networkd-wait-online
+    enabled: true
 
 - name: Configure watchdog
   template:

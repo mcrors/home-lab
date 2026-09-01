@@ -16,5 +16,19 @@ watchdog_retry_timeout: 240
 watchdog_realtime: "no"
 watchdog_priority: 1
 watchdog_min_memory: 0
-watchdog_ping_count: 3
-watchdog_ping_target: "{{ gateway }}"
+
+# Path the daemon calls as `test-binary`. /usr/local/sbin because it is a local
+# operational script, not a packaged one.
+watchdog_isolation_check_path: /usr/local/sbin/node-isolation-check
+
+# Seconds the daemon allows the check to run before treating it as a failure.
+# Worst case is one `ping -c1 -W1` per target with every target dead, so ~5s for
+# five targets. 10 leaves headroom without approaching the 15s interval.
+watchdog_test_timeout: 10
+
+# Seconds after boot during which the isolation check returns success without
+# probing. The daemon starts ~31s into boot, before eth0 has carrier, and would
+# otherwise reboot the node ~75s in — making every reboot cost two. 180 sits
+# comfortably past the worst observed case of eth0 still down at 106s. See
+# .scratch/node-hardening/issues/07-watchdog-starts-before-network.md.
+watchdog_boot_grace: 180
