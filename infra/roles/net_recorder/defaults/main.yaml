@@ -33,3 +33,30 @@ net_recorder_pcap_filter: "arp or icmp"
 
 # samples.log is ~3MB/day at a 10s cadence.
 net_recorder_logrotate_keep: 14
+
+# ----------------------------------------------------------
+# TX stall snapshots
+#
+# The 2026-09-01 outage showed the MAC's own tx_frames counter frozen dead for
+# 27 consecutive samples while the kernel's NETDEV WATCHDOG never fired. That
+# combination means the driver kept reclaiming TX descriptors as sent while the
+# hardware transmitted nothing, which points at the Cadence GEM's TX DMA
+# halting on a used-bit-read and never being restarted. The counters cannot
+# prove that on their own; the MAC registers can.
+# ----------------------------------------------------------
+
+# Consecutive zero-transmit samples before the first snapshot. At a 10s cadence
+# 2 means the snapshot lands ~10s into the stall, while still ignoring a single
+# quiet interval. This node runs k3s and renews a kubelet lease every few
+# seconds, so it is never legitimately silent for 20s.
+net_recorder_stall_after: 2
+
+# Cap per episode. A stall runs ~27 samples before the watchdog reboots the
+# node, and the snapshots back off exponentially (samples 2, 4, 8, 16), so the
+# onset is captured in detail without burying it under repeats.
+net_recorder_stall_max_dumps: 6
+
+# How often to refresh the healthy register baseline, in samples. 6 is once a
+# minute. The baseline is what the stall dump gets compared against, and it
+# lives in /run so it costs no disk writes.
+net_recorder_regs_every: 6
