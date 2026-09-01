@@ -74,11 +74,12 @@ Every layer failed open. The tickets here address each link independently.
 | --- | --- | --- | --- |
 | 01 | Disable armbian-ramlog, move `/var/log` to SSD | resolved | — |
 | 02 | Replace watchdog gateway ping with peer-quorum isolation check | ready-for-agent | — |
-| 03 | Fix the watchdog config defects | needs-info | 02 |
+| 03 | Fix the watchdog config defects | resolved | — |
 | 04 | Pods do not come back after a node reboot | ready-for-human | — |
 | 05 | Reboot cleanly instead of cutting power on isolation | needs-triage | 02 |
 | 06 | Make sure journald logs actually survive an outage | ready-for-agent | 01 |
-| 07 | Watchdog reboots the node ~75s after every boot | ready-for-human | — |
+| 07 | Watchdog reboots the node ~75s after every boot | ready-for-human | 02 |
+| 08 | Restarting the watchdog daemon reboots the node | resolved | — |
 
 Start with 01 and 06. Until logs survive a reboot, tickets 03, 04 and 05 are all
 reasoning about evidence that the next reset will destroy.
@@ -119,3 +120,45 @@ Two findings changed other tickets:
 
 Still unrun: the force-reset half of the 04/05 experiment, which is also ticket 06's
 acceptance test.
+
+## Update 2026-09-01
+
+**Ticket 08 resolved: the watchdog's ping check is defective, not just badly targeted.**
+`watchdog` 5.16 stamps outgoing ICMP echoes with its PID truncated to the 16-bit
+identifier field, then compares replies against the untruncated PID (`src/net.c`). Any
+daemon above PID 65535 discards every reply, scores every ping as failed, and runs a clean
+shutdown after `retry-timeout`. `pid_max` on these nodes is 4194304, so a daemon restarted
+on a node with real uptime always lands above the threshold; a boot-time daemon draws a low
+PID and works. Verified across 16 daemon instances on all five watchdog nodes and both
+board families, with no exceptions.
+
+Consequences for the rest of the project:
+
+- **Ticket 02 is now the fix for two tickets.** Moving to `test-binary` deletes the
+  defective code path, because the script calls iputils `ping`, which handles the
+  identifier correctly. Removing `ping`/`ping-count` is therefore mandatory rather than
+  preferred: they are unsafe on any node past 65535 PIDs regardless of what they point at.
+- **02 needs a high-PID acceptance test.** A boot-time daemon always draws a low PID, so
+  testing only on a freshly booted node cannot catch this class of bug. That is precisely
+  how it survived unnoticed since the role was deployed.
+- **The watchdog restart handler is cleared.** The Debian `OnFailure=`/`Conflicts=` handoff
+  to `wd_keepalive` fires correctly, `/dev/watchdog` is petted across the restart gap, and
+  `meson_gxbb_wdt` advertises `WDIOF_MAGICCLOSE` with `nowayout = 0`. Ticket 03's closing
+  comment previously blamed the handler and has been corrected in place. Do not change it.
+- **The 2026-08-27 incident is unaffected.** Checked against the git log: the watchdog role
+  was deployed 2026-08-22 and untouched until 2026-08-31, so no daemon restarted on
+  2026-08-27 and the daemons running that day held low PIDs with working ping checks. Those
+  ping failures were real. The narrative in Context above stands.
+
+**Ticket 03 is resolved** and its `Status:` line has been corrected to match its body; all
+four sections were implemented and applied on 2026-08-31.
+
+### Open wording question in Context, above
+
+Context items 2 and 3 describe the 2026-08-27 reboots as a "hard reset". The 2026-08-30
+finding is that a failed check makes the daemon send SIGTERM to PID 1, which is a software
+reboot, with the 60s hardware timer running as a backstop during the shutdown. Those two
+descriptions only reconcile if shutdown overran the 60s timer and the board was cut
+mid-shutdown, which would also explain the containerd name-reservation damage in item 3.
+That is a plausible reading and it is **not verified**. The force-reset half of the 04/05
+experiment is what would settle it. Left as written until then.

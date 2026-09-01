@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: resolved
 
 # 03: Fix the watchdog config defects
 
@@ -386,17 +386,28 @@ second playbook run reported `changed=0`, so the template is idempotent.
 
 #### Applying this rebooted all five nodes — and that is a separate defect
 
-Every node reset shortly after the run. Not caused by anything in this ticket: the
+Every node went down shortly after the run. Not caused by anything in this ticket: the
 settings in force are identical to before except the removed load check, and removing a
-check cannot reboot a board. The cause is the role's handler,
-`systemctl stop watchdog && sleep 1 && systemctl start watchdog`. While the daemon is
-stopped, nothing is resetting the board's countdown timer, so the timer runs out and the
-board reboots. The operator confirms this happens on every watchdog restart, not just this
-one. Ticket 08 explains the mechanism properly.
+check cannot reboot a board.
 
-So **any `changed` result on the config task costs a reboot of all five watchdog nodes.**
-Filed as ticket 08. Anyone running `playbooks/watchdog.yaml` should expect this and pick
-the timing deliberately; `--check --diff` previews without paying it.
+**The explanation first written here was wrong and is corrected below.** It blamed the
+role's handler for dropping `/dev/watchdog` across the restart, letting the hardware timer
+run out. Ticket 08 investigated and disproved that. The handler, `wd_keepalive` and magic
+close are all fine: the Debian `OnFailure=`/`Conflicts=` handoff fires and the device is
+petted throughout the gap. Leave the handler alone.
+
+The real cause is a defect in the `watchdog` 5.16 ping check. It stamps outgoing ICMP
+echoes with its PID truncated to the 16-bit identifier field, then compares replies against
+the untruncated PID (`src/net.c`), so any daemon above PID 65535 discards every reply and
+scores every ping as failed. It then runs a clean shutdown after `retry-timeout`, about
+270s later. `pid_max` here is 4194304, so a daemon restarted on a node with real uptime
+always lands above the threshold, while a boot-time daemon draws a low PID and works. See
+ticket 08 for the evidence.
+
+So **any `changed` result on the config task costs a shutdown of all five watchdog nodes**
+until ticket 02 lands and removes the built-in ping check. Anyone running
+`playbooks/watchdog.yaml` should expect this and pick the timing deliberately;
+`--check --diff` previews without paying it.
 
 The 24h acceptance criterion above starts from this run, and these five resets are
 explained — they carry no `max-load-1` trip.
