@@ -76,7 +76,7 @@ Every layer failed open. The tickets here address each link independently.
 | 02 | Replace watchdog gateway ping with peer-quorum isolation check | ready-for-agent | — |
 | 03 | Fix the watchdog config defects | resolved | — |
 | 04 | Pods do not come back after a node reboot | ready-for-human | — |
-| 05 | Reboot cleanly instead of cutting power on isolation | needs-triage | 02 |
+| 05 | Reboot cleanly instead of cutting power on isolation | wontfix | — |
 | 06 | Make sure journald logs actually survive an outage | resolved | — |
 | 07 | Watchdog reboots the node ~75s after every boot | ready-for-human | 02 |
 | 08 | Restarting the watchdog daemon reboots the node | resolved | — |
@@ -175,3 +175,20 @@ still unset so the 5-minute default applies, the `ForwardToSyslog` double-write 
 undecided, and the retention limits are still sized for the old ramdisk. The first carries
 real diagnostic cost, since up to five minutes before an unclean reboot are still lost and
 nothing relevant logs at CRIT or above. Details and the reopen trigger are in ticket 06.
+
+## Update 2026-09-01 (ticket 05 closed wontfix)
+
+05's opening premise was already corrected: the watchdog sends SIGTERM to PID 1 rather than
+cutting power, which removed the case for its options A and B. Closing it rests on a second
+point: **option C is probably already happening**, since an ordinary systemd shutdown stops
+`k3s-node` with every other unit. If the pod wedge is real, the likelier cause is the
+shutdown overrunning the daemon's 60s hardware window and the board being cut partway
+through, which would be fixed by a `TimeoutStopSec` on `k3s-node.service` or systemd's
+`RebootWatchdogSec` rather than by anything in the watchdog role.
+
+All of that is unverified, and verifying it means pulling a production node's network to
+time a shutdown. Not justified for a fault seen once. Reopen if pods fail to return after
+an unclean reboot again.
+
+This leaves the "hard reset" wording question in Context above open and now unlikely to be
+answered, since the force-reset half of the 04/05 experiment will not be run deliberately.

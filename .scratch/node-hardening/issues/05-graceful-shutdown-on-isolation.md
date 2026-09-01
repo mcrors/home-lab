@@ -1,4 +1,4 @@
-Status: needs-triage
+Status: wontfix
 Blocked by: 02
 
 # 05: Reboot cleanly instead of cutting power when a node detects it is isolated
@@ -134,3 +134,30 @@ rather than an immediate power cut.
   and time the shutdown.
 - On 2026-08-30 the shutdown completed cleanly, but boot `-1` was only 106s old so k3s
   had barely started. That is not a representative test.
+
+### 2026-09-01 — closed as wontfix
+
+Operator decision: the remaining work costs more than it is likely to return.
+
+The ticket's opening premise was already dead. The watchdog does not cut power on a failed
+check; it sends SIGTERM to PID 1 and systemd runs an ordinary shutdown. That removed the
+rationale for options A and B.
+
+What killed the rest is that **option C is probably already happening.** A normal systemd
+shutdown stops `k3s-node` along with every other unit, so "stop k3s before rebooting" is
+likely the current behaviour rather than a change to make. If the pod wedge is real, the
+cause is more likely that the shutdown does not finish inside the daemon's 60s hardware
+window and the board is cut partway through, which is a different fix (a `TimeoutStopSec`
+on `k3s-node.service`, or systemd's `RebootWatchdogSec`) and still unverified.
+
+Confirming any of it needs a live test: pull a node's network, let the watchdog trip, and
+time the shutdown. That is a production node taken down deliberately to test a hypothesis
+about a fault that has occurred once. The cost is not justified at present.
+
+**Reopen if** pods fail to return after an unclean reboot again. That is the symptom this
+ticket exists to prevent, and a second occurrence would make the hypothesis worth testing.
+Ticket 04 holds the pod-recovery problem itself.
+
+Not lost by closing this: the clean-reboot half of the shared experiment ran on
+lib-potato-04 on 2026-08-30 and all pods returned Ready with no intervention. The
+force-reset half was never run.
