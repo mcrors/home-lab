@@ -1,4 +1,4 @@
-Status: ready-for-human
+Status: wontfix
 
 # 04: Pods do not come back after a node reboot
 
@@ -171,3 +171,38 @@ asked systemd to shut down. See the premise correction in ticket 05. A watchdog 
 therefore not automatically the hard reset this ticket assumed, which means the causal
 story "hard reset → containerd never saved state → name reservations stranded" is no
 longer the only candidate and has not been demonstrated.
+
+### 2026-09-01 — closed as wontfix
+
+Operator decision: seen rarely, and there is a known one-command recovery. Not worth
+building automation or a detection path for a fault that has occurred once. Reopen if it
+happens again.
+
+Ticket 05, which held the candidate preventive fix, was closed the same day. Its reasoning
+matters here: a normal systemd shutdown already stops `k3s-node`, so the leading hypothesis
+is that the shutdown overruns the watchdog daemon's 60s hardware window and the board is
+cut partway through. Unverified, and confirming it needs a production node's network pulled
+to time a shutdown.
+
+**Recovery procedure, kept here so it is findable if this recurs:**
+
+- **Symptom.** Pods stay in phase `Running` on a `Ready` node but never become ready, or
+  sit in `Error`. No controller replaces them because the node looks healthy. In the
+  2026-08-27 incident this ran 1,557 kubelet retry attempts over six hours on
+  lib-potato-04 and hit attempt 1623 on lib-pi-01.
+- **Confirm.** `crictl ps -a` shows duplicate sandboxes holding stale container name
+  reservations.
+- **Fix.** `kubectl delete pod <name>`. The reserved name includes the pod's unique ID, so
+  a recreated pod asks for a name nobody holds and starts normally. All seven pods returned
+  within about a minute, and healthy pods on the same nodes were untouched.
+- **Escalation.** Restarting `k3s-node` also clears it, at the cost of restarting
+  everything else on the node.
+- **Gotcha.** The k3s unit on these nodes is `k3s-node.service`, not `k3s-agent.service`.
+  `systemctl is-active k3s-agent` returns `inactive` on a completely healthy node.
+
+**Not affected by this closure.** The six-hour blind spot was an alerting gap, and the
+alerting work is tracked separately in `docs/alerting/alerts-to-create.md`
+(`PodNotReady`, `DeploymentReplicaMismatch`), which the spec lists as out of scope for this
+project. Closing 04 does not drop it. `PodNotReady` remains the main fix for the blind
+spot, and the rule needs to catch both presentations above, since the `Error` case has no
+pod IP and any expression assuming one will miss it.
