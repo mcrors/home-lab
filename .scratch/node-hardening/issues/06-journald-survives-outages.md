@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: resolved
 Blocked by: 01
 
 # 06: Make sure journald logs actually survive an outage
@@ -82,3 +82,33 @@ Plus:
 - The `ForwardToSyslog` decision is written down.
 
 ## Comments
+
+### 2026-09-01 — closed on the acceptance test; the two config decisions are deferred
+
+**Confirmed.** `lib-pi-05` rebooted unexpectedly overnight and the operator triaged it from
+the surviving journal. That is this ticket's acceptance test met on a real unclean reboot
+rather than a staged `sysrq-trigger` one: logs persisted across a reset and were sufficient
+to diagnose from. Combined with ticket 01, the core goal is delivered. Logs now survive.
+
+**Deliberately not done.** Closing here leaves three scope items unaddressed. They are
+recorded so a future reader knows they were skipped by choice rather than missed:
+
+1. **`SyncIntervalSec` is still unset**, so journald's 5-minute default applies. It appears
+   nowhere in `infra/roles/common/tasks/journald.yaml` or `infra/vars/main.yaml`. Up to the
+   last five minutes before an unclean reboot are still lost, and the CRIT-and-above
+   exception does not help: the watchdog shutdown line, the kubelet retry loop and the
+   ticket 08 ping failures all log below that threshold. This is the item with real
+   diagnostic cost. Suggested value if revisited: 10s, since these nodes are on SSD and the
+   5-minute default exists to spare SD-card flash wear.
+2. **The `ForwardToSyslog` question is undecided.** Every message is still stored twice,
+   once in the journal and once in `/var/log/syslog`. Far less dangerous now that
+   `/var/log` is a 30GB SSD partition than it was on the 47MB ramdisk, where the doubling
+   contributed to the `DiskWillFillSoon` alert on 2026-08-27. Before turning the forward
+   off, check whether any tooling reads `/var/log/syslog` directly. That check has not been
+   done.
+3. **Retention limits were not revisited.** `SystemMaxUse=200M` and `MaxRetentionSec=7day`
+   are still the values sized for the old 47MB ramdisk, not a 30GB partition.
+
+**When to reopen:** if an incident's logs turn out to stop short of the moment of failure,
+that is item 1 biting, and it is worth doing then. Item 3 matters if seven days of history
+proves too short. Item 2 is housekeeping with no diagnostic consequence.

@@ -77,7 +77,7 @@ Every layer failed open. The tickets here address each link independently.
 | 03 | Fix the watchdog config defects | resolved | — |
 | 04 | Pods do not come back after a node reboot | ready-for-human | — |
 | 05 | Reboot cleanly instead of cutting power on isolation | needs-triage | 02 |
-| 06 | Make sure journald logs actually survive an outage | ready-for-agent | 01 |
+| 06 | Make sure journald logs actually survive an outage | resolved | — |
 | 07 | Watchdog reboots the node ~75s after every boot | ready-for-human | 02 |
 | 08 | Restarting the watchdog daemon reboots the node | resolved | — |
 
@@ -162,3 +162,16 @@ descriptions only reconcile if shutdown overran the 60s timer and the board was 
 mid-shutdown, which would also explain the containerd name-reservation damage in item 3.
 That is a plausible reading and it is **not verified**. The force-reset half of the 04/05
 experiment is what would settle it. Left as written until then.
+
+## Update 2026-09-01 (later)
+
+**Ticket 06 closed.** `lib-pi-05` rebooted unexpectedly overnight and was triaged from the
+surviving journal, which is 06's acceptance test met on a real unclean reboot. Logs now
+survive resets, so the project's central goal, being able to explain the next 15:00 event,
+is met.
+
+Closed with three scope items deliberately deferred rather than done: `SyncIntervalSec` is
+still unset so the 5-minute default applies, the `ForwardToSyslog` double-write question is
+undecided, and the retention limits are still sized for the old ramdisk. The first carries
+real diagnostic cost, since up to five minutes before an unclean reboot are still lost and
+nothing relevant logs at CRIT or above. Details and the reopen trigger are in ticket 06.
