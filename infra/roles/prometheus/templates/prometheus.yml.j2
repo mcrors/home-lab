@@ -4,6 +4,9 @@ global:
 
 scrape_configs:
   - job_name: 'node_exporter'
+    relabel_configs:
+      - target_label: cluster
+        replacement: '{{ prometheus_cluster_name }}'
     static_configs:
       - targets:
           {% for host in groups['all_nodes'] %}
@@ -17,6 +20,31 @@ scrape_configs:
       insecure_skip_verify: true
     bearer_token: '{{ prometheus_scraper_token }}'
     metrics_path: /metrics/cadvisor
+    relabel_configs:
+      - target_label: cluster
+        replacement: '{{ prometheus_cluster_name }}'
+    static_configs:
+      - targets:
+          {% for host in groups['k3s_cluster'] %}
+          - '{{ host }}:10250'
+          {% endfor %}
+
+  - job_name: 'kubelet'
+    scheme: https
+    tls_config:
+      insecure_skip_verify: true
+    bearer_token: '{{ prometheus_scraper_token }}'
+    metrics_path: /metrics
+    relabel_configs:
+      - target_label: cluster
+        replacement: '{{ prometheus_cluster_name }}'
+    # k3s serves apiserver, etcd and kubelet metrics from one registry on :10250,
+    # so an unfiltered scrape adds ~71k series. Keep only what the PVC dashboards
+    # need; widen this regex to pick up more.
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'kubelet_volume_stats_.*|kubelet_running_.*|kubelet_node_name'
+        action: keep
     static_configs:
       - targets:
           {% for host in groups['k3s_cluster'] %}
@@ -35,6 +63,9 @@ scrape_configs:
     scheme: https
     tls_config:
       insecure_skip_verify: true
+    relabel_configs:
+      - target_label: cluster
+        replacement: '{{ prometheus_cluster_name }}'
     static_configs:
       - targets:
           - 'ksm.houli.eu:443'
@@ -69,7 +100,6 @@ scrape_configs:
       - https://traefik.houli.eu
       - https://longhorn.houli.eu
       - https://plex.houli.eu/web/index.html
-      - https://jenkins.houli.eu/login
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

@@ -27,6 +27,7 @@
   template:
     src: prometheus.yml.j2
     dest: /mnt/prometheus/config/prometheus.yml
+  no_log: true  # the rendered config embeds the prometheus-scraper bearer token
 
 - name: Ensure Prometheus rules directory exists
   file:

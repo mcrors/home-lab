@@ -1,5 +1,9 @@
 compose_file_dir: /opt/containers/prometheus
 
+# Stamped onto every cluster-scoped scrape job so dashboards that filter
+# by {cluster="..."} (the dotdc Kubernetes set, among others) resolve.
+prometheus_cluster_name: "home-lab"
+
 # Default disk for LVM (change as needed)
 prometheus_disk: "/dev/sda1"  # Change this to your actual disk
 

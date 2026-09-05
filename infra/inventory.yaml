@@ -59,12 +59,21 @@ pis:
       static_ip: 192.168.1.235
     lib-pi-03.home:
       static_ip: 192.168.1.236
-    # lib-pi-04.home:
-      # static_ip: 192.168.1.237
     lib-pi-05.home:
       static_ip: 192.168.1.238
-    # lib-pi-06.home:
-      # static_ip: 192.168.1.239
+
+# Pis that are part of the fleet for monitoring and basic config, but are
+# deliberately kept out of `pis` and `sbc`. Being in `sbc` would enrol them in
+# the root-to-SSD migration (common.yaml --tags storage) and being in `pis`
+# would enrol them in the watchdog rollout (watchdog.yaml). They are children
+# of all_nodes only, so node_exporter and the Prometheus scrape list pick them
+# up. Move a host up into `pis` when it is ready for storage and watchdog.
+pis_monitor_only:
+  hosts:
+    lib-pi-04.home:
+      static_ip: 192.168.1.237
+    lib-pi-06.home:
+      static_ip: 192.168.1.239
 
 potatoes:
   hosts:
@@ -91,3 +100,4 @@ all_nodes:
   children:
     nucs:
     sbc:
+    pis_monitor_only:
