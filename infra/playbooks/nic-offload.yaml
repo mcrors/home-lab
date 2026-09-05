@@ -1,0 +1,12 @@
+---
+# Scoped to lib-pi-05. It is the only Raspberry Pi 5 in the fleet and so the only
+# node on the macb driver — every other pi is a Pi 4 on bcmgenet, and none of
+# them has ever shown this fault. See .scratch/pi-05-tx-stall/spec.md
+- name: Disable TX segmentation offload on the macb NIC
+  hosts: "{{ nic_offload_hosts | default('lib-pi-05.home') }}"
+  become: true
+  gather_facts: true
+  roles:
+    - nic_offload
+  vars_files:
+    - ../vars/main.yaml

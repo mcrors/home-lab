@@ -1,0 +1,29 @@
+# Managed by Ansible (infra/roles/nic_offload). Local edits are overwritten.
+#
+# Read by systemd-udevd when it sets up this interface, which happens on every
+# boot. An `ethtool -K` command would do the same thing but only until the next
+# reboot, and lib-pi-05 reboots itself every few hours, so a live-only setting
+# would silently disappear mid-experiment and read as a failure.
+#
+# Matched on MAC rather than interface name: the kernel names this eth0 and
+# systemd renames it end0, so a name match is fragile in a way the MAC is not.
+#
+# See .scratch/pi-05-tx-stall/spec.md
+
+[Match]
+MACAddress={{ nic_offload_mac }}
+
+[Link]
+# The two settings that matter. Both are on by default.
+#
+# TCPSegmentationOffload hands the chip one large buffer and lets it cut that
+# into packets itself. That is the descriptor handling under suspicion.
+# GenericSegmentationOffload is the kernel's software equivalent and is left off
+# alongside it, so the segmenting happens well before the driver either way.
+#
+# Scatter-gather is deliberately NOT disabled here. systemd .link files cannot
+# express it, it carries a larger throughput cost, and TSO is the primary
+# suspect. If this change does not hold, disabling scatter-gather is the
+# escalation and needs a different mechanism.
+TCPSegmentationOffload=false
+GenericSegmentationOffload=false
