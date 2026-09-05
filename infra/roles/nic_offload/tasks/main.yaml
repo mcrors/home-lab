@@ -1,0 +1,91 @@
+---
+
+# ----------------------------------------------------------
+# nic_offload
+#
+# Writes a systemd .link file disabling TCP segmentation offload, then applies
+# it to the running interface and proves it took effect.
+#
+# The verification at the end is the point of the role as much as the file is.
+# The whole experiment rests on the setting actually being in force; a .link
+# file that silently fails to match would leave the node unchanged and make a
+# continuing stall look like "TSO was not the cause" when it was never off.
+# ----------------------------------------------------------
+
+- name: Assert the target interface exists
+  assert:
+    that:
+      - nic_offload_interface in ansible_interfaces
+    fail_msg: >-
+      Interface {{ nic_offload_interface }} not found on this host. Interfaces
+      present: {{ ansible_interfaces | join(', ') }}. Set nic_offload_interface
+      if this node names it differently.
+    success_msg: "{{ nic_offload_interface }} is present"
+
+# Matched on MAC rather than name, so the file keeps applying if the interface
+# is ever renamed. Read from facts rather than hardcoded, so the role stays
+# usable if lib-pi-05 is ever rebuilt or replaced.
+- name: Resolve the interface MAC address
+  set_fact:
+    nic_offload_mac: "{{ ansible_facts[nic_offload_interface].macaddress }}"
+
+- name: Install the offload settings file
+  template:
+    src: nic-offload.link.j2
+    dest: "{{ nic_offload_link_file }}"
+    owner: root
+    group: root
+    mode: "0644"
+  when: nic_offload_enabled
+  register: nic_offload_link
+
+- name: Remove the offload settings file when disabled
+  file:
+    path: "{{ nic_offload_link_file }}"
+    state: absent
+  when: not nic_offload_enabled
+  register: nic_offload_link_removed
+
+# A .link file is read when the interface is set up, so writing it changes
+# nothing until the next boot. Re-triggering udev applies it now, and doing so
+# is also what proves the file matches — if it does not, the verification below
+# fails immediately rather than a week into the experiment.
+#
+# This re-runs udev for one interface. It does not take the link down, and no
+# rename can happen because the naming policy is unchanged.
+- name: Apply the settings to the running interface
+  command: "udevadm trigger --action=add /sys/class/net/{{ nic_offload_interface }}"
+  when:
+    - not ansible_check_mode
+    - (nic_offload_link.changed | default(false)) or (nic_offload_link_removed.changed | default(false))
+  changed_when: true
+
+- name: Settle udev before reading the result back
+  command: udevadm settle --timeout=10
+  when: not ansible_check_mode
+  changed_when: false
+
+- name: Read the offload state back from the interface
+  command: "ethtool -k {{ nic_offload_interface }}"
+  register: nic_offload_state
+  when: not ansible_check_mode
+  changed_when: false
+
+# Deliberately a hard failure. Ticket 02's acceptance criteria depend on these
+# being genuinely off, and a warning here would be read past.
+- name: Assert TSO and GSO are actually off
+  assert:
+    that:
+      - "'tcp-segmentation-offload: off' in nic_offload_state.stdout"
+      - "'generic-segmentation-offload: off' in nic_offload_state.stdout"
+    fail_msg: >-
+      The .link file was written but the settings are not in force on
+      {{ nic_offload_interface }}. The experiment in
+      .scratch/pi-05-tx-stall/issues/02-disable-tso-and-scatter-gather.md would
+      produce a false negative in this state. Check that the MAC in
+      {{ nic_offload_link_file }} matches the interface, and check
+      `journalctl -u systemd-udevd` for a match failure.
+    success_msg: "TSO and GSO are off on {{ nic_offload_interface }}"
+  when:
+    - nic_offload_enabled
+    - not ansible_check_mode

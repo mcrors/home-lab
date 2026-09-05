@@ -1,0 +1,32 @@
+---
+
+# ----------------------------------------------------------
+# nic_offload — disable TX segmentation offload on lib-pi-05
+#
+# lib-pi-05 stops transmitting every few hours and is rebooted by the watchdog.
+# The 2026-09-01 17:42 stall was captured by net_recorder and shows the MAC's
+# transmit descriptor pointer frozen at one address while the receive pointer
+# keeps advancing, packets piling up in the qdisc behind a stopped queue, and
+# no error reported by the driver or the kernel. The transmit engine parks and
+# never restarts.
+#
+# TSO is the leading trigger. It makes the driver hand the chip large buffers to
+# segment itself, which is where macb's descriptor handling is most complex and
+# most exposed to that class of stall. Turning it off costs some CPU on a node
+# that is not CPU-bound.
+#
+# See .scratch/pi-05-tx-stall/issues/02-disable-tso-and-scatter-gather.md
+# ----------------------------------------------------------
+
+# Interface to configure. The role matches on this interface's MAC address
+# rather than its name, so a rename cannot silently stop the setting applying.
+nic_offload_interface: end0
+
+# Set false to revert: the .link file is removed and the node returns to stock
+# behaviour at the next reboot. Kept as a variable so the experiment can be
+# undone in one place rather than by editing tasks.
+nic_offload_enabled: true
+
+# Where the settings file lives. systemd-udevd reads this directory when it sets
+# up the interface, which happens on every boot.
+nic_offload_link_file: "/etc/systemd/network/10-{{ nic_offload_interface }}-offload.link"

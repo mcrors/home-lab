@@ -278,3 +278,31 @@ covers what those were needed for. Worst-case runtime measured at 5.03s against 
 Note for whoever verifies by hand: use `sudo`. On the potato image `ping` has no
 `cap_net_raw` for unprivileged users, so running the check as the ordinary SSH user fails
 every probe, returns 1, and writes a false isolation line.
+
+### 2026-09-05 — first production firing, on lib-pi-05
+
+The check has now done its job on a real fault rather than a test. lib-pi-05
+stalled at 2026-09-01 23:56 (a transmit wedge, see `.scratch/pi-05-tx-stall/`),
+and the isolation check detected it and rebooted the node correctly:
+
+```
+00:00:03 watchdog-isolation: isolated: no reply from any of 5 targets
+         (192.168.1.230 192.168.1.231 192.168.1.232 192.168.1.249 192.168.1.1)
+00:00:40 watchdog: Retry timed-out at 255 seconds for /usr/local/sbin/node-isolation-check
+00:00:40 watchdog: shutting down the system because of error 1 = 'Operation not permitted'
+```
+
+All five targets genuinely were unreachable — the node could not transmit at all —
+so this is a correct positive, not a false one. It also confirms the daemon
+restart no longer carries the PID defect from ticket 08: this daemon had been
+running since a mid-life restart and the check worked regardless.
+
+**One wart worth knowing about.** The daemon reports the script's exit code as an
+errno, so a plain `exit 1` surfaces as `error 1 = 'Operation not permitted'`, which
+has nothing to do with what happened. The preceding line names the script, and the
+script's own `watchdog-isolation` message carries the real reason. Anyone reading a
+reboot out of the journal should look for the `watchdog-isolation` tag rather than
+the daemon's shutdown line.
+
+Not worth changing the exit code to chase a nicer errno; the `logger` line already
+solves it.

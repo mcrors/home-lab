@@ -26,3 +26,7 @@
 - import_playbook: "{{ playbook_dir }}/playbooks/net-recorder.yaml"
   tags:
     - net-recorder
+
+- import_playbook: "{{ playbook_dir }}/playbooks/nic-offload.yaml"
+  tags:
+    - nic-offload

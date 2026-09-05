@@ -107,9 +107,19 @@ events occur routinely on this hardware and are normally recovered from.
 This also explains why the earlier rounds found nothing: socket counts, fd counts,
 conntrack, voltage and traffic volume all sit above or beside the descriptor ring.
 
-**Confidence.** The correlation with the Pi 5 and `macb` is solid. The specific
-used-bit-read mechanism is inferred from counter behaviour and has not been observed
-directly; ticket 01 exists to observe it.
+**Confidence.** The correlation with the Pi 5 and `macb` is solid. The transmit
+engine parking is now directly observed (ticket 01, 2026-09-01 17:42 stall): the
+MAC's transmit descriptor pointer sits frozen at one address while the receive
+pointer keeps advancing. Why it parks is still unproven, and used-bit-read remains
+a candidate rather than a finding.
+
+**One step of the reasoning above is wrong and is kept for the record.** Point 2,
+the argument from `NETDEV WATCHDOG` staying silent, concluded that the driver kept
+reclaiming descriptors as sent. The capture shows it did not — the driver's own
+counter froze alongside the hardware's, so the ring was not draining and the
+kernel watchdog should have fired. It did not, across four minutes. That silence is
+now an open question and may be a second defect. The conclusion the argument
+supported still holds, reached instead by direct observation of the registers.
 
 ## Decisions recorded
 
@@ -135,10 +145,50 @@ directly; ticket 01 exists to observe it.
 
 | # | Title | Status | Blocked by |
 | --- | --- | --- | --- |
-| 01 | Capture MAC registers on TX stall | needs-info | — |
-| 02 | Disable TSO and scatter-gather on `end0` | ready-for-agent | 01 |
+| 01 | Capture MAC registers on TX stall | resolved | — |
+| 02 | Disable TSO on `end0` (scatter-gather deferred) | needs-info | — |
 | 03 | Move lib-pi-05 to kernel 6.18.42 | needs-info | 02 |
 | 04 | Auto-recover a stalled TX path | needs-triage | 02 |
 
 Run 02 and 03 strictly in sequence. Running them together makes the result
 unattributable, which is the entire reason they are separate tickets.
+
+## Update 2026-09-05 — TSO disabled, project paused
+
+`infra/roles/nic_offload` applied to lib-pi-05 at 10:20. TSO and GSO are off and
+verified in force; scatter-gather is deliberately still on. Ticket 02 carries the
+detail.
+
+**Full stall history now recorded**, seven in total:
+
+| Onset | Ended | Captured |
+| --- | --- | --- |
+| Aug 30 ~20:07 | watchdog reboot | no |
+| Aug 30 ~20:27 | watchdog reboot | no |
+| Aug 31 ~15:27 | watchdog reboot | no |
+| Aug 31 ~18:17 | watchdog reboot | no |
+| Sep 01 ~00:15 | watchdog reboot | samples only |
+| Sep 01 17:42 | watchdog reboot | 4 snapshots |
+| Sep 01 23:56 | watchdog reboot | 4 snapshots |
+
+**No stall has ever recovered on its own.** `net_recorder` writes a `TX_RESUMED`
+line when transmission restarts without a reboot, and across the whole recording
+period there is not one. The fault latches; it does not flicker. This also rules
+out brief self-healing stalls happening unnoticed between the visible ones.
+
+**The node then went quiet unaided** from Sep 1 23:56 to the change on Sep 5, a
+gap about four times its previous worst. Whatever governs the frequency is not
+understood, and it is the main threat to interpreting ticket 02's result. Hence
+the 2-3 week window rather than one.
+
+**What a future reader should do first:** check whether lib-pi-05 has stalled
+since 2026-09-05. `sudo grep -c "TX STALL SNAPSHOT" /var/log/net-recorder/stall.log*`
+on the node, remembering the rotated files. No stalls means ticket 02 is holding
+and the answer is "TSO was the trigger". Any stall means move to the
+scatter-gather escalation, and ticket 02 explains why that needs a new ticket.
+
+**Known gap, unfixed:** the rotating packet capture does not survive a reboot.
+`tcpdump -W` restarts numbering at file 0 on every start and the 5MB rotation
+never triggers at this traffic level, so the pre-stall capture is always the file
+overwritten on the way back up. Never blocked anything so far, since the counters
+and registers proved sufficient.

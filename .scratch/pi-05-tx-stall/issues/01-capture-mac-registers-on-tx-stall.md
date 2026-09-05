@@ -1,8 +1,8 @@
-Status: needs-info
+Status: resolved
 
 # 01: Capture MAC registers on TX stall
 
-Implemented and deployed 2026-09-01. Open until a real stall produces a snapshot.
+Implemented and deployed 2026-09-01. Fired on the 2026-09-01 17:42 stall. See the Answer at the bottom.
 
 `samples.log` can show that the MAC stopped transmitting. It cannot show why. The
 spec's used-bit-read hypothesis is inferred from counter behaviour and needs direct
@@ -97,3 +97,55 @@ are piling up above the driver and would point somewhere else entirely.
 
 Nothing else may change on `lib-pi-05` until a snapshot has been captured, or until
 02 is deliberately started knowing this may never fire again.
+
+## Answer — 2026-09-01 17:42 stall
+
+Fired as designed. Four snapshots at zero-TX counts 2, 4, 8 and 16, spanning
+~2.5 minutes, all intact after the watchdog reboot.
+
+**The prediction in "What to read" above was wrong.** Both counters froze:
+
+| | snapshot 1 (17:42:30) | snapshot 4 (17:44:50) |
+| --- | --- | --- |
+| `tx_frames` (MAC hardware) | 4893462 | 4893462 |
+| `q0_tx_packets` (driver) | 4710038 | 4710038 |
+| `rx_frames` (receive) | 2608537 | 2609354 |
+
+The driver was not reclaiming descriptors the hardware never sent. It stopped
+completing them at all, which is why `NETDEV WATCHDOG` was expected to fire and
+the reasoning in the spec built on its silence does not hold. Correct that
+reading; the conclusion it supported happens to survive for a different reason.
+
+**The register diff gave the answer directly, which is what this ticket was for.**
+Healthy dump at 17:42:10 against the stalled dump 20s later:
+
+```
+healthy  0x0010:  60 52 10 3c   c0 03 10 3c
+stalled  0x0010:  58 66 10 3c   c0 03 10 3c
+                  ^^^^^^^^^^^   ^^^^^^^^^^^
+                  advancing     frozen
+```
+
+Little-endian, these are words 4 and 5 of macb's `get_regs` array, which per
+`macb_get_regs` are RBQP and TBQP — the receive and transmit descriptor queue
+pointers. The receive pointer advances; the transmit pointer sits at `0x3c1003c0`
+in both. The transmit engine is parked at one descriptor and not moving.
+
+This is the self-validating comparison the ticket described: the layout and the
+diagnosis confirm each other, since only the RBQP/TBQP reading explains a diff
+that tracks exactly the direction still working.
+
+**New evidence not previously available: the qdisc backlog is growing.**
+328 → 541 → 996 packets across the snapshots, with `dropped 0`. Packets are
+queueing above a stopped transmit queue rather than being discarded, so the
+driver stopped accepting work rather than silently swallowing it.
+
+**Still silent.** No `macb` or `NETDEV WATCHDOG` message in the kernel log for
+that boot, `tx_underrun` 0, no error counter anywhere. A stopped transmit queue
+should trip the kernel's own watchdog within seconds and it stayed quiet for four
+minutes. That silence is now an open question in its own right and may be a
+second defect.
+
+**What this does and does not settle.** The transmit engine parking is now
+directly observed rather than inferred. Why it parks is not. The used-bit-read
+mechanism in the spec remains the leading candidate and remains unproven.
