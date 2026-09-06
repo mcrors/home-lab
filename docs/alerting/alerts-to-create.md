@@ -51,7 +51,7 @@ Complete as of 2026-09-06. `blackbox-ingress` discovers targets from Ingress obj
 - [X] Empty-target guards added: `BlackboxIngressDiscoveryEmpty` and `BlackboxStaticTargetsEmpty`.
       Both use `absent()`. `count(...) == 0` cannot work here: `count()` over an empty vector
       returns an empty vector, so the comparison never evaluates.
-- [ ] Decide whether the two blackbox jobs should carry the `cluster` label added in `2deb3d3`
+- [ ] Decide whether the two blackbox jobs should carry the `cluster` label added in `ea4c481`
 
 ## New alerts — Observability meta
 

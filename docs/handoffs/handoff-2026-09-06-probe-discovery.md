@@ -15,14 +15,14 @@ Ticket 10 (`10-blackbox-ingress-autodiscovery.md`) is closed.
 
 | Commit | Change |
 |---|---|
-| `8680dc9` | `prometheus-scraper` ClusterRole granted `list`/`watch` on `networking.k8s.io/ingresses` |
-| `4a86c7f` | `blackbox-ingress` scrape job added, using `kubernetes_sd_configs` with `role: ingress` |
-| `28956f8` | plex annotated (with a `probe-path` override) and migrated off the `node_type` label |
-| `ae179a4` | prowlarr, radarr, sonarr, transmission, uptime-kuma annotated |
-| `0aa6f70` | alertmanager, blackbox, grafana, kube-state-metrics, ntfy annotated |
-| `5d16386` | longhorn annotated |
-| `9eb6f85` | static `blackbox-http` list shrunk from 12 targets to 3 |
-| `ded143a` | `BlackboxIngressDiscoveryEmpty` and `BlackboxStaticTargetsEmpty` guards added |
+| `8d85952` | `prometheus-scraper` ClusterRole granted `list`/`watch` on `networking.k8s.io/ingresses` |
+| `026b95a` | `blackbox-ingress` scrape job added, using `kubernetes_sd_configs` with `role: ingress` |
+| `ae1f6a6` | plex annotated (with a `probe-path` override) and migrated off the `node_type` label |
+| `09b0c68` | prowlarr, radarr, sonarr, transmission, uptime-kuma annotated |
+| `49dda5b` | alertmanager, blackbox, grafana, kube-state-metrics, ntfy annotated |
+| `763386c` | longhorn annotated |
+| `e8ab0bf` | static `blackbox-http` list shrunk from 12 targets to 3 |
+| `2ca5729` | `BlackboxIngressDiscoveryEmpty` and `BlackboxStaticTargetsEmpty` guards added |
 
 ### Where probe coverage landed
 

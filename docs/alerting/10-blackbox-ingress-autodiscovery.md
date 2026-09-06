@@ -4,20 +4,20 @@ Status: done, 2026-09-06. All 12 cluster ingresses are discovered and probing gr
 
 ## Done
 
-- ClusterRole `prometheus-scraper` granted `list`/`watch` on `networking.k8s.io/ingresses` (`8680dc9`)
-- `blackbox-ingress` scrape job added to `prometheus.yml.j2` (`4a86c7f`), running alongside
+- ClusterRole `prometheus-scraper` granted `list`/`watch` on `networking.k8s.io/ingresses` (`8d85952`)
+- `blackbox-ingress` scrape job added to `prometheus.yml.j2` (`026b95a`), running alongside
   `blackbox-http`
 - Verified on lib-pi-06: 12 ingresses discovered, opt-in filter working, no discovery errors
 - `plex` annotated and probing green through the new job, exercising the path override
 
-- All 12 ingresses annotated (`ae179a4`, `0aa6f70`, `5d16386`). Longhorn was applied with
+- All 12 ingresses annotated (`09b0c68`, `49dda5b`, `763386c`). Longhorn was applied with
   `kubectl annotate` because its playbook has no tags and would have run disk setup.
-- `blackbox-http` shrunk to `prometheus`, `omv`, `traefik` (`9eb6f85`)
-- Empty-target guards added (`ded143a`)
+- `blackbox-http` shrunk to `prometheus`, `omv`, `traefik` (`e8ab0bf`)
+- Empty-target guards added (`2ca5729`)
 
 ## Remaining
 
-- Decide whether both blackbox jobs should carry the `cluster` label added in `2deb3d3`
+- Decide whether both blackbox jobs should carry the `cluster` label added in `ea4c481`
 
 Replace the hand-maintained `blackbox-http` target list with Kubernetes service discovery, so new
 services are probed without editing `prometheus.yml.j2`.
