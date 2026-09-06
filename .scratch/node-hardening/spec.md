@@ -78,7 +78,7 @@ Every layer failed open. The tickets here address each link independently.
 | 04 | Pods do not come back after a node reboot | wontfix | — |
 | 05 | Reboot cleanly instead of cutting power on isolation | wontfix | — |
 | 06 | Make sure journald logs actually survive an outage | resolved | — |
-| 07 | Watchdog reboots the node ~75s after every boot | ready-for-agent | — |
+| 07 | Watchdog reboots the node ~75s after every boot | resolved | — |
 | 08 | Restarting the watchdog daemon reboots the node | resolved | — |
 
 Start with 01 and 06. Until logs survive a reboot, tickets 03, 04 and 05 are all

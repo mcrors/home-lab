@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: resolved
 
 # 07: The watchdog reboots the node ~75s after every boot, because it starts before the network
 
@@ -144,3 +144,50 @@ all require a boot: exactly one entry in `journalctl --list-boots` after a `syst
 reboot`, no `network is unreachable` lines at startup, and a genuinely isolated node still
 rebooting. The rollout deliberately avoided reboots, so the boot-window fix is deployed but
 untested. Verify on the next planned reboot of a watchdog node, on both a pi and a potato.
+
+### 2026-09-06 — acceptance met on a pi, closed
+
+**lib-pi-05 rebooted twice today and neither reboot doubled.** That is the boot the
+two guards have been waiting on since they were deployed on 2026-09-01. Both reboots
+were real rather than staged: the watchdog shut the node down at 07:09:55 during a TX
+stall, and the `pi-05-tx-stall` kernel upgrade rebooted it at 10:19:55.
+
+Against the acceptance criteria:
+
+- **Exactly one boot per reboot.** Two reboots, two boot records, no doubles.
+
+  ```
+  -1  Sun 2026-09-06 07:00:39 CEST  ->  Sun 2026-09-06 10:21:25 CEST
+   0  Sun 2026-09-06 10:19:55 CEST  ->  (current)
+  ```
+
+- **No `network is unreachable` lines at startup.** Zero on both boots. The daemon now
+  starts at 07:10:29 and 10:21:57, after the network rather than ~31s into boot.
+
+- **A genuinely isolated node still reboots.** Verified in production the same day, not
+  simulated. At 07:09:48 `watchdog-isolation` logged `isolated: no reply from any of 5
+  targets` and the daemon shut the node down seven seconds later. The grace period did
+  not disable the check.
+
+Both guards confirmed in place on lib-pi-05: `GRACE=180` in
+`/usr/local/sbin/node-isolation-check`, and the `watchdog.service.d` drop-in ordering
+after `network-online.target`.
+
+**The potato half of criterion 1 is not boot-verified, and is being accepted as-is.**
+lib-potato-04 has been up since 2026-08-31 18:00, so it has not rebooted under the new
+config. What is confirmed there without rebooting it: `GRACE=180` present, the drop-in
+present, `systemd-networkd-wait-online` enabled, and `node-isolation-check` exiting 0 by
+hand. Rebooting a healthy node purely to tick this box was not judged worth it. The next
+time lib-potato-04 reboots for any reason, check `journalctl --list-boots` for a double.
+
+**Scope note that bounds all of this.** The watchdog runs on five of the nine nodes —
+lib-pi-01, -02, -03, -05 and lib-potato-04 — because `infra/playbooks/watchdog.yaml`
+targets `pis:lib-potato-04.home`. lib-potato-01, -02 and -03 (the control plane) and
+lib-nuc-01 have no watchdog and no `/etc/watchdog.conf` at all, so this class of fault
+could never have reached them.
+
+Correcting one thing for the record: the "Ticket 02 does not fix this" section above is
+right, and an early reading of this closure got it wrong by crediting the disappearance
+of the `ping` target. The ping target going away is necessary but not sufficient — the
+peer-quorum check would have failed identically in the boot window. The fix is the two
+guards in this ticket.
