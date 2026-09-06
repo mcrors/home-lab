@@ -1,4 +1,6 @@
 ingress:
+  annotations:
+    prometheus.io/probe: "true"
   hosts:
     - host: radarr.houli.eu
       paths:

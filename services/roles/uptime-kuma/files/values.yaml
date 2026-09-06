@@ -11,7 +11,8 @@ service:
 ingress:
   enabled: true
   className: traefik
-  annotations: {}
+  annotations:
+    prometheus.io/probe: "true"
   hosts:
     - host: uptime.houli.eu
       paths:

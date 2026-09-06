@@ -32,6 +32,8 @@ affinity:
           topologyKey: kubernetes.io/hostname
 
 ingress:
+  annotations:
+    prometheus.io/probe: "true"
   hosts:
     - host: transmission.houli.eu
       paths:

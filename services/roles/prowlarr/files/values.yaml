@@ -1,4 +1,6 @@
 ingress:
+  annotations:
+    prometheus.io/probe: "true"
   hosts:
     - host: prowlarr.houli.eu
       paths:
