@@ -110,6 +110,71 @@ scrape_configs:
       - target_label: __address__
         replacement: blackbox.houli.eu
 
+  # Probe targets discovered from Ingress objects carrying prometheus.io/probe=true.
+  # Runs alongside blackbox-http while we confirm discovery works; the static job
+  # shrinks to the out-of-cluster targets once this is proven.
+  - job_name: blackbox-ingress
+    scheme: https
+    metrics_path: /probe
+    kubernetes_sd_configs:
+      - role: ingress
+        api_server: https://{{ master_ip }}:6443
+        bearer_token: '{{ prometheus_scraper_token }}'
+        tls_config:
+          insecure_skip_verify: true
+    relabel_configs:
+      # Opt-in: skip every ingress that has not asked to be probed.
+      - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe]
+        regex: "true"
+        action: keep
+
+      # Default probe URL: scheme://host + the path the Ingress declares.
+      - source_labels:
+          - __meta_kubernetes_ingress_scheme
+          - __meta_kubernetes_ingress_host
+          - __meta_kubernetes_ingress_path
+        separator: ;
+        regex: (.+);(.+);(.*)
+        replacement: ${1}://${2}${3}
+        target_label: __param_target
+
+      # Override for services whose health page is not at the Ingress path
+      # (plex needs /web/index.html, jenkins will need /login). The third capture
+      # group requires a non-empty annotation, so this rule is a no-op without one
+      # and the default above survives.
+      - source_labels:
+          - __meta_kubernetes_ingress_scheme
+          - __meta_kubernetes_ingress_host
+          - __meta_kubernetes_ingress_annotation_prometheus_io_probe_path
+        separator: ;
+        regex: (.+);(.+);(.+)
+        replacement: ${1}://${2}${3}
+        target_label: __param_target
+
+      # Same default-then-override shape for the blackbox module.
+      - target_label: __param_module
+        replacement: http_2xx
+      - source_labels: [__meta_kubernetes_ingress_annotation_prometheus_io_probe_module]
+        regex: (.+)
+        target_label: __param_module
+
+      # Keep instance as a bare host, matching blackbox-http.
+      - source_labels: [__param_target]
+        regex: (https?://[^/]+)(?:/.*)?
+        replacement: ${1}
+        target_label: instance
+
+      # Carry the ingress identity through so probe alerts can be joined against
+      # kube-state-metrics alerts for the same workload.
+      - source_labels: [__meta_kubernetes_namespace]
+        target_label: namespace
+      - source_labels: [__meta_kubernetes_ingress_name]
+        target_label: ingress
+
+      # Scrape the exporter, not the target.
+      - target_label: __address__
+        replacement: blackbox.houli.eu
+
 rule_files:
   - "rules/*.yml"
 
