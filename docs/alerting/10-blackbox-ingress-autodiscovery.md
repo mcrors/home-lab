@@ -1,7 +1,6 @@
 # Task: Auto-discover Blackbox Probe Targets from Ingresses
 
-Status: in progress. The discovery job is live and proven; the ingress annotations are being
-rolled out one service at a time.
+Status: done, 2026-09-06. All 12 cluster ingresses are discovered and probing green.
 
 ## Done
 
@@ -11,11 +10,13 @@ rolled out one service at a time.
 - Verified on lib-pi-06: 12 ingresses discovered, opt-in filter working, no discovery errors
 - `plex` annotated and probing green through the new job, exercising the path override
 
+- All 12 ingresses annotated (`ae179a4`, `0aa6f70`, `5d16386`). Longhorn was applied with
+  `kubectl annotate` because its playbook has no tags and would have run disk setup.
+- `blackbox-http` shrunk to `prometheus`, `omv`, `traefik` (`9eb6f85`)
+- Empty-target guards added (`ded143a`)
+
 ## Remaining
 
-- Annotate the other 11 ingresses
-- Shrink `blackbox-http` to `omv`, `prometheus`, `traefik`
-- Add the empty-target guard alert (see `alerts-to-create.md`)
 - Decide whether both blackbox jobs should carry the `cluster` label added in `2deb3d3`
 
 Replace the hand-maintained `blackbox-http` target list with Kubernetes service discovery, so new

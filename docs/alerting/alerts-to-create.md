@@ -40,19 +40,18 @@ Deployed to lib-pi-06 on 2026-09-06 as the `networking` rule group.
 
 ### Probe coverage
 
-`blackbox-ingress` discovers targets from Ingress objects carrying `prometheus.io/probe: "true"`.
-See the README for the annotation reference. Migration status:
+Complete as of 2026-09-06. `blackbox-ingress` discovers targets from Ingress objects carrying
+`prometheus.io/probe: "true"`; see the README for the annotation reference.
 
 - [X] Ingress service discovery job live, verified against 12 discovered ingresses
-- [X] `plex` annotated, including the `/web/index.html` path override
-- [ ] Annotate the remaining 11 ingresses. Three of them are currently unprobed by any job:
-      `alertmanager.houli.eu`, `ntfy.houli.eu`, `uptime.houli.eu`, which together are the alerting
-      pipeline itself.
-- [ ] Shrink `blackbox-http` to the three out-of-cluster targets (`omv`, `prometheus`, `traefik`)
-      once every in-cluster target is discovered
-- [ ] Add the empty-target guard once annotations exist. It would fire correctly but uselessly
-      today, while the job legitimately has zero active targets:
-      `absent(up{job="blackbox-ingress"}) or count(up{job="blackbox-ingress"}) == 0`
+- [X] All 12 cluster ingresses annotated and probing green. `alertmanager.houli.eu`,
+      `ntfy.houli.eu` and `uptime.houli.eu` were previously probed by nothing.
+- [X] `plex` carries a `probe-path` override for `/web/index.html`, since it answers 401 at `/`
+- [X] `blackbox-http` shrunk to the three out-of-cluster targets: `prometheus`, `omv`, `traefik`
+- [X] Empty-target guards added: `BlackboxIngressDiscoveryEmpty` and `BlackboxStaticTargetsEmpty`.
+      Both use `absent()`. `count(...) == 0` cannot work here: `count()` over an empty vector
+      returns an empty vector, so the comparison never evaluates.
+- [ ] Decide whether the two blackbox jobs should carry the `cluster` label added in `2deb3d3`
 
 ## New alerts — Observability meta
 
