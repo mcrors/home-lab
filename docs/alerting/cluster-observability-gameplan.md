@@ -1,5 +1,13 @@
 # Cluster Observability Stack — Game Plan
 
+> **Superseded, kept as history. Written 2026-05-30; the checkboxes below were last accurate then
+> and are wrong now.** Phases 1, 2 and 3 are all delivered: Alertmanager, alert rules, ntfy, the
+> ntfy bridge and the Signal bridge are live, and probe targets are discovered from ingresses.
+> Phase 4 (Grafana dashboards) is the only part still outstanding, tracked in tickets 08 and 09.
+>
+> For current state read `README.md`. For the alert backlog read `alerts-to-create.md`. Do not
+> take the checkboxes in this file as a source of truth.
+
 ## Current State
 
 - **Prometheus**: external, on lib-pi-06

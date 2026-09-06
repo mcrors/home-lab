@@ -1,5 +1,12 @@
 # Task: Add kube-state-metrics Dashboard to Grafana
 
+Status: not started.
+
+Same provisioning caveat as ticket 08: `infra/roles/grafana/files/values.yaml` has
+`dashboardProviders` and `dashboards` commented out, so an imported dashboard is not captured in
+code. Turning provisioning on would let the dashboard ID be pinned in the values file and survive a
+Grafana rebuild.
+
 Import a cluster-level Grafana dashboard to visualise deployment health, pod states, node conditions, and resource requests vs limits using the kube-state-metrics data already being scraped.
 
 ## Background

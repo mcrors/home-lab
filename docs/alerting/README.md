@@ -148,12 +148,21 @@ volume, so this is noise rather than risk.
 
 ## Blackbox probe targets
 
-Two jobs feed `BlackboxProbeFailed`.
+Two jobs feed `BlackboxProbeFailed`. A target belongs to exactly one of them.
 
-| Job | Source | Covers |
-|---|---|---|
-| `blackbox-http` | Static list in `prometheus.yml.j2` | Targets outside the cluster |
-| `blackbox-ingress` | Kubernetes service discovery, `role: ingress` | Ingresses that opt in |
+| Job | Source | Covers | Targets |
+|---|---|---|---|
+| `blackbox-http` | Static list in `prometheus.yml.j2` | Anything with no Kubernetes Ingress: `prometheus`, `omv`, `traefik` | 3 |
+| `blackbox-ingress` | Kubernetes service discovery, `role: ingress` | Every ingress carrying the opt-in annotation | 12 |
+
+`traefik.houli.eu` stays static because it is a Traefik `IngressRoute` CRD, and `role: ingress`
+only sees standard `networking.k8s.io/v1` Ingress objects.
+
+Two alerts guard against these lists going empty, `BlackboxIngressDiscoveryEmpty` and
+`BlackboxStaticTargetsEmpty`. Every other probe alert fires on a failed probe; if a job has no
+targets there is nothing to fail, and monitoring stops silently while looking healthy. Both use
+`absent()`. Do not rewrite them as `count(...) == 0`, which cannot fire: `count()` over an empty
+vector returns an empty vector, so the comparison never evaluates.
 
 Discovery authenticates to the API server with the `prometheus-scraper` token and needs
 `list`/`watch` on `networking.k8s.io/ingresses`, granted in `infra/roles/prometheus_scraper/`.

@@ -1,5 +1,19 @@
 # Task: Add Node Reboot Frequency Panel to Grafana
 
+Status: not started.
+
+**Blocked by a bug, not by effort.** `NodeRecentlyRebooted` in `alerts.yaml` selects
+`up{job=~"node-exporter|node"}` while the job is actually named `node_exporter`. Prometheus anchors
+regex matchers fully, so that rule matches nothing and has never fired. The panel below queries the
+raw `node_boot_time_seconds` metric and would work, but the whole reboot-visibility story
+(this panel, `NodeUnexpectedReboot`, `MultiNodeRebootWindow`) is worth doing in one pass after the
+job name is fixed.
+
+Note there is no dashboard provisioning in this repo. `infra/roles/grafana/files/values.yaml` has
+`dashboardProviders` and `dashboards` entirely commented out, so any dashboard added today lives
+only in Grafana's database and is not reproducible from code. Decide whether to turn provisioning
+on before hand-building panels.
+
 Add a panel to track how often each node reboots over time, using the `node_boot_time_seconds` metric already scraped by node_exporter.
 
 ## Background
