@@ -36,6 +36,12 @@
             - nodes/metrics
             - nodes/proxy
           verbs: ["get"]
+        # Ingress discovery for the blackbox-ingress scrape job. Read-only: Prometheus
+        # enumerates Ingress objects and follows changes, it never modifies them.
+        - apiGroups: ["networking.k8s.io"]
+          resources:
+            - ingresses
+          verbs: ["list", "watch"]
 
 - name: Create prometheus-scraper ClusterRoleBinding
   kubernetes.core.k8s:
