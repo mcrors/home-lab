@@ -209,3 +209,25 @@ groups:
         annotations:
           summary: "DNS resolution failed: {{ $labels.instance }}"
           description: "DNS probe failing for 2 minutes. Pi-hole may be down."
+
+      # Every other probe alert fires on a failed probe. These two fire when there
+      # are no probes at all, which otherwise looks identical to everything being
+      # healthy. absent() is required here: count() over an empty vector returns an
+      # empty vector, so "count(...) == 0" can never fire.
+      - alert: BlackboxIngressDiscoveryEmpty
+        expr: absent(up{job="blackbox-ingress"})
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Blackbox ingress discovery has no targets"
+          description: "No ingress is being probed. Either service discovery is broken (token, RBAC or API server) or every prometheus.io/probe annotation has been removed."
+
+      - alert: BlackboxStaticTargetsEmpty
+        expr: absent(up{job="blackbox-http"})
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Blackbox static target list is empty"
+          description: "The out-of-cluster probe targets (prometheus, omv, traefik) are no longer being scraped."
