@@ -29,10 +29,30 @@
 
 ## New alerts — Networking / Ingress
 
-- [ ] **BlackboxProbeFailed** — endpoint not responding to synthetic check (`probe_success == 0`).
-- [ ] **SSLCertExpiringSoon** — certificate expiring within 14d (warning) / 7d (critical). Catches cert-manager failures.
-- [ ] **TraefikHighErrorRate** — elevated 5xx rate across ingress.
-- [ ] **DNSResolutionFailed** — blackbox DNS probe failing. Pi-hole is single point of failure.
+Deployed to lib-pi-06 on 2026-09-06 as the `networking` rule group.
+
+- [X] **BlackboxProbeFailed** — endpoint not responding to synthetic check (`probe_success == 0`).
+- [X] **SSLCertExpiringSoon** — certificate expiring within 14d (warning) / 7d (critical).
+- [~] **TraefikHighErrorRate** — deployed but **cannot fire**: no Traefik scrape job exists, so
+      `traefik_service_requests_total` is never collected.
+- [~] **DNSResolutionFailed** — deployed but **cannot fire**: the rule selects `job="blackbox-dns"`
+      and the only blackbox jobs are `blackbox`, `blackbox-http` and `blackbox-ingress`.
+
+### Probe coverage
+
+`blackbox-ingress` discovers targets from Ingress objects carrying `prometheus.io/probe: "true"`.
+See the README for the annotation reference. Migration status:
+
+- [X] Ingress service discovery job live, verified against 12 discovered ingresses
+- [X] `plex` annotated, including the `/web/index.html` path override
+- [ ] Annotate the remaining 11 ingresses. Three of them are currently unprobed by any job:
+      `alertmanager.houli.eu`, `ntfy.houli.eu`, `uptime.houli.eu`, which together are the alerting
+      pipeline itself.
+- [ ] Shrink `blackbox-http` to the three out-of-cluster targets (`omv`, `prometheus`, `traefik`)
+      once every in-cluster target is discovered
+- [ ] Add the empty-target guard once annotations exist. It would fire correctly but uselessly
+      today, while the job legitimately has zero active targets:
+      `absent(up{job="blackbox-ingress"}) or count(up{job="blackbox-ingress"}) == 0`
 
 ## New alerts — Observability meta
 
@@ -51,4 +71,14 @@
 
 ## Alertmanager config
 
-- [ ] Add `inhibit_rules` — critical suppresses warning for same alertname + instance.
+- [X] Add `inhibit_rules` — critical suppresses warning for same alertname + instance. Deployed and
+      verified in `configmap/alertmanager`.
+- [ ] Set `group_by` on the route. Currently unset, so every alert lands in a single aggregation
+      group and unrelated alerts batch into one notification. See `11-alert-grouping-and-inhibition.md`.
+
+## Broken rule
+
+- [ ] **NodeRecentlyRebooted** never fires. `alerts.yaml:90` selects `up{job=~"node-exporter|node"}`
+      but the job is named `node_exporter`. Prometheus anchors regex matchers fully, so this matches
+      nothing. Blocks reboot visibility, which `08-node-reboot-panel.md`, `NodeUnexpectedReboot` and
+      `MultiNodeRebootWindow` all depend on.

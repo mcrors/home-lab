@@ -125,16 +125,66 @@ Check each leg:
 
 ---
 
-## Alerts still to implement
+## Alert rules
 
-| Alert | Description |
-|---|---|
-| `DeploymentReplicaMismatch` | Desired vs available replicas differ |
-| `JobFailed` | Kubernetes Job exited non-zero |
-| `BlackboxProbeFailed` | Synthetic probe down |
-| `SSLCertExpiringSoon` | Certificate expires within 14 days |
-| `TraefikHighErrorRate` | 5xx rate above threshold |
-| `DNSResolutionFailed` | Internal DNS not resolving |
-| `PrometheusTargetDown` | Scrape target unreachable |
-| `PrometheusStorageFilling` | TSDB filling up |
-| `SystemClockSkew` | NTP drift above threshold |
+`alerts-to-create.md` is the canonical backlog. Do not duplicate its status here.
+
+Rules live at `infra/roles/prometheus/files/alerts.yaml` and deploy to
+`/mnt/prometheus/config/rules/alerts.yml` on lib-pi-06. Committed does not mean deployed: the
+prometheus role is run by hand, and the two files sat four months apart until 2026-09-05. Check
+before assuming a rule is live:
+
+```bash
+ssh lib-pi-06 'grep -E "^\s+- alert:" /mnt/prometheus/config/rules/alerts.yml'
+```
+
+Deploy with `ansible-playbook infra/playbooks/observability.yaml --tags prometheus`. The role has no
+reload handler; the `docker-compose up --force-recreate -d` at the end of `tasks/main.yaml` picks up
+config changes. That command is not idempotent, so **every run of this tag restarts Prometheus**
+whether or not anything changed. Restart takes under 20 seconds and the TSDB is on a persistent LVM
+volume, so this is noise rather than risk.
+
+---
+
+## Blackbox probe targets
+
+Two jobs feed `BlackboxProbeFailed`.
+
+| Job | Source | Covers |
+|---|---|---|
+| `blackbox-http` | Static list in `prometheus.yml.j2` | Targets outside the cluster |
+| `blackbox-ingress` | Kubernetes service discovery, `role: ingress` | Ingresses that opt in |
+
+Discovery authenticates to the API server with the `prometheus-scraper` token and needs
+`list`/`watch` on `networking.k8s.io/ingresses`, granted in `infra/roles/prometheus_scraper/`.
+
+### Opting an ingress in
+
+Add annotations to the ingress. The probe starts within a minute, no Prometheus change needed.
+
+| Annotation | Required | Purpose |
+|---|---|---|
+| `prometheus.io/probe` | yes | `"true"` to be probed. Must be a quoted string. |
+| `prometheus.io/probe-path` | no | Probe a path other than the one the Ingress declares |
+| `prometheus.io/probe-module` | no | Blackbox module other than `http_2xx` |
+
+`prometheus.io/probe-path` exists because some services do not return 2xx at their ingress path.
+Plex answers 401 at `/` and 200 at `/web/index.html`. Jenkins will need `/login`.
+
+### Debugging discovery
+
+The Service Discovery page at `https://prometheus.houli.eu/service-discovery` shows every discovered
+candidate with its raw `__meta_*` labels and what they became after relabelling. Annotation keys are
+mangled: every character outside `[a-zA-Z0-9_]` becomes an underscore, so `prometheus.io/probe-path`
+arrives as `__meta_kubernetes_ingress_annotation_prometheus_io_probe_path`.
+
+Zero scraped targets is ambiguous on its own. This separates "discovery found nothing" from
+"discovery worked and the filter dropped everything":
+
+```promql
+prometheus_sd_discovered_targets{config="blackbox-ingress"}
+```
+
+Note the namespace label is `__meta_kubernetes_namespace`, without the `ingress` infix that the
+other ingress metadata labels carry.
+
