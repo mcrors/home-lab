@@ -61,6 +61,14 @@ Supporting detail:
 
 ## Root cause hypothesis
 
+> **Superseded 2026-09-06.** The cause is known upstream and it is not the
+> used-bit-read race reasoned toward below. The TSTART doorbell write is a posted
+> MMIO write that can be dropped in the PCIe fabric between the RP1 and the SoC, so
+> the MAC never starts the TX DMA. See the 2026-09-06 update at the bottom. This
+> section is kept because the observations in it are sound and only the mechanism
+> drawn from them was wrong.
+
+
 **`lib-pi-05` is the only Raspberry Pi 5 in the fleet.**
 
 | node | model | ethernet driver |
@@ -117,9 +125,12 @@ a candidate rather than a finding.
 the argument from `NETDEV WATCHDOG` staying silent, concluded that the driver kept
 reclaiming descriptors as sent. The capture shows it did not — the driver's own
 counter froze alongside the hardware's, so the ring was not draining and the
-kernel watchdog should have fired. It did not, across four minutes. That silence is
-now an open question and may be a second defect. The conclusion the argument
-supported still holds, reached instead by direct observation of the registers.
+kernel watchdog should have fired. It did not, across four minutes.
+
+**That silence was explained on 2026-09-06 and is not a second defect.**
+`netdev_watchdog_up()` returns immediately when the driver has no `ndo_tx_timeout`,
+and `macb` in 6.18.10 had none, so the transmit watchdog timer was never armed on
+this node. The queue state was never in question. Ticket 03 carries the detail.
 
 ## Decisions recorded
 
@@ -128,16 +139,22 @@ supported still holds, reached instead by direct observation of the registers.
 - **Instrument before mitigating.** If the TSO change works there is never another
   stall to confirm the mechanism on, and if it fails the next stall should already
   be captured in full. Ticket 01 goes first for that reason.
-- **Auto-recovery goes last.** A link bounce masks the symptom that tickets 02 and
-  03 are measured by, and destroys the evidence for whatever the next theory needs.
+- **Auto-recovery goes last.** *Withdrawn 2026-09-06.* It assumed the measure is
+  reboots. `net_recorder` records stall onset and a `TX_RESUMED` line separately, so
+  frequency stays measurable with recovery active. Ticket 04 carries the detail.
 - **Persist offload settings through the role, never `ethtool -K` by hand.** This
   node reboots itself every few hours; a live-only setting would silently vanish at
-  the first stall and the experiment would read as a false negative.
+  the first stall and the experiment would read as a false negative. The role is
+  gone, but the reasoning applies to any future per-node network setting here.
+- **Measure by `stall.log`, not by reboots.** *Added 2026-09-06.* Now that the
+  kernel recovers from a stall without rebooting, reboot count no longer tracks
+  fault frequency and would read a working recovery as a fixed bug.
 
 ## Out of scope
 
-- Fixing the driver upstream. If ticket 02 confirms the mechanism, that becomes a
-  separate report to the Raspberry Pi kernel tree.
+- Fixing the driver upstream. Already reported and understood there; the root-cause
+  patches exist and were reverted on 2026-07-14, so this is a matter of waiting for
+  the vendor branch rather than anything to file.
 - Widening `net_recorder` to other nodes. Nothing else runs `macb`.
 - The watchdog behaviour around these stalls. Tracked in `node-hardening`.
 
@@ -146,14 +163,21 @@ supported still holds, reached instead by direct observation of the registers.
 | # | Title | Status | Blocked by |
 | --- | --- | --- | --- |
 | 01 | Capture MAC registers on TX stall | resolved | — |
-| 02 | Disable TSO on `end0` (scatter-gather deferred) | needs-info | — |
-| 03 | Move lib-pi-05 to kernel 6.18.42 | needs-info | 02 |
-| 04 | Auto-recover a stalled TX path | needs-triage | 02 |
+| 02 | Disable TSO on `end0` (scatter-gather deferred) | resolved (negative) | — |
+| 03 | Move lib-pi-05 to a kernel with the macb TX recovery path | resolved | 02 |
+| 04 | Auto-recover a stalled TX path | wontfix (superseded by 03) | 02 |
 
-Run 02 and 03 strictly in sequence. Running them together makes the result
-unattributable, which is the entire reason they are separate tickets.
+All four are closed. The project is now a waiting game on upstream, described in
+the 2026-09-06 update below.
 
 ## Update 2026-09-05 — TSO disabled, project paused
+
+> **Superseded by the 2026-09-06 update below.** The "what a future reader should do
+> first" instruction at the end of this section is stale: the question it poses was
+> answered on 2026-09-06, TSO was not the trigger, and the scatter-gather escalation
+> it points to was never run and is no longer wanted. The stall history table is
+> still accurate.
+
 
 `infra/roles/nic_offload` applied to lib-pi-05 at 10:20. TSO and GSO are off and
 verified in force; scatter-gather is deliberately still on. Ticket 02 carries the
@@ -192,3 +216,70 @@ scatter-gather escalation, and ticket 02 explains why that needs a new ticket.
 never triggers at this traffic level, so the pre-stall capture is always the file
 overwritten on the way back up. Never blocked anything so far, since the counters
 and registers proved sufficient.
+
+## Update 2026-09-06 — root cause identified upstream, kernel 6.18.44 deployed
+
+### Ticket 02 failed and TSO is ruled out
+
+lib-pi-05 stalled again at 07:05:13 with TSO and GSO confirmed off, and was rebooted
+by the watchdog at 07:09:55. The setting was genuinely in force, so this is a real
+negative. The stall was indistinguishable from the two captured on 2026-09-01. That
+is the eighth recorded stall.
+
+`infra/roles/nic_offload` and its playbook have been removed and TSO, GSO and
+scatter-gather are all back on. Ticket 02 carries the evidence and two mechanical
+traps found during the rollback.
+
+### The cause
+
+The Cadence GEM in the RP1 sits behind PCIe. The TSTART doorbell write to the NCR
+register is a **posted** MMIO write that can be dropped or delayed in the PCIe
+fabric, so the MAC never starts the TX DMA. Documented in `raspberrypi/linux`
+PR #7340 and at https://dtype.org/wiki/Cm5_macb_network_hang. The published
+signature matches ours exactly: TX frozen, RX and interrupts continuing, carrier up,
+all error counters at zero.
+
+This also explains the fleet-to-fleet disagreement about workarounds. Disabling EEE,
+TSO and GSO with enlarged rings helped the Talos fleet in
+`siderolabs/sbc-raspberrypi` issue 91 and failed on the CM5 fleet in the dtype
+writeup, which is the result we got. None of them touch the doorbell write, so
+whether they help is incidental.
+
+EEE is not supported on this interface, so that published workaround does not apply
+here at all. Rings are at the 512/512 default against an 8192/4096 maximum and were
+left alone.
+
+### What was deployed, and what it does and does not do
+
+lib-pi-05 now runs `6.18.44-current-bcm2711` (Armbian 26.8.3), which registers an
+`ndo_tx_timeout` callback in `macb`. The kernel's transmit watchdog notices a
+stopped queue and calls `macb_tx_restart`.
+
+**This is recovery, not prevention.** The three patches that address the root cause
+were reverted from `rpi-6.18.y` on 2026-07-14. Stalls will continue. They should now
+clear in about 5 seconds instead of costing 4.5 minutes and a reboot.
+
+Note that `/etc/armbian-release` still reports 26.2.1, because only the kernel
+packages were upgraded. lib-pi-05 and lib-pi-02 will report different Armbian
+versions while running comparable kernels. That is expected.
+
+### What to check next
+
+The next stall is the test. Expect all three of:
+
+- a `NETDEV WATCHDOG` line in the kernel log,
+- a `TX_RESUMED` line in `samples.log`, the first one ever recorded,
+- no new entry in `journalctl --list-boots`.
+
+If instead the node dies for 4.5 minutes and reboots as before, `dev_watchdog` is
+not firing, which would mean `trans_start` is being refreshed during the stall.
+Ticket 04 is then back on the table and ticket 03's Answer records why.
+
+Stall frequency stays measurable either way, since `stall.log` still gets a full
+snapshot at onset. Recovery does not cost the diagnosis.
+
+### The remaining fix is upstream and out of our hands
+
+Watch for the posted-write flush and ISR re-check patches returning to `rpi-6.18.y`.
+Until they land, this node has a hardware-triggered fault that it papers over
+quickly. That is the end state for now, and it is an acceptable one.

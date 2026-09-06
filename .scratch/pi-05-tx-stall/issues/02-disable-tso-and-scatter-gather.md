@@ -1,4 +1,4 @@
-Status: needs-info
+Status: resolved
 
 Blocked by: 01
 
@@ -119,3 +119,54 @@ rotated files before concluding nothing was captured.
 
 **Revert** is `nic_offload_enabled: false`, which removes the settings file and
 returns the node to stock at the next boot.
+
+### 2026-09-06 — negative result, TSO is ruled out, role removed
+
+**lib-pi-05 stalled again on 2026-09-06 07:05:13, with TSO and GSO confirmed off.**
+The node was unreachable until the watchdog shut it down at 07:09:55, 4m43s later.
+
+The setting was genuinely in force. The `.link` file was written and udev-triggered
+at 2026-09-05 10:20, the role's readback assert passed, and `ethtool -k end0` still
+showed both off after the reboot. This is a real negative, not a false one.
+
+The stall is indistinguishable from the two captured on 2026-09-01. Four snapshots
+fired at zero-TX counts 2, 4, 8 and 16, and across all of them:
+
+```
+tx_frames      18086014   frozen   (MAC hardware)
+q0_tx_packets  17434792   frozen   (driver)
+Sent           18074917   frozen   (qdisc)
+requeues       57548      frozen
+backlog        294p -> 518p -> 997p -> 997p, then 10727 dropped
+```
+
+RX kept working throughout, decaying from 124 to 19 packets per 10s sample as
+everything but broadcast dried up. Carrier never dropped, every error counter
+stayed at zero, and RX interrupts kept arriving at about 13/s.
+
+**The qdisc counters correct the mechanism story.** `Sent` and `requeues` frozen
+while the backlog fills to the 1000-packet queue limit means the qdisc handed the
+driver nothing for the whole stall, and `q0_tx_packets` frozen means the driver
+completed nothing. Nothing was being falsely reclaimed. The same is true of the
+2026-09-01 snapshots, so this was never the mechanism.
+
+**Scatter-gather was not escalated to.** The upstream root cause was identified the
+same day and is unrelated to descriptor chain length, so the escalation this ticket
+named would have been another negative. See the 2026-09-06 update in `../spec.md`.
+
+**`infra/roles/nic_offload` has been removed** along with its playbook and its
+import in `infra/playbook.yaml`. The `.link` file was deleted from lib-pi-05 first
+and TSO, GSO and scatter-gather are all back on. Keeping the role would have
+implied TSO mattered.
+
+Two things worth carrying forward:
+
+- Removing the `.link` file does **not** restore the setting on the running
+  interface. udev only applies what a `.link` file names, so the stock default does
+  not come back until the interface is initialised fresh at the next boot. The
+  role's rollback path also skips its own verification assert, since that task is
+  gated on `nic_offload_enabled`.
+- `-e nic_offload_enabled=false` passes the **string** `"false"`, which is truthy.
+  It evaluated the condition as True and would have reinstalled the file. Newer
+  ansible rejects a non-boolean conditional outright, which is the only reason it
+  did not happen. The correct form is `-e '{"nic_offload_enabled": false}'`.
