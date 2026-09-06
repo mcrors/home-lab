@@ -147,6 +147,7 @@
         namespace: "{{ ntfy_namespace }}"
         annotations:
           traefik.ingress.kubernetes.io/router.tls: "true"
+          prometheus.io/probe: "true"
           gethomepage.dev/enabled: "true"
           gethomepage.dev/name: "Ntfy"
           gethomepage.dev/group: "Infra"

@@ -47,6 +47,7 @@
         namespace: "{{ kube_state_metrics_namespace }}"
         annotations:
           traefik.ingress.kubernetes.io/router.tls: "true"
+          prometheus.io/probe: "true"
           gethomepage.dev/enabled: "true"
           gethomepage.dev/name: "kube-state-metrics"
           gethomepage.dev/group: "Infra"

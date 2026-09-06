@@ -92,9 +92,9 @@ ingress:
   enabled: true
   className: "traefik"
   labels: {}
-  annotations: {
+  annotations:
     traefik.ingress.kubernetes.io/router.tls: "true"
-  }
+    prometheus.io/probe: "true"
   hosts:
     ## The host property on hosts and tls is passed through helm tpl function.
     ## ref: https://helm.sh/docs/developing_charts/#using-the-tpl-function

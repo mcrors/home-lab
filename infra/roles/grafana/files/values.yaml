@@ -97,9 +97,9 @@ service:
 ingress:
   enabled: true
   ingressClassName: traefik
-  annotations: {
+  annotations:
     traefik.ingress.kubernetes.io/router.tls: "true"
-  }
+    prometheus.io/probe: "true"
   path: /
 
   # pathType is only for k8s >= 1.1=
