@@ -86,20 +86,13 @@ scrape_configs:
     metrics_path: /probe
     params:
       module: [http_2xx]
+    # Targets that ingress discovery cannot see. Everything with a Kubernetes
+    # Ingress is handled by blackbox-ingress below.
     static_configs:
     - targets:
-      - https://transmission.houli.eu
-      - https://sonarr.houli.eu
-      - https://radarr.houli.eu
-      - https://prowlarr.houli.eu
-      - https://grafana.houli.eu
       - https://prometheus.houli.eu
       - http://omv.houli.eu
-      - https://ksm.houli.eu
-      - https://blackbox.houli.eu
       - https://traefik.houli.eu
-      - https://longhorn.houli.eu
-      - https://plex.houli.eu/web/index.html
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
