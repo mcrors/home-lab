@@ -1,0 +1,6 @@
+---
+- Repo:
+    - home-lab:
+        - abbr: HL
+          href: https://github.com/mcrors/home-lab
+          description: Ansible and Helm for this cluster

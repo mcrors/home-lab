@@ -1,0 +1,43 @@
+---
+title: houli.eu
+
+# Homepage's built-in dark palette. custom.css repaints almost all of it, but
+# the theme still decides which of the two colour sets the markup asks for, so
+# leaving it on light would fight the stylesheet rather than be overridden by it.
+theme: dark
+color: slate
+
+# Group headings render as a title with a rule under it, which is the closest
+# built-in match for the section headers in docs/homepage/homelab-dashboard.html.
+# custom.css reshapes the rule; it does not have to invent it.
+headerStyle: underlined
+
+# Groups render in the order their keys appear here, and this block is the only
+# thing that fixes that order. Discovered services carry a
+# `gethomepage.dev/group` annotation naming one of these; a group that is
+# annotated but missing here still renders, just appended in an arbitrary
+# position. This is also why these files are passed with `--set-file` instead of
+# being written as YAML in a values file: Go templating sorts map keys
+# alphabetically, which would silently reorder the page to CI/Ops, Infra, Media.
+layout:
+  Infra:
+    style: row
+    columns: 4
+  Media:
+    style: row
+    columns: 4
+  CI/Ops:
+    style: row
+    columns: 4
+  Off-Cluster:
+    style: row
+    columns: 4
+
+# The footer prints the homepage release. The version is pinned in Chart.yaml
+# and visible in git, so on the page it is noise.
+hideVersion: true
+
+# Groups are always open. Collapsing is a nicety on a long dashboard; this one
+# fits on a screen, and a collapsed group hides exactly the thing the page
+# exists to show.
+disableCollapse: true

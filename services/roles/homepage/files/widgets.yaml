@@ -1,0 +1,22 @@
+---
+# Cluster-wide CPU and memory, then the same per node. Both read the
+# metrics.k8s.io API through the pod's ServiceAccount, which the chart's
+# ClusterRole grants. If metrics-server is unavailable these render as "-"
+# rather than failing the page.
+- kubernetes:
+    cluster:
+      show: true
+      cpu: true
+      memory: true
+      showLabel: true
+      label: cluster
+    nodes:
+      show: true
+      cpu: true
+      memory: true
+      # Always the node name. With nine nodes the row is unreadable without it.
+      showLabel: true
+
+- search:
+    provider: duckduckgo
+    target: _blank

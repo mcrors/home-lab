@@ -1,0 +1,25 @@
+---
+# Off-cluster targets only. Anything with a Kubernetes Ingress or a Traefik
+# IngressRoute is discovered from its `gethomepage.dev/*` annotations instead,
+# so listing it here would produce a duplicate card that no longer updates when
+# the service moves.
+#
+# Every host and port below was checked against the live machine on 2026-09-12,
+# not taken from the project plan. The plan also listed Garage S3 and a Postgres
+# node; neither is running anywhere on the network, so neither is here.
+- Off-Cluster:
+    - NAS:
+        # OpenMediaVault on lib-hp-01 (192.168.1.96). http, not https: that host
+        # serves plain nginx on port 80 and refuses connections on 443.
+        href: http://omv.houli.eu/
+        description: OpenMediaVault · lib-hp-01
+        icon: openmediavault
+        siteMonitor: http://omv.houli.eu/
+
+    - Prometheus:
+        # Runs in Docker on lib-pi-06 (192.168.1.226) behind an nginx reverse
+        # proxy that terminates TLS and serves this one server_name.
+        href: https://prometheus.houli.eu/
+        description: Metrics and alerting · lib-pi-06
+        icon: prometheus
+        siteMonitor: https://prometheus.houli.eu/

@@ -1,0 +1,19 @@
+---
+# Authenticate with the ServiceAccount token the chart mounts into the pod.
+mode: cluster
+
+# Discover services from `gethomepage.dev/*` annotations on Ingresses.
+ingress: true
+
+# Also read Traefik IngressRoute CRDs. The Traefik dashboard is published as an
+# IngressRoute rather than an Ingress, so it is invisible without this. The
+# chart grants the matching `traefik.io/ingressroutes` read permission under
+# `rbac.traefik`, which is on.
+traefik: true
+
+# Gateway API discovery is deliberately off. k3s ships the
+# gateway.networking.k8s.io CRDs with Traefik, but nothing in this cluster
+# routes through them, and the chart grants no permission to read them
+# (`rbac.gateway: false`). Turn both on together or homepage logs RBAC errors
+# on every refresh.
+gateway: false
