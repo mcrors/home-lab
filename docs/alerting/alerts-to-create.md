@@ -11,13 +11,24 @@
 - [X] **KubeNodeNotReady** — node in cluster but not in Ready state. Catches kubelet/network issues.
 - [X] **PodCrashLooping** — pod restart count climbing. Something broken, k3s cycling it.
 - [X] **PodStuckPending** — pod can't be scheduled. Resource exhaustion or affinity mismatch.
-- [ ] **PodNotReady** — pod in phase `Running` but ready condition false for >15m. Catches faults
+- [X] **PodNotReady** — pod in phase `Running` but ready condition false for >15m. Catches faults
       that no other rule sees: the pod is not crashlooping (phase stays `Running`), not pending,
       and the node stays `Ready`, so nothing else fires. This is the gap that let the 2026-08-27
       containerd name-reservation wedge run unnoticed for 6h on potato-04 and far longer on pi-01.
-- [ ] **DeploymentReplicaMismatch** — available replicas < desired. Service degraded.
-      Raised priority: on 2026-08-27 this would have caught metallb-controller, cert-manager-webhook,
-      alertmanager and signal-bridge all sitting at 0/1 with no alert firing.
+      Deployed 2026-09-12. A crashlooping pod is also Running and not ready, so `PodCrashLooping`
+      inhibits this alert rather than the exclusion being buried in the expression.
+- [X] **DeploymentReplicaMismatch** — available replicas < desired. Service degraded.
+      Deployed 2026-09-12.
+- [X] **StatefulSetReplicaMismatch** / **DaemonSetNotFullyAvailable** — the same check for the
+      other two workload kinds. **The earlier note on this ticket was wrong**: it claimed a
+      Deployment-only rule would have caught metallb-controller, cert-manager-webhook,
+      alertmanager and signal-bridge on 2026-08-27. Alertmanager is a StatefulSet, so it would
+      have been missed, and metallb also runs two DaemonSets carrying LoadBalancer traffic.
+      kube-state-metrics exposes a separate metric family per workload kind, so covering all
+      three takes three rules. Deployments alone cover 29 of 37 workloads.
+      Note `kube_daemonset_status_desired_number_scheduled` counts only schedulable nodes, so a
+      dead node lowers both sides and does not fire the DaemonSet rule; `KubeNodeNotReady`
+      covers that case.
 - [X] **ContainerOOMKilled** — container hit memory limit. Needs limit tuning.
 - [ ] **JobFailed** — CronJob or Job exited non-zero. Silent batch failures.
 
@@ -101,6 +112,8 @@ Built 2026-09-12 as the `dead_mans_switch` role on lib-pi-06. See `12-dead-mans-
       Without it a synchronised reboot sends one notification per node on top of the aggregate. The
       first inhibit rule cannot do this job: it matches on `instance`, and an aggregate built with
       `count by (cluster)` carries no `instance` label. Deployed 2026-09-12.
+- [X] Third inhibit rule — `PodCrashLooping` suppresses `PodNotReady`, matched on `namespace` and
+      `pod`. Deployed 2026-09-12.
 - [ ] Set `group_by` on the route. Currently unset, so every alert lands in a single aggregation
       group and unrelated alerts batch into one notification. See `11-alert-grouping-and-inhibition.md`.
 

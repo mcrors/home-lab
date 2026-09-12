@@ -28,6 +28,21 @@ groups:
           summary: "Pod stuck pending: {{ $labels.namespace }}/{{ $labels.pod }}"
           description: "Pod has been in Pending state for 15 minutes."
 
+      # Phase stays Running while readiness is false, so nothing else catches this:
+      # the pod is not crashlooping, not pending, and its node stays Ready. This is
+      # the gap that let the 2026-08-27 containerd name-reservation wedge run for 6h
+      # on potato-04 unnoticed. A crashlooping pod is also Running and not ready, so
+      # PodCrashLooping inhibits this alert in Alertmanager rather than the exclusion
+      # being buried in this expression.
+      - alert: PodNotReady
+        expr: kube_pod_status_ready{condition="true"} == 0 and on (namespace, pod) kube_pod_status_phase{phase="Running"} == 1
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Pod not ready: {{ $labels.namespace }}/{{ $labels.pod }}"
+          description: "Pod has been Running but not Ready for 15 minutes. Check its readiness probe and container logs."
+
       - alert: ContainerOOMKilled
         expr: kube_pod_container_status_last_terminated_reason{reason="OOMKilled"} == 1
         for: 0m
@@ -36,6 +51,40 @@ groups:
         annotations:
           summary: "Container OOM killed: {{ $labels.namespace }}/{{ $labels.pod }}"
           description: "Container {{ $labels.container }} was OOM killed. Memory limit needs tuning."
+
+      # Three rules rather than one, because kube-state-metrics exposes a separate
+      # metric family per workload kind and the cluster runs all three. A
+      # Deployment-only rule would cover 29 of 37 workloads and would have missed
+      # alertmanager on 2026-08-27, which is a StatefulSet, and the two metallb
+      # DaemonSets that carry LoadBalancer traffic.
+      - alert: DeploymentReplicaMismatch
+        expr: kube_deployment_status_replicas_available < kube_deployment_spec_replicas
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Deployment degraded: {{ $labels.namespace }}/{{ $labels.deployment }}"
+          description: "{{ $value }} replicas available, fewer than desired, for 15 minutes."
+
+      - alert: StatefulSetReplicaMismatch
+        expr: kube_statefulset_status_replicas_ready < kube_statefulset_replicas
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "StatefulSet degraded: {{ $labels.namespace }}/{{ $labels.statefulset }}"
+          description: "{{ $value }} replicas ready, fewer than desired, for 15 minutes."
+
+      # desired_number_scheduled only counts schedulable nodes, so a dead node lowers
+      # both sides and does not fire this. KubeNodeNotReady covers that case instead.
+      - alert: DaemonSetNotFullyAvailable
+        expr: kube_daemonset_status_number_available < kube_daemonset_status_desired_number_scheduled
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "DaemonSet degraded: {{ $labels.namespace }}/{{ $labels.daemonset }}"
+          description: "{{ $value }} pods available, fewer than the number of nodes it should run on, for 15 minutes."
 
   - name: longhorn
     rules:

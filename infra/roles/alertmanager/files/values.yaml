@@ -93,3 +93,13 @@ config:
         - alertname="NodeRebooted"
       equal:
         - cluster
+    # A crashlooping pod stays in phase Running with Ready false, so it trips
+    # PodNotReady as well. Suppressing here keeps the exclusion visible instead of
+    # buried in the PodNotReady expression. Both alerts carry namespace and pod.
+    - source_matchers:
+        - alertname="PodCrashLooping"
+      target_matchers:
+        - alertname="PodNotReady"
+      equal:
+        - namespace
+        - pod
