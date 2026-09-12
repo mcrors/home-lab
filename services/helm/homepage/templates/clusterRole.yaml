@@ -1,0 +1,59 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "homepage.clusterRoleName" . }}
+  labels:
+    {{- include "homepage.labels" . | nindent 4 }}
+rules:
+  # Namespaces and pods back the service discovery; nodes back the cluster
+  # and node widgets. Read-only throughout — homepage never writes.
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+      - pods
+      - nodes
+    verbs:
+      - get
+      - list
+  - apiGroups:
+      - networking.k8s.io
+    resources:
+      - ingresses
+    verbs:
+      - get
+      - list
+  {{- if .Values.rbac.traefik }}
+  # Traefik IngressRoute discovery. The traefik dashboard in this cluster is
+  # published as an IngressRoute rather than an Ingress, so without this rule
+  # its card never appears.
+  - apiGroups:
+      - traefik.io
+    resources:
+      - ingressroutes
+    verbs:
+      - get
+      - list
+  {{- end }}
+  {{- if .Values.rbac.gateway }}
+  - apiGroups:
+      - gateway.networking.k8s.io
+    resources:
+      - gateways
+      - httproutes
+    verbs:
+      - get
+      - list
+  {{- end }}
+  # Node and pod metrics for the resource widgets. Served by metrics-server,
+  # which this cluster already runs.
+  - apiGroups:
+      - metrics.k8s.io
+    resources:
+      - nodes
+      - pods
+    verbs:
+      - get
+      - list
+{{- end }}

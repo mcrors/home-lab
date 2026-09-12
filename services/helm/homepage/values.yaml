@@ -1,0 +1,155 @@
+# Default values for homepage.
+
+# Override the chart name (used in app.kubernetes.io/name label).
+# Leave empty to use the chart name from Chart.yaml.
+nameOverride: ""
+
+# Override the full resource name (used as metadata.name on resources).
+# Leave empty to use the standard release-name + chart-name pattern.
+fullnameOverride: ""
+
+serviceAccount:
+  # Whether the chart should create a ServiceAccount.
+  # Set to false if you want to pre-create one via Ansible, or use the namespace default.
+  create: true
+
+  # Name of the ServiceAccount to use or create.
+  # If create=true and name is empty, the fullname is used.
+  # If create=false and name is empty, "default" is used.
+  name: ""
+
+  # Annotations to add to the ServiceAccount (only applied if create=true).
+  annotations: {}
+
+  # Homepage reads the Kubernetes API for service discovery and node metrics,
+  # so unlike the *arr charts here, the token must be mounted.
+  automountServiceAccountToken: true
+
+rbac:
+  # Whether the chart should create the ClusterRole and ClusterRoleBinding.
+  create: true
+
+  # Grant read access to traefik.io IngressRoutes. Needed because the Traefik
+  # dashboard is published as an IngressRoute, not an Ingress. Pointless unless
+  # kubernetes.yaml also sets traefik: true.
+  traefik: true
+
+  # Grant read access to Gateway API Gateways and HTTPRoutes. The CRDs exist in
+  # this cluster (k3s ships them with Traefik) but nothing is routed through
+  # them, so the permission is not granted. Turn on together with
+  # gateway: true in kubernetes.yaml if that ever changes.
+  gateway: false
+
+image:
+  repository: ghcr.io/gethomepage/homepage
+  tag: ""
+  pullPolicy: IfNotPresent
+
+# Hostnames homepage will answer to, beyond its own pod IP, which the chart
+# always adds so the health probes are not rejected. A request whose Host
+# header is not listed here gets a 400.
+allowedHosts:
+  - homepage.local
+
+# Extra environment variables passed through verbatim.
+# Use this for widget API keys projected from a Secret.
+extraEnv: []
+# - name: HOMEPAGE_VAR_SONARR_KEY
+#   valueFrom:
+#     secretKeyRef:
+#       name: homepage-widgets
+#       key: sonarr
+
+# Pod-level security context. The image expects UID/GID 1000 and needs no
+# root phase at startup, so it runs as non-root throughout.
+podSecurityContext:
+  runAsUser: 1000
+  runAsGroup: 1000
+  runAsNonRoot: true
+  fsGroup: 1000
+
+# Container-level security context. readOnlyRootFilesystem is NOT set:
+# homepage is a Next.js app that writes a cache under its own app directory
+# at runtime.
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 192Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Scheduling passthroughs. Leave empty to let the scheduler decide.
+# The cluster-specific affinity is supplied by the Ansible role.
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+service:
+  type: ClusterIP
+  port: 3000
+  annotations: {}
+
+ingress:
+  enabled: true
+  className: traefik
+  annotations: {}
+  hosts:
+    - host: homepage.local
+      paths:
+        - path: /
+          pathType: Prefix
+  # TLS configuration. Leave secretName empty to rely on the ingress
+  # controller's default certificate (e.g. Traefik TLSStore). Set it
+  # explicitly to reference a secret in this namespace.
+  tls:
+    - secretName: ""
+      hosts:
+        - homepage.local
+
+# Homepage configuration files. Every key here becomes a file in /app/config,
+# mounted individually by the deployment. Adding a key is enough; no template
+# change is needed.
+#
+# These defaults are deliberately minimal, and they are not where real config
+# belongs. Pass each file in from disk instead, so it stays a real .yaml or .css
+# file you can edit and lint:
+#
+#   helm install ... --set-file 'config.custom\.css=./custom.css'
+#
+# Escape the dot in the key. Unescaped, helm reads it as a nesting separator and
+# builds config.custom.css three levels deep, silently leaving this default in
+# place. Ansible reaches the same flag through kubernetes.core.helm:
+#
+#   set_values:
+#     - value: 'config.custom\.css={{ role_path }}/files/custom.css'
+#       value_type: file
+#
+# Do not author the YAML files as native structures here for the chart to
+# serialise: templating sorts map keys alphabetically, and the key order of the
+# layout block in settings.yaml sets the group order on the page.
+config:
+  kubernetes.yaml: |
+    mode: cluster
+
+  settings.yaml: |
+    title: homepage
+
+  services.yaml: |
+    []
+
+  widgets.yaml: |
+    []
+
+  bookmarks.yaml: |
+    []
+
+  custom.css: ""
+
+  custom.js: ""

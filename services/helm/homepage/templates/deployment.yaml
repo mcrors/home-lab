@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "homepage.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "homepage.labels" . | nindent 4 }}
+spec:
+  # Homepage is stateless and its config is read-only, so more than one replica
+  # would work. One is used because this is a dashboard, not a dependency:
+  # nothing breaks while it restarts.
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "homepage.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "homepage.labels" . | nindent 8 }}
+      annotations:
+        # The config files are mounted with subPath, and subPath mounts are
+        # never refreshed by the kubelet when the ConfigMap changes. Without
+        # this checksum a config edit would be a no-op until something else
+        # happened to restart the pod.
+        checksum/config: {{ include (print $.Template.BasePath "/configMap.yaml") . | sha256sum }}
+    spec:
+      serviceAccountName: {{ include "homepage.serviceAccountName" . }}
+      automountServiceAccountToken: {{ .Values.serviceAccount.automountServiceAccountToken }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          env:
+            # Homepage rejects any request whose Host header is not in
+            # HOMEPAGE_ALLOWED_HOSTS. The probes below connect straight to the
+            # pod IP, so that IP has to be on the list or every probe fails
+            # with a 400 and the pod never becomes ready. MY_POD_IP is declared
+            # first because Kubernetes only expands $(VAR) references to
+            # variables defined earlier in this list.
+            - name: MY_POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: HOMEPAGE_ALLOWED_HOSTS
+              value: "$(MY_POD_IP):3000{{ with .Values.allowedHosts }},{{ join "," . }}{{ end }}"
+            {{- with .Values.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /api/healthcheck
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 6
+          readinessProbe:
+            httpGet:
+              path: /api/healthcheck
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            # Each config file is mounted individually with subPath. Mounting
+            # the whole ConfigMap over /app/config would hide the directory
+            # homepage writes its logs into.
+            {{- range $filename, $content := .Values.config }}
+            - name: config
+              mountPath: /app/config/{{ $filename }}
+              subPath: {{ $filename }}
+            {{- end }}
+            - name: logs
+              mountPath: /app/config/logs
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "homepage.fullname" . }}
+        # Homepage writes logs into its config directory. There is nothing worth
+        # keeping in them across a restart, so this is deliberately ephemeral.
+        - name: logs
+          emptyDir: {}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
