@@ -74,3 +74,12 @@ config:
       equal:
         - alertname
         - instance
+    # A synchronised reboot would otherwise send one NodeRebooted notification per node on
+    # top of the aggregate. MultiNodeRebootWindow carries no `instance` label, so the rule
+    # above cannot suppress them; both alerts do carry `cluster`.
+    - source_matchers:
+        - alertname="MultiNodeRebootWindow"
+      target_matchers:
+        - alertname="NodeRebooted"
+      equal:
+        - cluster

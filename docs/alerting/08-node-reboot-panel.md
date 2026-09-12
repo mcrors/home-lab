@@ -1,13 +1,14 @@
 # Task: Add Node Reboot Frequency Panel to Grafana
 
-Status: not started.
+Status: unblocked, panel still to build.
 
-**Blocked by a bug, not by effort.** `NodeRecentlyRebooted` in `alerts.yaml` selects
-`up{job=~"node-exporter|node"}` while the job is actually named `node_exporter`. Prometheus anchors
-regex matchers fully, so that rule matches nothing and has never fired. The panel below queries the
-raw `node_boot_time_seconds` metric and would work, but the whole reboot-visibility story
-(this panel, `NodeUnexpectedReboot`, `MultiNodeRebootWindow`) is worth doing in one pass after the
-job name is fixed.
+The bug that blocked this is fixed. `NodeRecentlyRebooted` selected `up{job=~"node-exporter|node"}`
+while the job is named `node_exporter`, and Prometheus anchors regex matchers fully, so the rule
+matched nothing and never fired. On 2026-09-12 it was fixed and renamed `NodeRebooted`, and
+`MultiNodeRebootWindow` was added alongside it. Both are deployed on lib-pi-06 and evaluating.
+
+The alerts now carry the reboot-visibility story on their own. This panel adds history, showing
+reboot frequency per node over a long window, which the alerts cannot.
 
 Note there is no dashboard provisioning in this repo. `infra/roles/grafana/files/values.yaml` has
 `dashboardProviders` and `dashboards` entirely commented out, so any dashboard added today lives
@@ -25,8 +26,12 @@ Hardware watchdog was deployed to all Pi nodes and lib-potato-04 to trigger an a
 Add a panel to the existing node health dashboard with the following PromQL:
 
 ```promql
-changes(node_boot_time_seconds{job="node-exporter"}[30d])
+changes(node_boot_time_seconds{job="node_exporter"}[30d])
 ```
+
+The job name here is `node_exporter` with an underscore. The earlier version of this doc said
+`node-exporter`, which is the same mistake that kept the alert from firing and would have returned
+an empty panel.
 
 Show as a stat panel with one series per node, time range selectable. A value of 0 means no reboots in the window; anything higher warrants a check of the journal on that node.
 

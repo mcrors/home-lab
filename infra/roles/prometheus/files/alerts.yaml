@@ -86,14 +86,29 @@ groups:
           summary: "CRITICAL CPU temperature on {{ $labels.instance }}"
           description: "CPU temp > 80°C for 5m (current: {{ $value }}°C)"
 
-      - alert: NodeRecentlyRebooted
-        expr: (up{job=~"node-exporter|node"} == 1) * (time() - node_boot_time_seconds) < 300
+      # Planned reboots are expected to be silenced in Alertmanager beforehand, so an
+      # unsilenced firing of this alert means the reboot was not planned.
+      - alert: NodeRebooted
+        expr: (up{job="node_exporter"} == 1) * (time() - node_boot_time_seconds) < 300
         for: 1m
         labels:
           severity: info
         annotations:
           summary: "Node rebooted: {{ $labels.instance }}"
           description: "Uptime is {{ humanizeDuration $value }}."
+
+      # Counts nodes whose uptime is under 10m rather than using
+      # changes(node_boot_time_seconds[10m]), which needs samples from both sides of the
+      # reboot inside the window and so misses any node down for longer than the window.
+      # Keeping `by (cluster)` preserves the label the Alertmanager inhibit rule matches on.
+      - alert: MultiNodeRebootWindow
+        expr: count by (cluster) (time() - node_boot_time_seconds{job="node_exporter"} < 600) >= 2
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $value }} nodes rebooted within the same 10m window"
+          description: "Two or more nodes have an uptime under 10 minutes. A synchronised reboot points to a shared upstream cause, such as a network blip tripping the watchdog ping check, rather than independent hardware faults."
 
   - name: health
     rules:

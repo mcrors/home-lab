@@ -146,6 +146,25 @@ volume, so this is noise rather than risk.
 
 ---
 
+## Silence before a planned reboot
+
+`NodeRebooted` fires on any node with an uptime under 5 minutes, and the Alertmanager route sends
+every severity to ntfy, so an unsilenced reboot reaches Signal. There is no maintenance-window
+mechanism: a silence is what marks a reboot as planned. Set one before rebooting a node by hand or
+running a playbook that reboots nodes.
+
+Add the silence in the Alertmanager UI at `https://alertmanager.houli.eu`, matching
+`alertname="NodeRebooted"` and the `instance` you are about to reboot, or match on `alertname`
+alone when a playbook will cycle several nodes. Keep the duration short; the alert clears on its
+own once uptime passes 5 minutes.
+
+Rebooting 2 or more nodes inside a 10 minute window also fires `MultiNodeRebootWindow` at critical
+severity, which is deliberately hard to miss. An inhibit rule keyed on `cluster` stops the
+per-node `NodeRebooted` notifications piling up underneath it. Silence that alertname too if you
+are intentionally cycling the fleet.
+
+---
+
 ## Blackbox probe targets
 
 Two jobs feed `BlackboxProbeFailed`. A target belongs to exactly one of them.

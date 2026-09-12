@@ -61,23 +61,38 @@ Complete as of 2026-09-06. `blackbox-ingress` discovers targets from Ingress obj
 ## New alerts — Node health
 
 - [ ] **SystemClockSkew** — node time drifted from NTP (`node_timex_offset_seconds`). Breaks TLS, cron, log correlation.
-- [ ] **NodeUnexpectedReboot** — `node_boot_time_seconds` changed without a planned maintenance
-      window. Surfaces watchdog trips, which are currently invisible: the reboot wipes the zram
-      `/var/log` before anything is persisted, so there is no post-hoc evidence of the cause.
-- [ ] **MultiNodeRebootWindow** — 2+ nodes rebooting within the same 10m window. A synchronised
+- [X] **NodeRebooted** — fires on any node with an uptime under 5m. Surfaces watchdog trips, which
+      were previously invisible: the reboot wipes the zram `/var/log` before anything is persisted,
+      so there is no post-hoc evidence of the cause. Deployed 2026-09-12.
+- [X] **NodeUnexpectedReboot** — folded into `NodeRebooted` rather than built as a separate rule.
+      The backlog wording assumed a maintenance-window mechanism that this repo does not have, and
+      encoding one in PromQL duplicates what Alertmanager silences already do. Set a silence before
+      a planned reboot; an unsilenced firing is the unexpected case. The cost of this choice is that
+      silences are manual, so an Ansible run that reboots a node notifies unless you silence first.
+- [X] **MultiNodeRebootWindow** — 2+ nodes rebooting within the same 10m window. A synchronised
       reboot means a shared upstream cause (gateway/network blip tripping the watchdog ping check),
-      not independent hardware faults. Four nodes went down together at 15:00 on 2026-08-27.
+      rather than independent hardware faults. Four nodes went down together at 15:00 on 2026-08-27.
+      Deployed 2026-09-12 as `count by (cluster) (time() - node_boot_time_seconds{job="node_exporter"} < 600) >= 2`.
+      It counts short-uptime nodes instead of using `changes(node_boot_time_seconds[10m]) > 0`,
+      which needs samples from both sides of the reboot inside the window and so misses any node
+      that stays down longer than the window.
 
 ## Alertmanager config
 
 - [X] Add `inhibit_rules` — critical suppresses warning for same alertname + instance. Deployed and
       verified in `configmap/alertmanager`.
+- [X] Second inhibit rule — `MultiNodeRebootWindow` suppresses `NodeRebooted`, matched on `cluster`.
+      Without it a synchronised reboot sends one notification per node on top of the aggregate. The
+      first inhibit rule cannot do this job: it matches on `instance`, and an aggregate built with
+      `count by (cluster)` carries no `instance` label. Deployed 2026-09-12.
 - [ ] Set `group_by` on the route. Currently unset, so every alert lands in a single aggregation
       group and unrelated alerts batch into one notification. See `11-alert-grouping-and-inhibition.md`.
 
-## Broken rule
+## Fixed rule
 
-- [ ] **NodeRecentlyRebooted** never fires. `alerts.yaml:90` selects `up{job=~"node-exporter|node"}`
-      but the job is named `node_exporter`. Prometheus anchors regex matchers fully, so this matches
-      nothing. Blocks reboot visibility, which `08-node-reboot-panel.md`, `NodeUnexpectedReboot` and
-      `MultiNodeRebootWindow` all depend on.
+- [X] **NodeRecentlyRebooted** never fired, and is now `NodeRebooted`. The rule selected
+      `up{job=~"node-exporter|node"}` while the job is named `node_exporter`, and Prometheus anchors
+      regex matchers fully, so the left side of the multiplication was always an empty vector.
+      Confirmed before the fix by running both selectors with the threshold raised to ten years:
+      `job="node_exporter"` matched all 12 nodes, `job=~"node-exporter|node"` matched nothing.
+      Fixed and deployed 2026-09-12.
