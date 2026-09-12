@@ -1,0 +1,26 @@
+ingress:
+  annotations:
+    prometheus.io/probe: "true"
+  hosts:
+    - host: homepage.houli.eu
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: ""
+      hosts:
+        - homepage.houli.eu
+
+# The chart always adds the pod IP, which the probes connect to directly.
+# Anything else that has to reach the dashboard goes here or gets a 400.
+allowedHosts:
+  - homepage.houli.eu
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: node_size
+              operator: In
+              values: ["medium"]

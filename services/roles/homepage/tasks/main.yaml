@@ -1,0 +1,58 @@
+---
+
+- name: Ensure homepage namespace exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ homepage_namespace }}"
+        labels:
+          app.kubernetes.io/managed-by: ansible
+
+- name: Install/Upgrade homepage with values.yaml
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: homepage
+    chart_ref: "{{ playbook_dir }}/helm/homepage"
+    release_namespace: "{{ homepage_namespace }}"
+    create_namespace: false
+    wait: true
+    values_files:
+      - "{{ role_path }}/files/values.yaml"
+    # Each homepage config file stays a real file on disk and reaches the chart
+    # through helm --set-file, which kubernetes.core.helm spells as a set_values
+    # entry with value_type: file. Only the path travels on the command line, so
+    # size is not a constraint, and custom.css stays a .css file that an editor
+    # can lint rather than a quoted blob inside values.yaml.
+    #
+    # The backslash before each dot is load-bearing. Keys here are filenames, and
+    # helm reads an unescaped dot as a nesting separator: config.custom.css=...
+    # builds a three-level structure and never sets the custom.css key. The
+    # chart ships a valid default for every key, so that failure is silent — the
+    # pod starts and serves the default content. Verify against the deployed
+    # ConfigMap, not against this task's exit code:
+    #
+    #   kubectl get configmap homepage -n homepage -o jsonpath='{.data}'
+    #
+    # Written out one line per file rather than generated from a loop: seven
+    # static entries are easier to read and to grep than the Jinja that would
+    # produce them, and this repo has already been bitten by whitespace inside a
+    # Jinja loop in the prometheus template.
+    set_values:
+      - value: 'config.settings\.yaml={{ role_path }}/files/settings.yaml'
+        value_type: file
+      - value: 'config.services\.yaml={{ role_path }}/files/services.yaml'
+        value_type: file
+      - value: 'config.widgets\.yaml={{ role_path }}/files/widgets.yaml'
+        value_type: file
+      - value: 'config.bookmarks\.yaml={{ role_path }}/files/bookmarks.yaml'
+        value_type: file
+      - value: 'config.kubernetes\.yaml={{ role_path }}/files/kubernetes.yaml'
+        value_type: file
+      - value: 'config.custom\.css={{ role_path }}/files/custom.css'
+        value_type: file
+      - value: 'config.custom\.js={{ role_path }}/files/custom.js'
+        value_type: file

@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: resolved
 Blocked by: nothing
 
 # Scaffold the Homepage Helm chart
@@ -94,3 +94,29 @@ unescaped, Helm reads it as nesting and builds `config.custom.css` three levels 
 setting the key, with no error. Renaming the keys to escape-free identifiers (`customCss`) with a
 filename mapping in the chart would remove that, at the cost of fixing the file set in the template.
 Not taken; the escaping is recorded in ticket 03 with a `kubectl` check that catches it.
+
+### Addendum, 2026-09-12: two more required config keys
+
+The chart's `config` defaults were one file short and homepage crash-looped on first deploy. Homepage
+expects a fixed set of nine files in `/app/config` and creates any that are missing by copying its
+own `/app/src/skeleton/` copy in. That copy fails with `EACCES`, because `/app/config` is owned by
+root, the pod runs as UID 1000, and the image's entrypoint skips its usual chown for want of a root
+phase. It logs the reason and exits 1.
+
+`docker.yaml: ""` and `proxmox.yaml: ""` were added to the `config` defaults. Nothing here uses
+either discovery source; they exist only so homepage never has to create them. No template change
+was needed, because the ConfigMap and the Deployment already range over the same map, so both keys
+appeared in the ConfigMap and in the mount list at once. That single-map decision above paid for
+itself.
+
+Keeping them in the chart rather than in the Ansible role is deliberate: Helm deep-merges the
+`config` map, so a caller overriding some keys with `--set-file` still inherits these. Verified —
+`helm template` with one `--set-file` leaves the other eight defaults intact.
+
+Empty content is enough. Homepage reads both files and logs nothing.
+
+Whether `proxmox.yaml` is genuinely required is unproven. Both files were added at once, homepage
+stops at the first missing file, and only `docker.yaml` ever appeared in the error. It matches the
+skeleton directory and costs nothing, so it stays.
+
+Resolved. The chart is deployed and serving.

@@ -138,6 +138,27 @@ config:
   kubernetes.yaml: |
     mode: cluster
 
+  # docker.yaml and proxmox.yaml are required even though nothing here uses
+  # either discovery source. Homepage expects a fixed set of files in
+  # /app/config, and on the first request that reads config (/api/hash, which a
+  # browser calls after the page HTML loads) it tries to create any that are
+  # missing by copying its own skeleton copy in. That copy fails with EACCES:
+  # /app/config is owned by root, the pod runs as UID 1000 under
+  # podSecurityContext, and the image's entrypoint skips its usual chown because
+  # it has no root phase in which to run it. Homepage then exits 1.
+  #
+  # Nothing catches this before it reaches a user. The liveness and readiness
+  # probes both hit /api/healthcheck, which never touches config, so the pod
+  # passes its probes and helm --wait reports a successful install. The crash
+  # loop starts when someone opens the dashboard.
+  #
+  # Empty content is enough: these only have to exist. Keep them here rather
+  # than in the Ansible role, because helm deep-merges the config map, so a
+  # caller overriding some keys with --set-file still inherits these.
+  docker.yaml: ""
+
+  proxmox.yaml: ""
+
   settings.yaml: |
     title: homepage
 

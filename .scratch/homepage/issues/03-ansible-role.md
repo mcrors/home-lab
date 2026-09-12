@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: resolved
 Blocked by: 01
 
 # Ansible role and playbook wiring
@@ -86,3 +86,57 @@ do not create one.
 - The four already-annotated services (Alertmanager, kube-state-metrics, Ntfy, Traefik) appear without any further change, or the Traefik `IngressRoute` gap from ticket 04 is confirmed here.
 - The `readOnlyRootFilesystem` attempt is resolved either way, with the outcome in `## Comments`.
 - All seven keys in the deployed ConfigMap hold the content of the matching file in `files/`, proving every `--set-file` key is escaped correctly.
+
+## Comments
+
+Role written, deployed, and verified against the live cluster on 2026-09-12. The dashboard serves at
+`https://homepage.houli.eu`.
+
+The first deploy crash-looped, and the cause was in the chart rather than the role. Homepage expects
+nine config files in `/app/config` and the chart defaulted only seven, so on the first request that
+reads config it tried to create `docker.yaml` from its skeleton and hit `EACCES`: the directory is
+root-owned, the pod runs as UID 1000, and the image's entrypoint skips its chown for want of a root
+phase. Homepage exits 1. Fixed in the chart by defaulting `docker.yaml` and `proxmox.yaml` to empty
+strings; written up in ticket 01.
+
+Two things about that are worth carrying forward:
+
+- **Nothing caught it before a user did.** Both probes hit `/api/healthcheck`, which never touches
+  config, so the pod passed its probes and `helm --wait` reported a successful install. The crash
+  loop only started when a browser loaded the page. A green playbook run proves less here than it
+  looks like it does.
+- **The trigger is `/api/hash`**, the call the browser makes after the page HTML loads. `curl` of `/`
+  returns 200 and touches nothing, which matches the note in ticket 02 about `/` being misleading.
+
+Acceptance criteria, checked one at a time:
+
+- Playbook succeeds. It reports `changed` on a re-run even when nothing changes, which is the module
+  warning about itself: `The default idempotency check can fail to report changes in certain cases.
+  Install helm diff >= 3.4.1 for better results.` The deployed state is idempotent — a second run
+  left the same pod in place, same name, zero restarts. Installing the `helm-diff` plugin would fix
+  the reporting, and is worth doing for every helm role in this repo rather than for this one.
+- Pod runs on `lib-pi-01`, whose `node_size` label is `medium`.
+- TLS is a valid Let's Encrypt wildcard, `CN=*.houli.eu`, valid to 14 Nov 2026. Checked without
+  `curl -k`.
+- The Kubernetes widget returns live cluster and per-node CPU and memory for all nine nodes, which
+  confirms the ClusterRole from ticket 01 is sufficient.
+- Three of the four already-annotated services appear: Alertmanager, kube-state-metrics, Ntfy. Traefik
+  does not, which confirms the gap ticket 02 flagged and ticket 04 owns. The `traefik-dashboard`
+  IngressRoute in `kube-system` carries the five `gethomepage.dev` annotations and no
+  `gethomepage.dev/href`, so homepage reads it and skips it. `traefik: true` is working.
+- All seven `--set-file` keys are escaped correctly. The deployed ConfigMap holds seven flat keys, and
+  inside the pod every file is byte-identical to its counterpart in `files/`, including `custom.css`
+  at 54518 bytes.
+
+`readOnlyRootFilesystem` was not adopted. The crash settled the question without an experiment:
+homepage writes into `/app/config` at runtime, and the chart mounts that path as individual read-only
+`subPath` files with no writable layer. Turning the flag on needs a writable mount at `/app/config`,
+which would mean either an `emptyDir` seeded from the ConfigMap by an init container, or giving up
+the read-only config the design deliberately chose. That is a larger change than a hardening bonus
+justifies. `securityContext` stays a values passthrough, so it can be revisited without a template
+change.
+
+Media and CI/Ops render empty. Both groups are declared in `settings.yaml` and nothing carries the
+matching `gethomepage.dev/group` annotation yet. Ticket 04 fills them.
+
+Resolved.

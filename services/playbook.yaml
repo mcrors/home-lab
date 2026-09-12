@@ -53,3 +53,12 @@
   roles:
     - uptime-kuma
   tags: uptime-kuma
+
+- name: Install Homepage into K3s
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  roles:
+    - homepage
+  tags: homepage

@@ -1,4 +1,4 @@
-Status: ready-for-human
+Status: resolved
 Blocked by: 01
 
 # Write the ConfigMap content
@@ -134,5 +134,4 @@ Two findings handed to later tickets:
   out a webfont here, and it was not considered when icons were scoped. Homepage can serve icons
   from `/app/config/icons/` instead, which would need a chart change. Ticket 06 should decide.
 
-Status moved to `ready-for-human` — the files are done and verified, but nothing is deployed until
-ticket 03 wires up the role.
+Resolved. The files are done and verified. Nothing is deployed; ticket 03 wires up the role.
