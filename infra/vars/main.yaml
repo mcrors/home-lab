@@ -40,3 +40,11 @@ journald_max_retention: "7day"
 
 # prometheus_scraper_namespace used by both prometheus_scraper and prometheus
 prometheus_scraper_namespace: prometheus-access
+
+# cluster_name used by both prometheus and dead_mans_switch. It becomes the
+# Prometheus `cluster` label, stamped onto every scrape target by the prometheus
+# role and onto the alerts the dead man's switch posts. The two roles run in
+# separate plays, so neither can see the other's defaults; this is the only place
+# they can share it. MultiNodeRebootWindow groups by this label and an Alertmanager
+# inhibit rule matches on it, so the two must not drift.
+cluster_name: "home-lab"
