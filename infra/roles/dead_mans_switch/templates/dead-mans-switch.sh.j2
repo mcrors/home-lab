@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+#
+# Managed by Ansible (roles/dead_mans_switch). Do not edit on the host.
+#
+# Runs daily on lib-pi-06, which sits outside k3s, and posts to the Alertmanager
+# API so that everything it sends travels the real pipeline to Signal.
+#
+#   DeadMansSwitch       the morning all-is-well message. Its absence is the signal.
+#   SignalCliImageStale  fires at {{ dms_signal_cli_stale_after_days }} days, while signal-cli still works, so the
+#                        upgrade prompt arrives over a channel that is not yet broken.
+#
+# Signal is the only route to the phone, so a signal-cli failure cannot be reported
+# after the fact. Firing early is the entire point of the staleness check.
+
+set -euo pipefail
+
+PROM_URL="{{ dms_prometheus_url }}"
+AM_URL="{{ dms_alertmanager_url }}"
+STALE_AFTER_DAYS={{ dms_signal_cli_stale_after_days }}
+
+post_alert() {
+    local name=$1 severity=$2 summary=$3 description=$4
+    local starts_at ends_at
+    # startsAt is sent explicitly because Alertmanager's fallback for a missing
+    # startsAt is endsAt, not now, which would stamp every alert as starting
+    # {{ dms_alert_ttl_minutes }} minutes in the future.
+    starts_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+    ends_at=$(date -u -d "+{{ dms_alert_ttl_minutes }} minutes" +%Y-%m-%dT%H:%M:%SZ)
+
+    jq -n \
+        --arg name "$name" \
+        --arg severity "$severity" \
+        --arg summary "$summary" \
+        --arg description "$description" \
+        --arg starts_at "$starts_at" \
+        --arg ends_at "$ends_at" \
+        '[{
+            labels: {
+                alertname: $name,
+                severity: $severity,
+                cluster: "{{ dms_cluster_name }}",
+                source: "dead-mans-switch"
+            },
+            annotations: {summary: $summary, description: $description},
+            startsAt: $starts_at,
+            endsAt: $ends_at
+        }]' \
+        | curl -sS --max-time {{ dms_curl_timeout }} -X POST \
+            -H 'Content-Type: application/json' \
+            --data @- "${AM_URL}/api/v2/alerts" >/dev/null
+
+    echo "posted ${name}"
+}
+
+check_signal_cli_age() {
+    local image tag epoch now age_days
+
+    image=$(curl -sS --max-time {{ dms_curl_timeout }} -G "${PROM_URL}/api/v1/query" \
+        --data-urlencode 'query=kube_pod_container_info{namespace="ntfy",container="signal-cli"}' \
+        | jq -r '.data.result[0].metric.image // empty')
+
+    if [ -z "$image" ]; then
+        post_alert SignalCliImageUnknown warning \
+            "Cannot read the running signal-cli image" \
+            "Prometheus returned no kube_pod_container_info for the signal-cli container. Either the pod is gone or kube-state-metrics is not being scraped. Either way the staleness check is no longer running."
+        return
+    fi
+
+    tag=${image##*:}
+    epoch=${tag%%-*}
+
+    # The bbernhard -ci tags encode the image build time as a Unix epoch. Verified
+    # against Docker Hub last_updated across the tag history, matching to within a
+    # minute. An unparseable tag must alert rather than pass, or a change to the
+    # upstream scheme would silently disable this check forever.
+    if ! [[ $epoch =~ ^[0-9]{10}$ ]]; then
+        post_alert SignalCliTagUnreadable warning \
+            "signal-cli tag no longer parses as a build timestamp" \
+            "Tag is '${tag}'. The staleness check cannot run until it is taught the new scheme, so signal-cli upgrades are back to being tracked by hand."
+        return
+    fi
+
+    now=$(date -u +%s)
+    age_days=$(( (now - epoch) / 86400 ))
+
+    if [ "$age_days" -lt 0 ] || [ "$age_days" -gt 3650 ]; then
+        post_alert SignalCliTagUnreadable warning \
+            "signal-cli tag decodes to an implausible date" \
+            "Tag '${tag}' decodes to an age of ${age_days} days. Treating it as unreadable rather than trusting the result."
+        return
+    fi
+
+    if [ "$age_days" -ge "$STALE_AFTER_DAYS" ]; then
+        post_alert SignalCliImageStale warning \
+            "signal-cli image is ${age_days} days old" \
+            "Running ${image}. Releases older than three months can stop working, and a broken signal-cli cannot report itself. Snapshot the signal-cli-data PVC, bump signal_cli_image_tag in roles/signal_bridge/defaults/main.yaml, then run the signal-bridge tag."
+        return
+    fi
+
+    echo "signal-cli image is ${age_days}d old, under the ${STALE_AFTER_DAYS}d threshold"
+}
+
+# A broken staleness check should cost visibility of signal-cli's age, never the
+# heartbeat, so its failure is logged and stepped over rather than aborting the run.
+check_signal_cli_age || echo "staleness check failed" >&2
+
+post_alert DeadMansSwitch info \
+    "Alerting pipeline heartbeat" \
+    "Daily all-is-well from lib-pi-06. If this stops arriving, some hop between Prometheus and Signal has broken."

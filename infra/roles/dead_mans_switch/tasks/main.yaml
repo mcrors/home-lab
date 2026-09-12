@@ -1,0 +1,42 @@
+---
+- name: Ensure jq is installed
+  apt:
+    name: jq
+    state: present
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install the dead man's switch script
+  template:
+    src: dead-mans-switch.sh.j2
+    dest: "{{ dms_script_path }}"
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Install the systemd service unit
+  template:
+    src: dead-mans-switch.service.j2
+    dest: /etc/systemd/system/dead-mans-switch.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd
+
+- name: Install the systemd timer unit
+  template:
+    src: dead-mans-switch.timer.j2
+    dest: /etc/systemd/system/dead-mans-switch.timer
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload systemd
+
+- name: Reload systemd before touching the timer
+  meta: flush_handlers
+
+- name: Enable and start the timer
+  systemd:
+    name: dead-mans-switch.timer
+    enabled: true
+    state: started

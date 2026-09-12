@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the alerting pipeline heartbeat daily
+
+[Timer]
+OnCalendar={{ dms_schedule }}
+# Fire on boot if the scheduled run was missed, so a reboot spanning the window
+# does not read as a broken pipeline.
+Persistent=true
+
+[Install]
+WantedBy=timers.target

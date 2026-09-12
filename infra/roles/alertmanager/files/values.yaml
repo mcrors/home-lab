@@ -57,6 +57,12 @@ config:
     group_interval: 5m
     repeat_interval: 4h
     routes:
+      # One-shot events posted by the dead man's switch on lib-pi-06. They carry a
+      # short endsAt, so on the default receiver each would also send a [Resolved]
+      # message a few minutes later. This route drops that second message.
+      - matchers:
+          - source="dead-mans-switch"
+        receiver: 'ntfy-oneshot'
       - matchers:
           - severity="critical"
         receiver: 'ntfy'
@@ -66,6 +72,10 @@ config:
       webhook_configs:
         - url: 'http://ntfy-bridge.ntfy.svc.cluster.local:8000/hook'
           send_resolved: true
+    - name: 'ntfy-oneshot'
+      webhook_configs:
+        - url: 'http://ntfy-bridge.ntfy.svc.cluster.local:8000/hook'
+          send_resolved: false
   inhibit_rules:
     - source_matchers:
         - severity="critical"

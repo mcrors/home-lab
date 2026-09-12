@@ -108,6 +108,15 @@
     - ../vars/main.yaml
   tags: ntfy-bridge
 
+- name: Install the alerting dead man's switch
+  hosts: prometheus
+  become: true
+  roles:
+    - dead_mans_switch
+  vars_files:
+    - ../vars/main.yaml
+  tags: dead-mans-switch
+
 - name: Deploy signal-bridge
   hosts: localhost
   connection: local

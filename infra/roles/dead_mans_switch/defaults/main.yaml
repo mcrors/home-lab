@@ -1,0 +1,19 @@
+---
+# Both endpoints are served from lib-pi-06 itself (nginx fronts the Prometheus
+# container) or through Traefik, and both validate TLS from this host.
+dms_prometheus_url: "https://prometheus.houli.eu"
+dms_alertmanager_url: "https://alertmanager.houli.eu"
+
+# The README records that signal-cli releases older than three months can stop
+# working. Firing at 60 days leaves roughly a month to act while signal-cli still
+# works, so the upgrade prompt still reaches Signal.
+dms_signal_cli_stale_after_days: 60
+
+# How long a posted alert stays firing before Alertmanager resolves it. Short,
+# because these are one-shot events rather than conditions.
+dms_alert_ttl_minutes: 5
+
+dms_curl_timeout: 20
+dms_cluster_name: "{{ cluster_name }}"
+dms_schedule: "*-*-* 07:00:00"
+dms_script_path: /usr/local/bin/dead-mans-switch.sh

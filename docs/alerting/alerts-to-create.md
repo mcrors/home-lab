@@ -77,6 +77,22 @@ Complete as of 2026-09-06. `blackbox-ingress` discovers targets from Ingress obj
       which needs samples from both sides of the reboot inside the window and so misses any node
       that stays down longer than the window.
 
+## Dead man's switch
+
+Built 2026-09-12 as the `dead_mans_switch` role on lib-pi-06. See `12-dead-mans-switch.md`.
+
+- [X] **DeadMansSwitch** — daily all-is-well message through the real pipeline to Signal. Absence
+      is the signal.
+- [X] **SignalCliImageStale** — signal-cli image older than 60 days. Proactive by design: it fires
+      while signal-cli still works, so the upgrade prompt reaches a channel that is not yet broken.
+      A heartbeat cannot do this job, because a dead signal-cli reports itself only as silence.
+- [X] **SignalCliTagUnreadable** / **SignalCliImageUnknown** — the staleness check has gone blind.
+      A check that silently stops checking is worse than no check.
+- [X] `ntfy-oneshot` receiver added, identical to `ntfy` but `send_resolved: false`, so one-shot
+      alerts do not each send a second `[Resolved]` message.
+- [ ] Off-site watchdog so absence detection is not a human job and something survives total
+      cluster loss. Split out to `13-offsite-pipeline-watchdog.md`.
+
 ## Alertmanager config
 
 - [X] Add `inhibit_rules` — critical suppresses warning for same alertname + instance. Deployed and

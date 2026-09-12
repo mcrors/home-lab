@@ -146,6 +146,45 @@ volume, so this is noise rather than risk.
 
 ---
 
+## Dead man's switch
+
+A systemd timer on lib-pi-06, outside k3s, runs `dead-mans-switch.sh` daily at 07:00. It posts to
+the Alertmanager API, so everything it sends travels the real pipeline to Signal. Deploy with
+`ansible-playbook infra/playbooks/observability.yaml --tags dead-mans-switch`.
+
+| Alert | Meaning | What to do |
+|---|---|---|
+| `DeadMansSwitch` | The daily all-is-well message | Nothing. Its **absence** is the signal. |
+| `SignalCliImageStale` | signal-cli image is over 60 days old | Upgrade it, see below |
+| `SignalCliTagUnreadable` | The tag no longer parses as a build timestamp | Teach the script the new scheme; until then signal-cli age is untracked |
+| `SignalCliImageUnknown` | Prometheus has no `kube_pod_container_info` for signal-cli | Check the pod and that kube-state-metrics is being scraped |
+
+Run it by hand with `sudo systemctl start dead-mans-switch.service` on lib-pi-06. That sends a real
+Signal message. Check what it did with `journalctl -u dead-mans-switch.service`.
+
+These alerts carry `source="dead-mans-switch"`, which routes them to the `ntfy-oneshot` receiver.
+That receiver differs from `ntfy` only in `send_resolved: false`. Without it every one-shot alert
+would send a second `[Resolved]` message minutes later, because the script gives each alert a
+5 minute `endsAt`.
+
+The script sends `startsAt` explicitly. Alertmanager's fallback for a missing `startsAt` is
+`endsAt`, not the current time, which would stamp every alert as starting 5 minutes in the future.
+
+### Why the staleness alert fires at 60 days
+
+signal-cli releases older than three months can stop working, and Signal is the only route to your
+phone, so a broken signal-cli cannot report itself. Firing at 60 days means the prompt arrives
+while signal-cli still works. Follow the upgrade steps under "Signal bridge — upgrade" above,
+starting with the PVC snapshot.
+
+The age comes from the image tag. `bbernhard/signal-cli-rest-api` `-ci` tags are the build time as
+a Unix epoch, verified against Docker Hub `last_updated` across the tag history. The running tag is
+read from Prometheus via `kube_pod_container_info`, so no cluster credentials are needed on
+lib-pi-06. If that scheme ever changes upstream, `SignalCliTagUnreadable` fires rather than the
+check quietly passing forever.
+
+---
+
 ## Silence before a planned reboot
 
 `NodeRebooted` fires on any node with an uptime under 5 minutes, and the Alertmanager route sends
