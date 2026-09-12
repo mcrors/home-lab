@@ -1,3 +1,7 @@
+resources:
+  limits:
+    memory: 1Gi
+
 ingress:
   annotations:
     prometheus.io/probe: "true"
