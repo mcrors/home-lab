@@ -231,24 +231,37 @@ whatever ends up deployed.
 
 **Type:** Enhancement
 **Blocked by:** HOM-06
-**Priority:** Undecided — revisit once the dashboard is stable and see whether it is worth doing
+**Status:** Done, 2026-09-13
 
 **Description:**
 Homepage supports per-service API widgets that pull live stats directly into the
-service card (e.g. Sonarr queue count, Transmission active torrents).
-Each widget needs an API key, which must not go in an annotation; see
-`.scratch/homepage/issues/05-service-widgets.md` for the cost that decision carries.
+service card. A key must not go in an annotation as a *literal*, but
+`{{HOMEPAGE_VAR_*}}` substitution does work inside annotation values, so a widget
+does not force its service out of Ingress discovery. That correction is what made
+this cheap; see `.scratch/homepage/issues/05-service-widgets.md`.
 
-**Candidates:**
-- Sonarr: queue / missing episodes
-- Radarr: queue / missing films
-- Prowlarr: indexer count
-- Transmission: active torrents
+**Delivered:**
+- Sonarr — queue, missing episodes, series
+- Radarr — queue, missing films, movies
+- Prowlarr — grabs, queries, failed grabs, failed queries (lifetime totals, not the
+  indexer count this plan assumed)
+- Transmission — leeching, download rate, seeding, upload rate (no credentials: its
+  RPC has auth disabled, tracked in `.scratch/cluster-access-control/`)
+- Plex — current streams, album, movie and TV counts
+- Calendar — upcoming Sonarr and Radarr releases, monthly grid
+
+**Not done:** Longhorn was built and rejected on looks. Pi-hole is out of scope until
+it is in the cluster. OpenMediaVault, stocks, Traefik and Uptime Kuma were deferred.
+
+**Also delivered here:** `Infra` and `Media` are now three columns each, via nested
+layout subgroups, and `CI/Ops` and `Off-Cluster` dropped to two columns. This
+supersedes the four-column layout HOM-02 wrote.
 
 **Acceptance Criteria:**
-- At least one *arr widget showing live data
-- No API key readable from any annotation
-- No widget errors in Homepage logs
+- At least one *arr widget showing live data — met
+- No API key readable from any annotation — met, verified against all Ingresses,
+  ConfigMaps, repo files and `git log -p --all`
+- No widget errors in Homepage logs — met
 
 ---
 
@@ -261,4 +274,4 @@ Each widget needs an API key, which must not go in an annotation; see
 | HOM-03 | Ansible role + playbook | HOM-01 | |
 | HOM-04 | Ingress annotations — all services | HOM-03 | Jenkins deferred to the Jenkins effort; Pi-hole is not in the cluster yet |
 | HOM-06 | Icon audit | HOM-04 | Last step before the dashboard is done |
-| HOM-05 | Per-service live widgets | HOM-06 | Undecided; may not be done at all |
+| HOM-05 | Per-service live widgets | HOM-06 | Done: 6 widgets live, Longhorn rejected, 4 deferred. Also made Infra and Media three columns |

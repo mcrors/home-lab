@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: resolved
 Blocked by: 06
 
 Being worked one service at a time: decide, deploy and record each before looking at the next. The
@@ -104,6 +104,9 @@ API keys of the *arr family are 32 hex characters, so this cannot bite there.
 | Pi-hole | Out of scope | Not in the cluster. The spec already assigns its annotation to whichever project brings it in. Struck from this list rather than left looking undone. |
 | OpenMediaVault | Skipped | Rory's call, 2026-09-13. |
 | Calendar | Done | Upcoming Sonarr and Radarr releases, monthly grid. Needs no credentials of its own. Prompted the 3-column Media layout below. |
+| Stocks | Deferred | Needs an external market-data provider rather than anything in the cluster, so it has nothing to do with the rest of this ticket. |
+| Traefik | Deferred | Rory's call. The card already exists and links to the dashboard. |
+| Uptime Kuma | Deferred | Rory's call. The card already exists in CI/Ops. |
 
 The remaining services in the scope list are undecided and are being taken one at a time.
 
@@ -325,3 +328,41 @@ What was kept is what misleads someone editing that line: the placeholder is not
 must match, the Plex token is account-scoped, Transmission's 409 is a CSRF handshake, the Calendar must
 be nested in `services.yaml` too, and card order is alphabetical unless weighted. The reasoning behind
 each decision stays here.
+
+### The Infra section is three columns too
+
+Same pattern as Media, applied after Rory saw the Media split and wanted the rest of the page to match.
+`Infra` now holds no cards directly, only `Metrics` (Blackbox Exporter, kube-state-metrics), `Alerting`
+(Alertmanager, Ntfy) and `Platform` (Longhorn, Traefik), an even 2/2/2. `CI/Ops` and `Off-Cluster` stayed
+flat and moved from `columns: 4` to `columns: 2`, because at 4 their two cards each filled half a row and
+left the rest blank.
+
+**Two infra roles gained a task-level tag, and that is the part worth keeping.** Traefik's annotations
+live in `k3s_config`, which shares a play with `metallb` and `cert_manager` and also updates CoreDNS and
+the Traefik HelmChartConfig. Longhorn's live in `longhorn_chart`, whose play includes the Longhorn helm
+upgrade. Neither had task-level tags, so the smallest runnable unit for a one-word annotation change was
+the cluster's networking, certs and storage layer. Adding `tags: traefik-ingressroute` and
+`tags: longhorn-ingress` makes those two objects applyable on their own; `--list-tasks` confirmed the
+pair selects exactly two tasks before anything was run.
+
+The other four still have no task-level tags, so `--tags blackbox,ksm,alertmanager,ntfy` re-ran 19 tasks
+to change four annotations. It came out clean: 4 changed, and the only pod that restarted anywhere was
+homepage. Alertmanager was not interrupted, which was the risk flagged beforehand. Worth adding the same
+narrow tags there if these annotations are touched again.
+
+## Closing note
+
+Closed 2026-09-13. Six widgets live (Sonarr, Radarr, Prowlarr, Transmission, Plex, Calendar), one tried
+and rejected (Longhorn), one out of scope (Pi-hole, not in the cluster), and four deliberately deferred
+(OpenMediaVault, stocks, Traefik, Uptime Kuma). Every acceptance criterion is met, and each per-service
+decision is recorded above as this ticket required.
+
+The ticket's own cost model was the main thing it got wrong, and that is fixed in the record rather than
+worked around: widgets do not force a service out of Ingress discovery, and the chart never needed a
+change because ticket 01 had already scaffolded `extraEnv`.
+
+Reopen when a new service arrives that is worth a widget. The per-widget recipe is three annotations in
+the owning role, one key in the `homepage-widgets` Secret, and one `extraEnv` entry, with the URL always
+the in-cluster Service. Two traps to re-read first: the name after `HOMEPAGE_VAR_` must match the
+placeholder exactly, and a card written in `services.yaml` must be nested under its parent group there,
+not only in the `settings.yaml` layout.

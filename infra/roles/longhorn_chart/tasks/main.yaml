@@ -47,6 +47,9 @@
         value: Ignore
 
 - name: Create longhorn-ingress
+  # Tagged so the homepage annotations in the template can be updated without
+  # re-running the Longhorn helm upgrade that shares this play.
+  tags: longhorn-ingress
   kubernetes.core.k8s:
     kubeconfig: "{{ kubeconfig_path }}"
     state: present

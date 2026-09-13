@@ -151,7 +151,7 @@
           prometheus.io/probe: "true"
           gethomepage.dev/enabled: "true"
           gethomepage.dev/name: "Ntfy"
-          gethomepage.dev/group: "Infra"
+          gethomepage.dev/group: "Alerting"
           gethomepage.dev/icon: "ntfy"
           gethomepage.dev/description: "Push notification server"
       spec:

@@ -36,6 +36,10 @@
     src: "{{ role_path }}/files/traefik-helm-chart-config.yaml"
 
 - name: Apply Traefik Dashboard IngressRoute
+  # Tagged so the homepage annotations here can be updated on their own. Without
+  # it the smallest runnable unit is the whole play, which also reapplies metallb,
+  # cert_manager, the CoreDNS config and the Traefik HelmChartConfig.
+  tags: traefik-ingressroute
   kubernetes.core.k8s:
     kubeconfig: "{{ kubeconfig_path }}"
     state: present
@@ -48,7 +52,7 @@
         annotations:
           gethomepage.dev/enabled: "true"
           gethomepage.dev/name: "Traefik"
-          gethomepage.dev/group: "Infra"
+          gethomepage.dev/group: "Platform"
           gethomepage.dev/icon: "traefik"
           gethomepage.dev/description: "Reverse proxy and ingress controller"
           # An IngressRoute has no host field homepage can read.

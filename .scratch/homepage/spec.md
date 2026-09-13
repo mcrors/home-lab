@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: resolved
 
 # Homepage dashboard
 
@@ -33,5 +33,8 @@ See `docs/homepage/homepage-project-plan.md` for the full plan and
 | 06 | Audit and fix every service icon | 04 |
 | 05 | Per-service live-data widgets | 06 |
 
-Ticket 06 is the last step before the dashboard counts as done. Ticket 05 is `needs-triage`, parked
-behind a look at the finished page; it may end as `wontfix`.
+All six tickets are closed. Ticket 05 did not end as `wontfix`: six widgets went live, and it also
+carried two layout changes that came out of looking at the finished page, so `Infra` and `Media` are now
+three columns each. See that ticket's decision table for what was taken, tried and rejected, or deferred.
+
+Reopen the effort when a new service is worth a card or a widget; ticket 05's closing note has the recipe.

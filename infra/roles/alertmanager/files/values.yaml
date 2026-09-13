@@ -35,7 +35,7 @@ ingress:
     prometheus.io/probe: "true"
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: "Alertmanager"
-    gethomepage.dev/group: "Infra"
+    gethomepage.dev/group: "Alerting"
     gethomepage.dev/icon: "alertmanager"
     gethomepage.dev/description: "Alert routing and notification"
   hosts:
