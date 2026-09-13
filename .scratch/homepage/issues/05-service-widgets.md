@@ -101,6 +101,9 @@ API keys of the *arr family are 32 hex characters, so this cannot bite there.
 | Transmission | Done | Four current-state numbers, and the cheapest widget of the four: its RPC needs no credentials, so there is no vault key and no Secret change. |
 | Longhorn | Rejected | Built, deployed, looked at, removed. It worked; it just looked wrong on the page. |
 | Plex | Done | Current stream count is the number worth having. The three library counts come along with it and barely move. |
+| Pi-hole | Out of scope | Not in the cluster. The spec already assigns its annotation to whichever project brings it in. Struck from this list rather than left looking undone. |
+| OpenMediaVault | Skipped | Rory's call, 2026-09-13. |
+| Calendar | Done | Upcoming Sonarr and Radarr releases, monthly grid. Needs no credentials of its own. Prompted the 3-column Media layout below. |
 
 The remaining services in the scope list are undecided and are being taken one at a time.
 
@@ -256,3 +259,69 @@ claiming and which is unrelated.
 Also worth recording for later widgets: `/app/src/widgets/<name>/component.jsx` is readable JSX in the
 running image. Reading that is much cheaper than decompiling the minified chunks in
 `/app/.next/server`, which is how the earlier widgets in this ticket were checked.
+
+### OpenMediaVault
+
+Skipped on 2026-09-13 at Rory's call, before the design was worked out. What had been established, in
+case it is revisited:
+
+The widget takes a mandatory `method`, and `component.jsx` returns `null` for anything else, so one
+card shows exactly one of three things: `services.getStatus` (OMV service up/down counts),
+`smart.getListBg` (SMART disk health) or `downloader.getDownloadList`.
+
+Two things would have made it the most awkward widget in the list. OMV is off-cluster, so it is a
+static `services.yaml` entry rather than a discovered Ingress, and the widget would have to attach to
+the existing NAS entry there. And `services.yaml` already records that `omv.houli.eu` serves plain
+HTTP and refuses 443, while OMV's RPC authenticates with a username and password rather than an API
+token, so credentials would have crossed the LAN unencrypted on every widget poll.
+
+### Calendar
+
+Deployed 2026-09-13 and confirmed on the page, in the monthly grid view. Agenda was deployed first on
+my recommendation; Rory looked at both and preferred the grid.
+
+It needs no credentials. Each integration names an existing card by group and name, and homepage reuses
+that card's configured url and key, so the Sonarr and Radarr tokens are not repeated. `service_group`
+must be the leaf group the card sits in, `Arr`, not the parent `Media`; a mismatch is silent and
+presents as a calendar that renders but stays empty.
+
+**The nesting cost a round trip and is worth knowing.** The Calendar has no Ingress, so it is a static
+`services.yaml` entry, the first service card in that file. Declaring its group at the top level of
+`services.yaml` and relying on the `settings.yaml` layout to nest it under Media is not enough: it
+rendered as its own section below every other one. Homepage resolves a group name with a recursive
+search that tests each top-level entry's own name before descending, and records a parent only when it
+descends, so a top-level `Calendar` is found immediately with no parent. `Streaming` and `Arr` avoid
+this only because nothing declares them in `services.yaml`; they exist solely in the merged layout tree,
+where they are found as children of Media. A card written in `services.yaml` must therefore be nested
+under its parent group there as well. In that file an array value is a group and a map value is a
+service, which is how the parser tells them apart.
+
+### The Media section is now three columns
+
+Not a widget, but it came out of this ticket and it changed five roles, so it is recorded here rather
+than lost. Rory's call after seeing the Calendar sitting awkwardly in a flat four-column Media row.
+
+`Media` now holds no cards of its own, only three subgroups rendered as a 3-column grid: `Calendar`,
+`Streaming` (Plex, Transmission) and `Arr` (Prowlarr, Radarr, Sonarr). Subgroup headings are suppressed
+with `header: false`, so the page shows one "Media" rule above three bare columns.
+
+The nesting is declared only in the `settings.yaml` layout, where any nested object value becomes a
+subgroup and string or number values like `style` and `columns` are skipped. Services still carry a
+flat `gethomepage.dev/group` naming a leaf, so moving a card between columns is a one-word annotation
+change. Any `style` other than `row` renders a vertical stack. Cards sort by weight then name, and
+nothing sets a weight, so order is alphabetical.
+
+This supersedes the `Media: {style: row, columns: 4}` entry that ticket 02 wrote.
+
+### Comment pass
+
+Rory asked for a clean-code pass over the inline YAML comments before committing. Across the eight
+files this ticket touched, 123 comment lines went to 78: sonarr 14 to 4, plex 15 to 5, transmission 12
+to 3, the homepage role tasks 39 to 24, and radarr and prowlarr to zero, since `{{HOMEPAGE_VAR_*}}`
+explains itself once the pattern is written out in one place. The two homepage config files grew a
+little because they gained the Calendar and the 3-column layout.
+
+What was kept is what misleads someone editing that line: the placeholder is not a secret and its name
+must match, the Plex token is account-scoped, Transmission's 409 is a CSRF handshake, the Calendar must
+be nested in `services.yaml` too, and card order is alphabetical unless weighted. The reasoning behind
+each decision stays here.

@@ -3,18 +3,9 @@ ingress:
     prometheus.io/probe: "true"
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: "Prowlarr"
-    gethomepage.dev/group: "Media"
+    gethomepage.dev/group: "Arr"
     gethomepage.dev/icon: "prowlarr"
     gethomepage.dev/description: "Indexer manager"
-    # Live-data widget. widget.key is the literal placeholder text, not the key;
-    # homepage substitutes it from the pod environment, so no secret lands in
-    # this Ingress. The reasoning and the URL choice are written out once in
-    # services/roles/sonarr/files/values.yaml rather than repeated here.
-    #
-    # This widget sums numberOfGrabs, numberOfQueries, numberOfFailGrabs and
-    # numberOfFailQueries across every indexer. They are lifetime totals, not
-    # current state, so they tell you less at a glance than the *arr queues do.
-    # Taken anyway, deliberately; see ticket 05 for the decision.
     gethomepage.dev/widget.type: "prowlarr"
     gethomepage.dev/widget.url: "http://prowlarr.prowlarr.svc.cluster.local:9696"
     gethomepage.dev/widget.key: "{{HOMEPAGE_VAR_PROWLARR_KEY}}"

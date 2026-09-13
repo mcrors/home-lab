@@ -23,9 +23,23 @@ layout:
   Infra:
     style: row
     columns: 4
+  # Media holds no cards, only these three subgroups, rendered as a 3-column grid.
+  # Services keep a flat `gethomepage.dev/group` naming a leaf; the nesting lives
+  # only here, so moving a card between columns is a one-word annotation change.
+  # Cards sort by weight then name, so order is alphabetical unless an Ingress
+  # carries a `gethomepage.dev/weight`.
   Media:
     style: row
-    columns: 4
+    columns: 3
+    Calendar:
+      style: column
+      header: false
+    Streaming:
+      style: column
+      header: false
+    Arr:
+      style: column
+      header: false
   CI/Ops:
     style: row
     columns: 4

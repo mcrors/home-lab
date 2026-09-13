@@ -36,21 +36,12 @@ ingress:
     prometheus.io/probe: "true"
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: "Transmission"
-    gethomepage.dev/group: "Media"
+    gethomepage.dev/group: "Streaming"
     gethomepage.dev/icon: "transmission"
     gethomepage.dev/description: "BitTorrent client"
-    # Live-data widget. No key, no username and no password, unlike the *arr
-    # widgets: this Transmission has rpc-authentication-required false and both
-    # whitelists disabled, so its RPC accepts an unauthenticated call from any
-    # pod that can reach port 9091. See ticket 05 for why that is recorded as a
-    # problem in its own right rather than worked around here.
-    #
-    # A POST to /transmission/rpc answers 409 with an X-Transmission-Session-Id
-    # header. That is the CSRF handshake, not an auth failure; homepage retries
-    # with the header. Do not read a 409 here as a broken widget.
-    #
-    # Shows leeching count, download rate, seeding count and upload rate, all
-    # current state.
+    # No key because this RPC has authentication disabled, tracked as a problem in
+    # .scratch/cluster-access-control/. A 409 from /transmission/rpc is the CSRF
+    # handshake, not an auth failure.
     gethomepage.dev/widget.type: "transmission"
     gethomepage.dev/widget.url: "http://transmission.transmission.svc.cluster.local:9091"
   hosts:
