@@ -10,6 +10,23 @@ ingress:
     gethomepage.dev/group: "Media"
     gethomepage.dev/icon: "sonarr"
     gethomepage.dev/description: "TV series management"
+    # Live-data widget. The key is the literal placeholder text, not the key:
+    # homepage substitutes {{HOMEPAGE_VAR_*}} into discovered services by
+    # JSON-round-tripping the service object through substituteEnvironmentVars,
+    # so the real key lives only in the homepage pod's environment and never in
+    # this Ingress. Verified in the running v2.3.0 bundle, not assumed from docs.
+    #
+    # Nothing templates this string on the way in: Ansible does not Jinja-render
+    # a values_files entry, and helm does not template values files either, so
+    # the braces survive verbatim through the chart's toYaml.
+    #
+    # The URL is the in-cluster Service, not sonarr.houli.eu. Homepage fetches
+    # widget data server-side from its own pod, so the public host would leave
+    # the cluster, cross Traefik and depend on the pod trusting our cert chain,
+    # only to arrive back here. Plain http is safe: it never leaves the cluster.
+    gethomepage.dev/widget.type: "sonarr"
+    gethomepage.dev/widget.url: "http://sonarr.sonarr.svc.cluster.local:8989"
+    gethomepage.dev/widget.key: "{{HOMEPAGE_VAR_SONARR_KEY}}"
   hosts:
     - host: sonarr.houli.eu
       paths:

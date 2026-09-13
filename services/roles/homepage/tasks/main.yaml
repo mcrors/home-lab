@@ -12,6 +12,31 @@
         labels:
           app.kubernetes.io/managed-by: ansible
 
+- name: Apply homepage widget API key Secret
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: "{{ homepage_widget_secret_name }}"
+        namespace: "{{ homepage_namespace }}"
+      type: Opaque
+      # stringData, not data, so no b64encode filter is needed and the key is
+      # never base64ed into a task argument by hand. The API server encodes it.
+      #
+      # Each key here is projected into the pod as HOMEPAGE_VAR_<NAME> by
+      # extraEnv in files/values.yaml. The name after that prefix has to match
+      # the placeholder text in the owning service's widget.key annotation
+      # exactly: substitution matches on the HOMEPAGE_VAR_ prefix and treats the
+      # remainder as a literal, so a mismatch leaves the raw {{...}} text in the
+      # widget config and the service answers 401.
+      stringData:
+        SONARR_KEY: "{{ vault_sonarr_api_key }}"
+  # The Secret body is the API key. Without this, a -v run prints it.
+  no_log: true
+
 - name: Install/Upgrade homepage with values.yaml
   kubernetes.core.helm:
     kubeconfig: "{{ kubeconfig_path }}"
@@ -22,6 +47,23 @@
     wait: true
     values_files:
       - "{{ role_path }}/files/values.yaml"
+    # extraEnv lives here rather than in files/values.yaml because it has to
+    # reference homepage_widget_secret_name, and a values_files entry is handed
+    # to helm as a path without ever being Jinja-rendered. Same reason the plex
+    # role passes its secretName through values: instead of its values file.
+    #
+    # The chart renders this verbatim into the container's env (deployment.yaml),
+    # so this is a plain EnvVar list. secretKeyRef, not a literal value: the key
+    # must not appear in the helm release, which is stored as a Secret in the
+    # cluster but is readable by anything that can read Secrets in this namespace
+    # and is kept for every revision in the release history.
+    values:
+      extraEnv:
+        - name: HOMEPAGE_VAR_SONARR_KEY
+          valueFrom:
+            secretKeyRef:
+              name: "{{ homepage_widget_secret_name }}"
+              key: SONARR_KEY
     # Each homepage config file stays a real file on disk and reaches the chart
     # through helm --set-file, which kubernetes.core.helm spells as a set_values
     # entry with value_type: file. Only the path travels on the command line, so

@@ -1,1 +1,6 @@
 homepage_namespace: homepage
+
+# One Secret holds every widget API key, one key per service, rather than a
+# Secret per service. Widgets are added one at a time over the life of this
+# dashboard, and this way each new one costs a key rather than a resource.
+homepage_widget_secret_name: homepage-widgets
