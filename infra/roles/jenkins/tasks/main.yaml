@@ -32,5 +32,10 @@
     release_namespace: "{{ jenkins_namespace }}"
     create_namespace: false
     wait: true
+    # First start pulls 275 MiB across 12 layers onto a pi, provisions a Longhorn
+    # volume, then downloads nine plugins and their dependencies. The module
+    # default is helm's 5m0s, and a first install that times out strands the
+    # release in pending-install, which needs a manual uninstall before a retry.
+    timeout: "15m0s"
     values_files:
       - "{{ role_path }}/files/values.yaml"
