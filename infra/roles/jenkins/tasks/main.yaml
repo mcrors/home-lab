@@ -1,0 +1,36 @@
+---
+
+- name: Add jenkins Helm repo
+  kubernetes.core.helm_repository:
+    name: jenkinsci
+    repo_url: https://charts.jenkins.io
+
+- name: Update Helm repo cache
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: cache-refresh
+    namespace: kube-system
+    state: absent
+    update_repo_cache: true
+
+- name: Ensure jenkins namespace exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Namespace
+      metadata:
+        name: "{{ jenkins_namespace }}"
+
+- name: Install/Upgrade jenkins with values.yaml
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: jenkins
+    chart_ref: jenkinsci/jenkins
+    chart_version: "{{ jenkins_chart_version }}"
+    release_namespace: "{{ jenkins_namespace }}"
+    create_namespace: false
+    wait: true
+    values_files:
+      - "{{ role_path }}/files/values.yaml"

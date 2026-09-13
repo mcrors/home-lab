@@ -1,0 +1,3 @@
+jenkins_namespace: jenkins
+jenkins_chart_version: 5.9.54
+jenkins_host: jenkins.houli.eu

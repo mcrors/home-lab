@@ -11,7 +11,10 @@ See `docs/jenkins/jenkins-prd.md` section 7 (Ingress annotations) and `docs/aler
 
 ## Scope
 
-1. **Blackbox probe** — already configured in `infra/roles/prometheus/templates/prometheus.yml.j2`. Confirm it is green and no longer a standing failure. No change expected.
+1. **Blackbox probe** — already configured in `infra/roles/prometheus/templates/prometheus.yml.j2`, and ticket 02 added the matching `prometheus.io/probe: "true"` and `prometheus.io/probe-path: /login` annotations to the Ingress. Confirm it is green and no longer a standing failure. No change expected.
+
+   The probe resolves to `https://jenkins.houli.eu/login`, not `/`. PRD section 6 denies anonymous read, so `/` may answer 403. If the probe is red, check whether Jenkins is actually serving `/login` before touching the annotation. See ticket 02 Finding E.
+
 2. **Homepage** — confirm the six `gethomepage.dev/*` annotations from ticket 02 produce a Jenkins card in the CI/Ops group. `docs/homepage/homepage-project-plan.md` row HOM-04 records this as deferred "to when Ingress exists". Close that row.
 3. **Uptime Kuma** — add an HTTP monitor for `https://jenkins.houli.eu/login`, notifying the `homelab-alerts` ntfy topic, matching the other service monitors.
 4. **Longhorn backup** — add the `jenkins` PVC to the Longhorn backup target, as PRD section 6 (Data) requires. The signal-bridge project moved PVC backups to the Longhorn backups effort — follow whatever that effort settled on rather than inventing a second mechanism.

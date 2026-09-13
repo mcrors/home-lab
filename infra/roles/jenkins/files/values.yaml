@@ -1,0 +1,93 @@
+# Values for the upstream jenkinsci/jenkins chart. The chart version is pinned
+# in ../defaults/main.yaml. See docs/jenkins/jenkins-prd.md sections 6 and 7.
+#
+# The controller image tag is not set here. The chart composes it from its own
+# appVersion and controller.image.tagLabel, giving jenkins/jenkins:2.568.2-jdk21.
+#
+# No `strategy` value is set. The chart renders a StatefulSet, which already
+# stops the old pod before it starts the new one.
+
+controller:
+  # The controller schedules builds and runs none of them. A build with no
+  # agent waits in the queue. PRD section 4.
+  numExecutors: 0
+
+  # Clears the reverse proxy warning recorded in TODO.md.
+  jenkinsUrl: https://jenkins.houli.eu
+
+  # The heap then tracks the memory limit below instead of the node's total RAM.
+  javaOpts: "-XX:MaxRAMPercentage=70.0"
+
+  # No CPU limit. A CPU limit throttles the JVM and makes the UI slow.
+  # PRD section 6 (Resources). The chart defaults limits.cpu to 2000m and Helm
+  # merges maps, so the key must be nulled rather than omitted.
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: null
+      memory: 1536Mi
+
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: node_type
+                operator: In
+                values:
+                  - pi
+      preferredDuringSchedulingIgnoredDuringExecution:
+        - weight: 100
+          preference:
+            matchExpressions:
+              - key: node_size
+                operator: In
+                values:
+                  - medium
+
+  # Setting installPlugins replaces the chart's list rather than extending it,
+  # so the chart's four defaults are restated here at the chart's own versions.
+  # The five below them are the additions tickets 04 to 06 need.
+  installPlugins:
+    - kubernetes:4540.v612369217f87
+    - workflow-aggregator:608.v67378e9d3db_1
+    - git:5.10.1
+    - configuration-as-code:2117.vc05a_0b_e6b_f4e
+    - github-branch-source:1983.vfa_27ed961853
+    - docker-workflow:653.v2f2c08eff0ec
+    - credentials-binding:728.v902a_273b_8947
+    - timestamper:1.30
+    - build-timeout:1.41
+
+  # Plugins reinstall at every start until ticket 08 sets this to true.
+  initializeOnce: false
+
+  ingress:
+    enabled: true
+    apiVersion: networking.k8s.io/v1
+    ingressClassName: traefik
+    hostName: jenkins.houli.eu
+    path: /
+    pathType: Prefix
+    annotations:
+      traefik.ingress.kubernetes.io/router.tls: "true"
+      prometheus.io/probe: "true"
+      prometheus.io/probe-path: /login
+      gethomepage.dev/enabled: "true"
+      gethomepage.dev/name: "Jenkins"
+      gethomepage.dev/group: "CI/Ops"
+      gethomepage.dev/icon: "jenkins"
+      gethomepage.dev/description: "Build pipelines"
+    tls:
+      - hosts:
+          - jenkins.houli.eu
+
+persistence:
+  enabled: true
+  storageClass: longhorn
+  size: 8Gi
+  accessMode: ReadWriteOnce
+
+# agent: left at chart defaults. Ticket 04 configures the DinD pod template.
