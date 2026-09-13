@@ -51,6 +51,10 @@
           gethomepage.dev/group: "Infra"
           gethomepage.dev/icon: "traefik"
           gethomepage.dev/description: "Reverse proxy and ingress controller"
+          # An IngressRoute has no host field homepage can read.
+          gethomepage.dev/href: "https://{{ traefik_host }}"
+          # Pods are labelled `traefik`; this object is named for the dashboard.
+          gethomepage.dev/app: "traefik"
       spec:
         entryPoints:
           - websecure

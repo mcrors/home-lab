@@ -1,6 +1,11 @@
 ingress:
   annotations:
     prometheus.io/probe: "true"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Prowlarr"
+    gethomepage.dev/group: "Media"
+    gethomepage.dev/icon: "prowlarr"
+    gethomepage.dev/description: "Indexer manager"
   hosts:
     - host: prowlarr.houli.eu
       paths:

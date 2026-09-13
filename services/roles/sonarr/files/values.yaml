@@ -5,6 +5,11 @@ resources:
 ingress:
   annotations:
     prometheus.io/probe: "true"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Sonarr"
+    gethomepage.dev/group: "Media"
+    gethomepage.dev/icon: "sonarr"
+    gethomepage.dev/description: "TV series management"
   hosts:
     - host: sonarr.houli.eu
       paths:

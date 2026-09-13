@@ -6,6 +6,13 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.tls: "true"
     prometheus.io/probe: "true"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Longhorn"
+    gethomepage.dev/group: "Infra"
+    gethomepage.dev/icon: "longhorn"
+    gethomepage.dev/description: "Distributed block storage"
+    # Longhorn pods use a bare `app` label; scope the tag to the UI.
+    gethomepage.dev/pod-selector: "app=longhorn-ui"
 spec:
   ingressClassName: traefik
   tls:

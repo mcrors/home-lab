@@ -1,6 +1,11 @@
 ingress:
   annotations:
     prometheus.io/probe: "true"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Radarr"
+    gethomepage.dev/group: "Media"
+    gethomepage.dev/icon: "radarr"
+    gethomepage.dev/description: "Movie library management"
   hosts:
     - host: radarr.houli.eu
       paths:

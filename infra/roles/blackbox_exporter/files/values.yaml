@@ -95,6 +95,13 @@ ingress:
   annotations:
     traefik.ingress.kubernetes.io/router.tls: "true"
     prometheus.io/probe: "true"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Blackbox Exporter"
+    gethomepage.dev/group: "Infra"
+    gethomepage.dev/icon: "prometheus"
+    gethomepage.dev/description: "Endpoint availability probing"
+    # Pods are labelled with the chart name, not the Ingress name.
+    gethomepage.dev/app: "prometheus-blackbox-exporter"
   hosts:
     ## The host property on hosts and tls is passed through helm tpl function.
     ## ref: https://helm.sh/docs/developing_charts/#using-the-tpl-function

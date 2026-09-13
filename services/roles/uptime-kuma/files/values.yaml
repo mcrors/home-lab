@@ -13,6 +13,11 @@ ingress:
   className: traefik
   annotations:
     prometheus.io/probe: "true"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Uptime Kuma"
+    gethomepage.dev/group: "CI/Ops"
+    gethomepage.dev/icon: "uptime-kuma"
+    gethomepage.dev/description: "Service uptime monitoring"
   hosts:
     - host: uptime.houli.eu
       paths:

@@ -34,6 +34,11 @@ affinity:
 ingress:
   annotations:
     prometheus.io/probe: "true"
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Transmission"
+    gethomepage.dev/group: "Media"
+    gethomepage.dev/icon: "transmission"
+    gethomepage.dev/description: "BitTorrent client"
   hosts:
     - host: transmission.houli.eu
       paths:

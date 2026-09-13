@@ -70,6 +70,7 @@
           metadata:
             labels:
               app: ntfy
+              app.kubernetes.io/name: ntfy
           spec:
             affinity:
               nodeAffinity:
