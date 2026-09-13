@@ -99,6 +99,7 @@ API keys of the *arr family are 32 hex characters, so this cannot bite there.
 | Radarr | Done | Same widget type as Sonarr with a different name and port. Nothing new to invent, so the only question was whether the numbers are wanted, and they are. |
 | Prowlarr | Done | Taken against a recommendation to skip. The widget shows lifetime totals rather than the indexer count the ticket assumed, but the cost is now trivial and Rory wants the numbers on the page. |
 | Transmission | Done | Four current-state numbers, and the cheapest widget of the four: its RPC needs no credentials, so there is no vault key and no Secret change. |
+| Longhorn | Rejected | Built, deployed, looked at, removed. It worked; it just looked wrong on the page. |
 
 The remaining services in the scope list are undecided and are being taken one at a time.
 
@@ -204,3 +205,30 @@ includes adding a torrent and setting `download-dir` to any path the container c
 the NFS media and downloads mounts. The widget neither caused nor worsened this; needing no credentials
 is how it was noticed. Tracked in `.scratch/cluster-access-control/issues/01-transmission-rpc-unauthenticated.md`
 rather than here, because a fix is an access-control decision rather than a dashboard change.
+
+### Longhorn
+
+Tried and removed on 2026-09-13. Not a failure to make it work: it worked, and Rory judged that it
+looked wrong in the header. Reverted and redeployed, leaving zero Longhorn references in the live
+ConfigMap. Longhorn still has its service card in `Infra` from `longhorn-ingress`; only the header
+widget is gone.
+
+Two things learned that are worth keeping, because they will apply to any other information widget.
+
+**Longhorn is an information widget, not a service card.** It has no directory under
+`/app/src/widgets` (159 service widgets) and instead lives in `/app/src/components/widgets`, alongside
+`datetime`, `glances`, `greeting`, `kubernetes`, `logo`, `openmeteo`, `openweathermap`, `resources`,
+`stocks`, `unifi_console` and `weather`. Those are configured in `widgets.yaml` and attach to no
+Ingress, so the annotation pattern used for the four *arr-style widgets does not apply to them.
+
+**The URL goes in `settings.yaml`, not `widgets.yaml`.** This cost a debugging round trip. The card
+rendered "API Error"; `/api/widgets/longhorn` answered
+`400 {"error":"Missing Longhorn URL"}`. The route reads
+`getSettings()?.providers?.longhorn`, so the URL belongs in a top-level `providers:` block in
+`settings.yaml`, and a `url:` key on the `widgets.yaml` entry is read by nothing. Once moved, the route
+returned 200 with real per-node capacity. Expect the same split for `stocks` if that is ever taken.
+
+The in-cluster Service was the right choice regardless: `/api/widgets/longhorn` is a server-side route,
+so the fetch leaves the homepage pod, and `longhorn-frontend.longhorn-system.svc.cluster.local` answered
+`/v1/nodes` with 200 and no auth. That last detail is part of why
+`.scratch/cluster-access-control/` now exists.
