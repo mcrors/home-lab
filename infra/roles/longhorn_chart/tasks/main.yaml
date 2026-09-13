@@ -52,12 +52,6 @@
     state: present
     template: "{{ role_path }}/templates/ingress.yaml.j2"
 
-- name: Create longhorn-ingress
-  kubernetes.core.k8s:
-    kubeconfig: "{{ kubeconfig_path }}"
-    state: present
-    template: "{{ role_path }}/templates/ingress.yaml.j2"
-
 - name: Create metrics-service
   kubernetes.core.k8s:
     kubeconfig: "{{ kubeconfig_path }}"
