@@ -77,12 +77,18 @@ securityContext:
     drop:
       - ALL
 
+# No CPU limit. Measured 2026-09-13, the dashboard averaged 0.059 cores against a
+# 500m limit yet was throttled in 35% of its CPU periods: it idles, then every
+# widget fires at once on page load and saturates the quota inside the 100ms CFS
+# window. Average utilisation hides this completely. CPU is compressible and the
+# request still guarantees a scheduling share, so dropping the ceiling costs the
+# other pods on the node nothing they were entitled to. The memory limit stays,
+# because memory is not compressible.
 resources:
   requests:
     cpu: 50m
     memory: 192Mi
   limits:
-    cpu: 500m
     memory: 512Mi
 
 # Scheduling passthroughs. Leave empty to let the scheduler decide.

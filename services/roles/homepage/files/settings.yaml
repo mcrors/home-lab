@@ -51,11 +51,13 @@ layout:
     Arr:
       style: column
       header: false
-  # Two cards each, and flat: no subgroups, so columns is just how many sit side by
-  # side. At 4 they filled half the row and left the rest blank.
+  # Both flat: no subgroups, so columns is just how many cards sit side by side,
+  # and the count is set to match the cards the group actually has. A wider value
+  # leaves the rest of the row blank, which is why CI/Ops was 2 while it held only
+  # Grafana and Uptime Kuma. Jenkins made it three.
   CI/Ops:
     style: row
-    columns: 2
+    columns: 3
   Off-Cluster:
     style: row
     columns: 2
