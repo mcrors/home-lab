@@ -9,6 +9,22 @@ ingress:
     gethomepage.dev/group: "Media"
     gethomepage.dev/icon: "plex"
     gethomepage.dev/description: "Media streaming server"
+    # Live-data widget. widget.key is the literal placeholder text, not the key;
+    # homepage substitutes it from the pod environment, so no secret lands in
+    # this Ingress. The reasoning and the URL choice are written out once in
+    # services/roles/sonarr/files/values.yaml rather than repeated here.
+    #
+    # The credential is Plex's PlexOnlineToken, which authenticates the Plex
+    # account rather than just this server, so it is a broader secret than the
+    # *arr API keys. It is held as HOMEPAGE_VAR_PLEX_KEY in the homepage-widgets
+    # Secret, from vault_plex_api_key. Unrelated to vault_plex_claim_token, which
+    # this role already uses for first-time server claiming.
+    #
+    # Shows current streams, then album, movie and TV counts. Streams is the
+    # number worth having; the three library counts barely move.
+    gethomepage.dev/widget.type: "plex"
+    gethomepage.dev/widget.url: "http://plex.plex.svc.cluster.local:32400"
+    gethomepage.dev/widget.key: "{{HOMEPAGE_VAR_PLEX_KEY}}"
   hosts:
     - host: plex.houli.eu
       paths:

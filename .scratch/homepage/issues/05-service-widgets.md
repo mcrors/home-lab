@@ -100,6 +100,7 @@ API keys of the *arr family are 32 hex characters, so this cannot bite there.
 | Prowlarr | Done | Taken against a recommendation to skip. The widget shows lifetime totals rather than the indexer count the ticket assumed, but the cost is now trivial and Rory wants the numbers on the page. |
 | Transmission | Done | Four current-state numbers, and the cheapest widget of the four: its RPC needs no credentials, so there is no vault key and no Secret change. |
 | Longhorn | Rejected | Built, deployed, looked at, removed. It worked; it just looked wrong on the page. |
+| Plex | Done | Current stream count is the number worth having. The three library counts come along with it and barely move. |
 
 The remaining services in the scope list are undecided and are being taken one at a time.
 
@@ -232,3 +233,26 @@ The in-cluster Service was the right choice regardless: `/api/widgets/longhorn` 
 so the fetch leaves the homepage pod, and `longhorn-frontend.longhorn-system.svc.cluster.local` answered
 `/v1/nodes` with 200 and no auth. That last detail is part of why
 `.scratch/cluster-access-control/` now exists.
+
+### Plex
+
+Deployed 2026-09-13 and confirmed on the page. Shows current streams, then album, movie and TV counts.
+Streams is the current-state number that justifies the card; the library counts are near-static.
+
+Same annotation pattern as the *arr widgets, at `http://plex.plex.svc.cluster.local:32400`. The widget's
+API template is `{url}{endpoint}?X-Plex-Token={key}`, so the key travels as a query parameter rather
+than a header, which changes nothing about how it is stored.
+
+**The credential is broader than the others.** It is Plex's `PlexOnlineToken`, read from
+`/config/Library/Application Support/Plex Media Server/Preferences.xml`, and it authenticates the Plex
+account rather than only this server. Stored the same way as the *arr keys and verified absent from
+every Ingress, ConfigMap, repo file and git history, but worth knowing it is closer to an account
+password than to a server-scoped API key.
+
+Held as `vault_plex_api_key`. That name is deliberately close to the other three and deliberately
+distinct from the pre-existing `vault_plex_claim_token`, which the plex role uses for first-time server
+claiming and which is unrelated.
+
+Also worth recording for later widgets: `/app/src/widgets/<name>/component.jsx` is readable JSX in the
+running image. Reading that is much cheaper than decompiling the minified chunks in
+`/app/.next/server`, which is how the earlier widgets in this ticket were checked.
