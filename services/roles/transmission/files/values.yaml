@@ -39,6 +39,20 @@ ingress:
     gethomepage.dev/group: "Media"
     gethomepage.dev/icon: "transmission"
     gethomepage.dev/description: "BitTorrent client"
+    # Live-data widget. No key, no username and no password, unlike the *arr
+    # widgets: this Transmission has rpc-authentication-required false and both
+    # whitelists disabled, so its RPC accepts an unauthenticated call from any
+    # pod that can reach port 9091. See ticket 05 for why that is recorded as a
+    # problem in its own right rather than worked around here.
+    #
+    # A POST to /transmission/rpc answers 409 with an X-Transmission-Session-Id
+    # header. That is the CSRF handshake, not an auth failure; homepage retries
+    # with the header. Do not read a 409 here as a broken widget.
+    #
+    # Shows leeching count, download rate, seeding count and upload rate, all
+    # current state.
+    gethomepage.dev/widget.type: "transmission"
+    gethomepage.dev/widget.url: "http://transmission.transmission.svc.cluster.local:9091"
   hosts:
     - host: transmission.houli.eu
       paths:

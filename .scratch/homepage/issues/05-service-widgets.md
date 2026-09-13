@@ -98,6 +98,7 @@ API keys of the *arr family are 32 hex characters, so this cannot bite there.
 | Sonarr | Done | Queue depth and missing-episode count are the two numbers worth a glance before opening the app. Cheap once the Secret plumbing existed. |
 | Radarr | Done | Same widget type as Sonarr with a different name and port. Nothing new to invent, so the only question was whether the numbers are wanted, and they are. |
 | Prowlarr | Done | Taken against a recommendation to skip. The widget shows lifetime totals rather than the indexer count the ticket assumed, but the cost is now trivial and Rory wants the numbers on the page. |
+| Transmission | Done | Four current-state numbers, and the cheapest widget of the four: its RPC needs no credentials, so there is no vault key and no Secret change. |
 
 The remaining services in the scope list are undecided and are being taken one at a time.
 
@@ -173,3 +174,33 @@ daily, and he does. Recorded here so the reasoning is legible if the card is lat
 
 Same shape as the other two, at `http://prowlarr.prowlarr.svc.cluster.local:9696`, key hash-matched
 before deploying. Leak check re-run across all three keys after the deploy: zero hits each.
+
+### Transmission
+
+Deployed 2026-09-13 and confirmed on the page. Shows leeching count, download rate, seeding count and
+upload rate, all current state rather than lifetime totals.
+
+Annotations only. This widget needs no key, no username and no password, which is not how the ticket
+priced it and not how the other three work. Transmission's RPC has authentication disabled:
+
+```
+"rpc-authentication-required": false,
+"rpc-username": "",
+"rpc-whitelist-enabled": false,
+"rpc-host-whitelist-enabled": false,
+"rpc-bind-address": "0.0.0.0",
+```
+
+The `127.0.0.1,::1` value of `rpc-whitelist` is not enforced, because `rpc-whitelist-enabled` is false.
+Settings live at `/config/transmission-home/settings.json`, not `/config/settings.json`.
+
+One thing to know before reading a 409 as a failure: a POST to `/transmission/rpc` answers
+`409` with an `X-Transmission-Session-Id` header. That is Transmission's CSRF handshake and homepage
+retries with the header. It is not an auth challenge.
+
+**This surfaced a security problem, filed separately.** Because RPC auth is off and no NetworkPolicy
+exists in that namespace, any pod in the cluster can drive Transmission's RPC unauthenticated, which
+includes adding a torrent and setting `download-dir` to any path the container can write, so it reaches
+the NFS media and downloads mounts. The widget neither caused nor worsened this; needing no credentials
+is how it was noticed. Tracked in `.scratch/cluster-access-control/issues/01-transmission-rpc-unauthenticated.md`
+rather than here, because a fix is an access-control decision rather than a dashboard change.
