@@ -51,7 +51,7 @@
           gethomepage.dev/enabled: "true"
           gethomepage.dev/name: "kube-state-metrics"
           gethomepage.dev/group: "Infra"
-          gethomepage.dev/icon: "prometheus"
+          gethomepage.dev/icon: "mdi-kubernetes"
           gethomepage.dev/description: "Kubernetes object state metrics"
       spec:
         ingressClassName: traefik

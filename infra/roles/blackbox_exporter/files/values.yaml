@@ -98,7 +98,7 @@ ingress:
     gethomepage.dev/enabled: "true"
     gethomepage.dev/name: "Blackbox Exporter"
     gethomepage.dev/group: "Infra"
-    gethomepage.dev/icon: "prometheus"
+    gethomepage.dev/icon: "mdi-radar"
     gethomepage.dev/description: "Endpoint availability probing"
     # Pods are labelled with the chart name, not the Ingress name.
     gethomepage.dev/app: "prometheus-blackbox-exporter"

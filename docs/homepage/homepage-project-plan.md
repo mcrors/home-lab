@@ -191,11 +191,11 @@ the four that exist.
 | Prowlarr | Media | `prowlarr` | |
 | Transmission | Media | `transmission` | |
 | Longhorn | Infra | `longhorn` | |
-| Blackbox Exporter | Infra | `prometheus` | |
+| Blackbox Exporter | Infra | `mdi-radar` | |
 | Uptime Kuma | CI/Ops | `uptime-kuma` | |
 | Grafana | CI/Ops | `grafana` | |
 | Alertmanager | Infra | `alertmanager` | Already annotated |
-| kube-state-metrics | Infra | `prometheus` | Already annotated |
+| kube-state-metrics | Infra | `mdi-kubernetes` | Already annotated |
 | Ntfy | Infra | `ntfy` | Already annotated |
 | Traefik dashboard | Infra | `traefik` | Already annotated, on an `IngressRoute` CRD. Discovered only when `kubernetes.yaml` sets `traefik: true`, and only if `gethomepage.dev/href` is added — the one service that needs that annotation |
 | Jenkins | CI/Ops | `jenkins` | Deferred — `.scratch/jenkins/issues/07-monitoring-and-homepage.md` owns this row |
