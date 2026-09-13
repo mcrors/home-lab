@@ -35,6 +35,7 @@
       stringData:
         SONARR_KEY: "{{ vault_sonarr_api_key }}"
         RADARR_KEY: "{{ vault_radarr_api_key }}"
+        PROWLARR_KEY: "{{ vault_prowlarr_api_key }}"
   # The Secret body is nothing but API keys. Without this, a -v run prints them.
   no_log: true
 
@@ -70,6 +71,11 @@
             secretKeyRef:
               name: "{{ homepage_widget_secret_name }}"
               key: RADARR_KEY
+        - name: HOMEPAGE_VAR_PROWLARR_KEY
+          valueFrom:
+            secretKeyRef:
+              name: "{{ homepage_widget_secret_name }}"
+              key: PROWLARR_KEY
     # Each homepage config file stays a real file on disk and reaches the chart
     # through helm --set-file, which kubernetes.core.helm spells as a set_values
     # entry with value_type: file. Only the path travels on the command line, so

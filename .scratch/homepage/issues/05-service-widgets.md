@@ -97,6 +97,7 @@ API keys of the *arr family are 32 hex characters, so this cannot bite there.
 |---|---|---|
 | Sonarr | Done | Queue depth and missing-episode count are the two numbers worth a glance before opening the app. Cheap once the Secret plumbing existed. |
 | Radarr | Done | Same widget type as Sonarr with a different name and port. Nothing new to invent, so the only question was whether the numbers are wanted, and they are. |
+| Prowlarr | Done | Taken against a recommendation to skip. The widget shows lifetime totals rather than the indexer count the ticket assumed, but the cost is now trivial and Rory wants the numbers on the page. |
 
 The remaining services in the scope list are undecided and are being taken one at a time.
 
@@ -151,3 +152,24 @@ ConfigMaps, the repo and `git log -p --all`: zero hits for either. Logs clean.
 Worth noting for anyone reading this later: an ad-hoc `ansible localhost -m debug` run does not load
 `services/group_vars` unless it runs from `services/`. Run from the repo root it reports a vault
 variable as undefined even when it is correctly defined, which briefly looked like a missing key here.
+
+### Prowlarr
+
+Deployed 2026-09-13 and confirmed on the page.
+
+The scope list above says "Prowlarr: indexer count". That is wrong, and the widget cannot do it. Chunk
+`1081` of the running image fetches the `indexerstats` endpoint and sums four counters across every
+indexer: `numberOfGrabs`, `numberOfQueries`, `numberOfFailGrabs`, `numberOfFailQueries`. There is no
+indexer count among them.
+
+I recommended skipping it on that basis. These are cumulative lifetime totals rather than current
+state, so unlike a Sonarr queue depth they do not tell you anything you would act on: a query total
+that only ever rises is wallpaper after the first week, and the one genuinely useful signal, a climbing
+failure count, is easier to see as a rate in Prometheus than as a raw total on a card.
+
+Rory chose to take it anyway, which is the right call to be his: the cost argument had already
+evaporated by this point, so the only question left was whether he wants the numbers in front of him
+daily, and he does. Recorded here so the reasoning is legible if the card is later removed.
+
+Same shape as the other two, at `http://prowlarr.prowlarr.svc.cluster.local:9696`, key hash-matched
+before deploying. Leak check re-run across all three keys after the deploy: zero hits each.
