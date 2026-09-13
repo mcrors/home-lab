@@ -34,7 +34,8 @@
       # widget config and the service answers 401.
       stringData:
         SONARR_KEY: "{{ vault_sonarr_api_key }}"
-  # The Secret body is the API key. Without this, a -v run prints it.
+        RADARR_KEY: "{{ vault_radarr_api_key }}"
+  # The Secret body is nothing but API keys. Without this, a -v run prints them.
   no_log: true
 
 - name: Install/Upgrade homepage with values.yaml
@@ -64,6 +65,11 @@
             secretKeyRef:
               name: "{{ homepage_widget_secret_name }}"
               key: SONARR_KEY
+        - name: HOMEPAGE_VAR_RADARR_KEY
+          valueFrom:
+            secretKeyRef:
+              name: "{{ homepage_widget_secret_name }}"
+              key: RADARR_KEY
     # Each homepage config file stays a real file on disk and reaches the chart
     # through helm --set-file, which kubernetes.core.helm spells as a set_values
     # entry with value_type: file. Only the path travels on the command line, so

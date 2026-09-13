@@ -96,6 +96,7 @@ API keys of the *arr family are 32 hex characters, so this cannot bite there.
 | Service | Decision | Reasoning |
 |---|---|---|
 | Sonarr | Done | Queue depth and missing-episode count are the two numbers worth a glance before opening the app. Cheap once the Secret plumbing existed. |
+| Radarr | Done | Same widget type as Sonarr with a different name and port. Nothing new to invent, so the only question was whether the numbers are wanted, and they are. |
 
 The remaining services in the scope list are undecided and are being taken one at a time.
 
@@ -128,3 +129,25 @@ Acceptance criteria, verified against the cluster rather than the repo:
 - No widget errors in the homepage logs. None, and specifically no
   `Error attempting k8s environment variable substitution`.
 - Per-service decision recorded. Above.
+
+### Radarr
+
+Deployed 2026-09-13, same day as Sonarr. The card shows live data; Rory confirmed on the page.
+
+Identical in shape to Sonarr: `widget.type: radarr`, the in-cluster Service at
+`http://radarr.radarr.svc.cluster.local:7878`, and the key as placeholder text. Reachability was
+confirmed the same way before writing anything, a 401 from the homepage pod. The key already existed in
+`/config/config.xml` and Rory added it to the vault as `vault_radarr_api_key`, hash-matched against the
+live key before deploying.
+
+This is the first widget to exercise the shared-Secret design, and it cost what the Sonarr entry
+predicted: one `stringData` key, one `extraEnv` entry, three annotations. No new resource, no chart
+change. The annotation comment in the radarr role points at the sonarr role rather than repeating the
+reasoning, so there is one copy of the explanation.
+
+The leak check was re-run for both keys together after this deploy, against all Ingresses, all
+ConfigMaps, the repo and `git log -p --all`: zero hits for either. Logs clean.
+
+Worth noting for anyone reading this later: an ad-hoc `ansible localhost -m debug` run does not load
+`services/group_vars` unless it runs from `services/`. Run from the repo root it reports a vault
+variable as undefined even when it is correctly defined, which briefly looked like a missing key here.
