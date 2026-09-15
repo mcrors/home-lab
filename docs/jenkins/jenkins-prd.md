@@ -132,9 +132,12 @@ Ticket 01 also corrected three points in this document: the chart renders a Stat
    |                          v                                     |
    |   Pod: jenkins-agent-xxxxx                 [any pi, not the    |
    |     +-----------------+  +------------------+  controller's]   |
-   |     | jnlp            |  | dind (privileged)|                  |
+   |     | docker (cli)    |  | dind (privileged)|                  |
    |     | build steps     |->| Docker daemon    |                  |
    |     +-----------------+  +------------------+                  |
+   |     +---------------------------------------+                  |
+   |     | jnlp: agent process, no build tooling |                  |
+   |     +---------------------------------------+                  |
    |            DOCKER_HOST=tcp://127.0.0.1:2375                     |
    |                                                                |
    +---------------------------------------------------------------+
@@ -152,16 +155,21 @@ The controller reads its whole system configuration from JCasC at startup. The P
 
 ### The agent
 
-The Kubernetes plugin creates one pod for each build. The pod holds two containers:
+The Kubernetes plugin creates one pod for each build. The pod holds three containers:
 
-1. `jnlp` — the `jenkins/inbound-agent` image. Runs the pipeline steps.
+1. `jnlp` — the `jenkins/inbound-agent` image. Runs the agent process and streams the build log to the controller.
 2. `dind` — the `docker:dind` image. Runs `dockerd`. Runs privileged.
+3. `docker` — the `docker:cli` image. Runs the pipeline steps. Held open with `command: cat` and a TTY.
 
-The two containers share the pod network. The `jnlp` container reaches the daemon at `tcp://127.0.0.1:2375`. The pipeline needs no socket mount and no permission fix.
+The three containers share the pod network, so a client on `127.0.0.1` reaches the daemon next door. They do not share filesystems. The build steps therefore run in the container that holds the Docker client, selected with `container('docker')` in the `Jenkinsfile`. The pipeline needs no socket mount and no permission fix.
+
+`jenkins/inbound-agent` carries no container tooling of any kind, which is why the client is a container of its own rather than a binary in the agent image. The workspace is visible in all three containers because the plugin mounts `workspace-volume` into each of them.
 
 `DOCKER_TLS_CERTDIR` is empty. The daemon then listens on plain TCP.
 
-**Bind address.** The image default binds every interface in the pod, which includes the pod IP. Any pod in the cluster could then reach port 2375, and that access is equal to root on the agent's node. The `dind` container therefore overrides the bind address with `--host=tcp://127.0.0.1:2375`. The `jnlp` container uses the matching `DOCKER_HOST`. Only the containers in the agent pod reach the daemon.
+**Bind address.** The image default binds every interface in the pod, which includes the pod IP. Any pod in the cluster could then reach port 2375, and that access is equal to root on the agent's node. The `dind` container therefore overrides the bind address with `dockerd --host=tcp://127.0.0.1:2375`. The `docker` container uses the matching `DOCKER_HOST`, which is set pod wide.
+
+`dockerd` has to be the first argument. The image entrypoint prepends its own `dockerd` and its own `--host=tcp://0.0.0.0:2375` whenever the first argument starts with a dash. Both listeners then claim port 2375 and the daemon exits 1 on a bind collision. Ticket 04 Finding G.
 
 **Startup delay.** The daemon needs approximately 17 seconds to accept connections. The Kubernetes plugin waits for the container to start, not for the daemon to be ready. A pipeline that calls `docker` immediately fails. Each pipeline waits for the daemon before its first `docker` command.
 
@@ -182,7 +190,7 @@ This is deliberate. Two DinD pods on one pi exhaust memory.
 
 The agent pod also carries a required `podAntiAffinity` against the controller pod, with `topologyKey: kubernetes.io/hostname`. The controller and an agent never share a node.
 
-pi-05 has an unresolved crash history. The preference is soft. A build lands on another pi when pi-05 is unavailable. The design degrades, it does not stop.
+pi-05 has an unresolved crash history (As far as we know, this is fixed now). The preference is soft. A build lands on another pi when pi-05 is unavailable, for whatever reason. The design degrades, it does not stop.
 
 ### Architecture of the built images
 

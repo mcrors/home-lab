@@ -28,7 +28,28 @@ No webhook. `jenkins.houli.eu` has no public DNS record, so GitHub cannot reach 
 
 Each application `Jenkinsfile` must request the `docker` agent label from ticket 04. Confirm the `signal-bridge` repository's `Jenkinsfile` matches the pod template — it was written against the old install's DinD pattern and may reference a different label or a socket mount.
 
-Each `Jenkinsfile` must also wait for the Docker daemon before its first `docker` command. The daemon needs approximately 17 seconds and the Kubernetes plugin does not wait for it:
+**Run the steps in the `docker` container.** Ticket 04 Finding H: the agent pod holds three containers and the steps land in `jnlp` by default, which carries no Docker client. Every `docker` command has to run in the `docker` container instead. Either wrap each block:
+
+```groovy
+container('docker') {
+    sh 'docker build -t ...'
+}
+```
+
+or set it once for the pipeline, which is the shorter form when every step is a Docker step:
+
+```groovy
+agent {
+    kubernetes {
+        inheritFrom 'docker-arm64'
+        defaultContainer 'docker'
+    }
+}
+```
+
+A step that runs outside that container fails with `docker: not found` rather than a connection error, because the client is missing rather than the daemon.
+
+Each `Jenkinsfile` must also wait for the Docker daemon before its first `docker` command. The daemon needs approximately 17 seconds and the Kubernetes plugin does not wait for it. The wait itself runs in the `docker` container, for the same reason:
 
 ```sh
 timeout 120 sh -c 'until docker info >/dev/null 2>&1; do sleep 2; done'
@@ -53,6 +74,7 @@ Do not repoint the running `signal_bridge` role at the new tag in this ticket. T
 
 ## Acceptance criteria
 
+- Every `docker` step in each `Jenkinsfile` runs in the `docker` container, by wrapper or by `defaultContainer`.
 - The org folder exists after a controller restart, with no UI clicks.
 - A job for `signal-bridge` appears from a scan.
 - A build pushes an image to Docker Hub with a short-SHA tag and no `latest` tag.

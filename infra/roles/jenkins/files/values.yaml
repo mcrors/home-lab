@@ -90,4 +90,153 @@ persistence:
   size: 8Gi
   accessMode: ReadWriteOnce
 
-# agent: left at chart defaults. Ticket 04 configures the DinD pod template.
+# One ephemeral pod per build, deleted when the build ends. PRD section 4.
+#
+# The chart's agent keys have three gaps. They cannot express pod affinity.
+# They cannot set environment variables on a container declared under
+# additionalContainers. And a volume declared under agent.volumes mounts into
+# every container of the pod. yamlTemplate below closes all three gaps and
+# carries nothing else. The Kubernetes plugin merges it onto the generated
+# pod, matching containers by name.
+agent:
+  enabled: true
+
+  # Cloud-wide: one agent pod exists at a time across the cluster. A second
+  # build waits in the queue. Two DinD pods on one pi exhaust memory.
+  containerCap: 1
+  # Per template, for the same reason.
+  instanceCap: 1
+
+  # The jenkins-agent Service on port 50000 is in-cluster, so the agent opens a
+  # direct JNLP connection and does not need the WebSocket transport.
+  websocket: false
+
+  podName: docker-arm64
+  # The rendered label string is "jenkins-jenkins-agent docker". A pipeline
+  # asks for this template with the "docker" label.
+  customJenkinsLabels:
+    - docker
+
+  # No reuse. The pod is deleted as soon as the build ends.
+  podRetention: "Never"
+  idleMinutes: 0
+
+  # Pinned to the index digest recorded in ticket 01. The chart renders the
+  # image as repository:tag, so the digest rides on the tag. Both parts are
+  # valid in one reference and the digest is what resolves.
+  image:
+    repository: jenkins/inbound-agent
+    tag: "3385.vf1123fb_515da_-1@sha256:6dbeabd484bb3926293de0b337117f7ad8bb2c0ba1a425b3e34e3d3983b5e1f9"
+
+  # No CPU limit, same reasoning as the controller. Helm merges maps, so the
+  # chart's 512m default has to be nulled rather than omitted.
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: null
+      memory: 512Mi
+
+  # Pod-wide, which is what the chart offers. dind also receives DOCKER_HOST
+  # and ignores it: the variable directs a docker client only.
+  envVars:
+    - name: DOCKER_HOST
+      value: tcp://127.0.0.1:2375
+
+  additionalContainers:
+    - sideContainerName: dind
+      image:
+        repository: docker
+        tag: "28-dind@sha256:2a232a42256f70d78e3cc5d2b5d6b3276710a0de0596c145f627ecfae90282ac"
+      command: dockerd-entrypoint.sh
+      # The image default binds every interface in the pod, which includes the
+      # pod IP, and reaching port 2375 is equal to root on the agent's node.
+      # Ticket 01 Finding B. This binds loopback only.
+      #
+      # "dockerd" has to be the first argument. The entrypoint prepends its own
+      # dockerd command and its own --host=tcp://0.0.0.0:2375 whenever the
+      # first argument starts with a dash. Both listeners then claim port 2375
+      # and the daemon exits 1 on a bind collision. Naming dockerd explicitly
+      # skips that branch and keeps the rest of the entrypoint.
+      args: "dockerd --host=tcp://127.0.0.1:2375"
+      privileged: true
+      resources:
+        requests:
+          cpu: 250m
+          memory: 512Mi
+        limits:
+          cpu: null
+          memory: 1Gi
+
+    # The Docker client. jenkins/inbound-agent carries no container tooling at
+    # all, so a pipeline step that runs "docker build" needs a container that
+    # has the binary. The client reaches the daemon next door over loopback.
+    # A Jenkinsfile selects it with container('docker').
+    #
+    # "cat" with a TTY keeps the container alive. The image entrypoint would
+    # exit immediately and take the whole pod with it.
+    - sideContainerName: docker
+      image:
+        repository: docker
+        tag: "28-cli@sha256:625d9431a9f54c5a2bc90f24f0e1c3d55b1349fd857dd85035f98c2c9acbdd4d"
+      command: cat
+      # Required even when empty. The chart pipes args through a replace filter
+      # for every additional container, and a missing key fails the render.
+      args: ""
+      TTYEnabled: true
+      resources:
+        requests:
+          cpu: 50m
+          memory: 64Mi
+        limits:
+          cpu: null
+          memory: 256Mi
+
+  yamlTemplate: |-
+    apiVersion: v1
+    kind: Pod
+    spec:
+      containers:
+        - name: dind
+          env:
+            # Empty, so the entrypoint skips generating certificates and does
+            # not add a TLS listener of its own. The --host flag above is then
+            # the only listener. Set here rather than in agent.envVars: that
+            # key is pod-wide and the chart renders an empty value as a null.
+            - name: DOCKER_TLS_CERTDIR
+              value: ""
+          volumeMounts:
+            # The layer store. Mounted into dind alone; agent.volumes would
+            # mount it into jnlp as well, where nothing reads it.
+            - name: docker-graph-storage
+              mountPath: /var/lib/docker
+      volumes:
+        - name: docker-graph-storage
+          emptyDir: {}
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: node_type
+                    operator: In
+                    values:
+                      - pi
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              preference:
+                matchExpressions:
+                  - key: node_size
+                    operator: In
+                    values:
+                      - large
+        # The controller and an agent never share a node. The selector is the
+        # live StatefulSet's, read from the cluster, not a guess.
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  app.kubernetes.io/component: jenkins-controller
+                  app.kubernetes.io/instance: jenkins
+              topologyKey: kubernetes.io/hostname
