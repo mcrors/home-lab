@@ -13,6 +13,24 @@ controller:
     userKey: admin-user
     passwordKey: admin-password
 
+  additionalExistingSecrets:
+    - name: jenkins-credentials
+      keyName: github-pat
+
+  JCasC:
+    configScripts:
+      credentials: |
+        credentials:
+          system:
+            domainCredentials:
+              - credentials:
+                  - usernamePassword:
+                      scope: GLOBAL
+                      id: github-pat
+                      username: mcrors
+                      password: ${jenkins-credentials-github-pat}
+                      description: "GitHub PAT for organization folder scanning"
+
   # The controller schedules builds and runs none of them. A build with no
   # agent waits in the queue. PRD section 4.
   numExecutors: 0

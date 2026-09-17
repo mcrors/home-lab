@@ -24,9 +24,11 @@ See `docs/jenkins/jenkins-prd.md` section 7 (Secrets) and the pattern in `infra/
 Add four variables to `infra/group_vars/all/vault.yaml`:
 
 - `vault_jenkins_admin_password`
-- `vault_jenkins_github_pat`
+- `vault_jenkins_github_token`
 - `vault_jenkins_dockerhub_user`
 - `vault_jenkins_dockerhub_token`
+
+The vault variable is `vault_jenkins_github_token`, matching its `vault_jenkins_dockerhub_token` sibling. The Secret key and the Jenkins credential ID are both `github-pat`, which is the name ticket 06 refers to.
 
 The admin username is not a secret and stays out of the vault. It lives as `jenkins_admin_user` in `infra/roles/jenkins/defaults/main.yaml` and the Secret task reads it from there.
 
@@ -85,3 +87,23 @@ Verified on the live cluster:
 - `git grep` finds the password in no tracked file.
 
 Not yet checked: the idempotent re-run. The next deploy exercises it anyway when the GitHub key goes in.
+
+### 2026-09-17 — GitHub PAT done
+
+The Secret gained a `github-pat` key from `vault_jenkins_github_token`. `controller.additionalExistingSecrets` mounts it, and a `JCasC.configScripts` entry declares the `github-pat` credential.
+
+Checked before deploying:
+
+- The token is a classic PAT, 40 characters with a `ghp_` prefix. A fine-grained token would start `github_pat_` and would have failed silently later.
+- `GET /user` returns 200 with scope `public_repo` exactly, and no other scope.
+- The token's account is `mcrors`, not `rhoulihan`. Tickets 01 and 06 were corrected. `rhoulihan` is a different person's GitHub account, and a `public_repo` token reads any account's public repositories, so the wrong scope would have scanned successfully against a stranger's repositories.
+
+Verified after deploying:
+
+- All three files project into `/run/secrets/additional`, with the PAT file at 40 bytes.
+- The credentials API lists `github-pat` as "Username with password", displaying as `mcrors/******`.
+- The script console reports `username=mcrors secretLength=40 looksLikeClassicPat=true isUnresolvedPlaceholder=false`. This rules out JCasC storing the literal `${jenkins-credentials-github-pat}` string, which looks identical in the UI and then fails as "0 repositories processed".
+- The default security realm still renders, so `configScripts` did not displace it.
+
+Remaining: the Docker Hub token, and the idempotent re-run.
+
