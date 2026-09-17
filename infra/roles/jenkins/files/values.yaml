@@ -8,6 +8,11 @@
 # stops the old pod before it starts the new one.
 
 controller:
+  admin:
+    existingSecret: jenkins-credentials
+    userKey: admin-user
+    passwordKey: admin-password
+
   # The controller schedules builds and runs none of them. A build with no
   # agent waits in the queue. PRD section 4.
   numExecutors: 0

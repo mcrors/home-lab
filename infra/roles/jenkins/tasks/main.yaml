@@ -23,6 +23,21 @@
       metadata:
         name: "{{ jenkins_namespace }}"
 
+- name: Apply jenkins-credentials Secret
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: jenkins-credentials
+        namespace: "{{ jenkins_namespace }}"
+      stringData:
+        admin-user: "{{ jenkins_admin_user }}"
+        admin-password: "{{ vault_jenkins_admin_password }}"
+  no_log: true
+
 - name: Install/Upgrade jenkins with values.yaml
   kubernetes.core.helm:
     kubeconfig: "{{ kubeconfig_path }}"

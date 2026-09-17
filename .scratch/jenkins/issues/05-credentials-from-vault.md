@@ -28,6 +28,8 @@ Add four variables to `infra/group_vars/all/vault.yaml`:
 - `vault_jenkins_dockerhub_user`
 - `vault_jenkins_dockerhub_token`
 
+The admin username is not a secret and stays out of the vault. It lives as `jenkins_admin_user` in `infra/roles/jenkins/defaults/main.yaml` and the Secret task reads it from there.
+
 ### Create the Secret from Ansible
 
 Add a task to `infra/roles/jenkins/tasks/main.yaml`, before the Helm task, that creates a `jenkins-credentials` Secret in the `jenkins` namespace with `no_log: true`.
@@ -41,6 +43,7 @@ Ticket 01 confirmed the mechanism. The chart mounts the Secret at `/run/secrets/
 - The admin keys project to the **fixed** file names `chart-admin-username` and `chart-admin-password`, whatever the source keys are called. JCasC reads `${chart-admin-password}`.
 - Do not also list the admin keys in `additionalExistingSecrets`. The `admin.existingSecret` path already mounts them.
 - `name` and `keyName` must both be lowercase RFC 1123 labels.
+- Leave `controller.admin.createSecret` at its default of `true`. Setting `existingSecret` is what stops the chart rendering its own Secret. `createSecret` separately gates the volume projection that mounts the admin keys, so setting it to `false` alongside `existingSecret` reads as correct and silently drops the mount, leaving the security realm with an unresolved `${chart-admin-username}` at startup. Confirmed against chart 5.9.54 on 2026-09-16.
 
 ### Declare the credentials in JCasC
 
@@ -55,12 +58,30 @@ Both take their values from the mounted Secret. Neither holds a literal.
 
 Set the JCasC security realm to the local user database with signup disabled and anonymous read denied, matching the old install's `FullControlOnceLoggedInAuthorizationStrategy` with `denyAnonymousReadAccess`.
 
+This needs no code. The chart's JCasC defaults already render a local `securityRealm` with `allowsSignup: false`, and an `authorizationStrategy` of `loggedInUsersCanDoAnything` with `allowAnonymousRead: false`. The repo sets no JCasC values, so those defaults apply. Confirmed against chart 5.9.54 on 2026-09-16.
+
 ## Acceptance criteria
 
 - Logging in with the Vault admin password succeeds.
 - The chart generates no admin Secret of its own. `kubectl get secret -n jenkins` lists `jenkins-credentials` and no Secret named `jenkins`.
 - Both credentials appear in Manage Jenkins with no plaintext in the UI or in git.
 - `git grep` finds no token value anywhere in the repository.
-- `kubectl get secret jenkins-credentials -n jenkins` shows four keys.
+- `kubectl get secret jenkins-credentials -n jenkins` shows five keys. The admin username occupies a key of its own. The chart's projection names that key explicitly, and a projected volume that names a key the Secret does not hold stops the pod from starting.
 - Anonymous access to `https://jenkins.houli.eu` redirects to login.
 - Running the role again is idempotent and logs no secret.
+
+## Comments
+
+### 2026-09-16 — admin password done
+
+Deployed piecemeal, admin credential first. The role now applies a `jenkins-credentials` Secret holding `admin-user` and `admin-password`, and `controller.admin.existingSecret` points the chart at it. The GitHub and Docker Hub keys join the same task later.
+
+Verified on the live cluster:
+
+- Login with the vault password returns 200. A wrong password returns 401 and anonymous returns 403, so the 200 is real authentication.
+- The projected files land as `chart-admin-username` and `chart-admin-password`. The username reads `admin` and the password file matches the vault value's length.
+- `kubectl get secret -n jenkins` lists `jenkins-credentials` and no Secret named `jenkins`. Helm deleted the chart's own Secret on upgrade.
+- The controller log holds no SEVERE or Exception line.
+- `git grep` finds the password in no tracked file.
+
+Not yet checked: the idempotent re-run. The next deploy exercises it anyway when the GitHub key goes in.
