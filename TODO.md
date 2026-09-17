@@ -5,9 +5,6 @@
 * Add the secret creation to the playbook
 * Get the cert-sync credentials from the cluster to the node that runs the playbook
 
-# Jenkins
-* Fix reverse proxy issue
-
 # Monitoring
 * Setup alerts for disk space
 * Set up notifications

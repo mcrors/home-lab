@@ -38,7 +38,7 @@ controller:
 
   numExecutors: 0
 
-  # Clears the reverse proxy warning recorded in TODO.md.
+  # Without this the controller reports a reverse proxy misconfiguration.
   jenkinsUrl: https://jenkins.houli.eu
 
   # The heap then tracks the memory limit below instead of the node's total RAM.
