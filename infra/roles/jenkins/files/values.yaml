@@ -1,11 +1,8 @@
-# Values for the upstream jenkinsci/jenkins chart. The chart version is pinned
-# in ../defaults/main.yaml. See docs/jenkins/jenkins-prd.md sections 6 and 7.
+# The chart version is pinned in ../defaults/main.yaml. See
+# docs/jenkins/jenkins-prd.md sections 6 and 7.
 #
-# The controller image tag is not set here. The chart composes it from its own
-# appVersion and controller.image.tagLabel, giving jenkins/jenkins:2.568.2-jdk21.
-#
-# No `strategy` value is set. The chart renders a StatefulSet, which already
-# stops the old pod before it starts the new one.
+# No image tag is set. The chart composes it from its own appVersion and
+# controller.image.tagLabel.
 
 controller:
   admin:
@@ -31,8 +28,6 @@ controller:
                       password: ${jenkins-credentials-github-pat}
                       description: "GitHub PAT for organization folder scanning"
 
-  # The controller schedules builds and runs none of them. A build with no
-  # agent waits in the queue. PRD section 4.
   numExecutors: 0
 
   # Clears the reverse proxy warning recorded in TODO.md.
@@ -41,9 +36,9 @@ controller:
   # The heap then tracks the memory limit below instead of the node's total RAM.
   javaOpts: "-XX:MaxRAMPercentage=70.0"
 
-  # No CPU limit. A CPU limit throttles the JVM and makes the UI slow.
-  # PRD section 6 (Resources). The chart defaults limits.cpu to 2000m and Helm
-  # merges maps, so the key must be nulled rather than omitted.
+  # A CPU limit throttles the JVM and makes the UI slow. PRD section 6
+  # (Resources). The chart defaults limits.cpu to 2000m and Helm merges maps,
+  # so the key must be nulled rather than omitted.
   resources:
     requests:
       cpu: 500m
@@ -140,7 +135,6 @@ agent:
   customJenkinsLabels:
     - docker
 
-  # No reuse. The pod is deleted as soon as the build ends.
   podRetention: "Never"
   idleMinutes: 0
 
@@ -151,8 +145,8 @@ agent:
     repository: jenkins/inbound-agent
     tag: "3385.vf1123fb_515da_-1@sha256:6dbeabd484bb3926293de0b337117f7ad8bb2c0ba1a425b3e34e3d3983b5e1f9"
 
-  # No CPU limit, same reasoning as the controller. Helm merges maps, so the
-  # chart's 512m default has to be nulled rather than omitted.
+  # Same reasoning as the controller. The chart's 512m default has to be
+  # nulled rather than omitted.
   resources:
     requests:
       cpu: 100m
@@ -254,8 +248,6 @@ agent:
                     operator: In
                     values:
                       - large
-        # The controller and an agent never share a node. The selector is the
-        # live StatefulSet's, read from the cluster, not a guess.
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             - labelSelector:
