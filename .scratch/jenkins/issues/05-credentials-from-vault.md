@@ -1,4 +1,4 @@
-Status: ready-for-human
+Status: resolved
 Blocked by: 04
 
 # M2: move credentials into Ansible Vault
@@ -21,14 +21,15 @@ See `docs/jenkins/jenkins-prd.md` section 7 (Secrets) and the pattern in `infra/
 
 ### Add them to the vault
 
-Add four variables to `infra/group_vars/all/vault.yaml`:
+Add three variables to `infra/group_vars/all/vault.yaml`:
 
 - `vault_jenkins_admin_password`
 - `vault_jenkins_github_token`
-- `vault_jenkins_dockerhub_user`
-- `vault_jenkins_dockerhub_token`
+- `vault_jenkins_docker_token`
 
-The vault variable is `vault_jenkins_github_token`, matching its `vault_jenkins_dockerhub_token` sibling. The Secret key and the Jenkins credential ID are both `github-pat`, which is the name ticket 06 refers to.
+Only secrets go in the vault. Both usernames are public, `mcrors` on GitHub and `rhoulihan` on Docker Hub, so they sit as literals in the JCasC script. The Docker Hub name is also the push namespace, visible in every image tag.
+
+Secret keys and credential IDs do not have to match the vault variable names. The GitHub key and credential ID are both `github-pat`, which is the name ticket 06 refers to.
 
 The admin username is not a secret and stays out of the vault. It lives as `jenkins_admin_user` in `infra/roles/jenkins/defaults/main.yaml` and the Secret task reads it from there.
 
@@ -54,7 +55,7 @@ Add two credential entries under `credentials.system.domainCredentials`:
 - `github-pat` — username/password credential for the org folder
 - `dockerhub` — username/password credential for image pushes
 
-Both take their values from the mounted Secret. Neither holds a literal.
+Both take their password from the mounted Secret. Neither holds a secret literal.
 
 ### Security realm
 
@@ -68,7 +69,7 @@ This needs no code. The chart's JCasC defaults already render a local `securityR
 - The chart generates no admin Secret of its own. `kubectl get secret -n jenkins` lists `jenkins-credentials` and no Secret named `jenkins`.
 - Both credentials appear in Manage Jenkins with no plaintext in the UI or in git.
 - `git grep` finds no token value anywhere in the repository.
-- `kubectl get secret jenkins-credentials -n jenkins` shows five keys. The admin username occupies a key of its own. The chart's projection names that key explicitly, and a projected volume that names a key the Secret does not hold stops the pod from starting.
+- `kubectl get secret jenkins-credentials -n jenkins` shows four keys: `admin-user`, `admin-password`, `github-pat`, `dockerhub-token`. The admin username occupies a key of its own, because the chart's projection names that key explicitly and a projected volume naming a key the Secret does not hold stops the pod from starting.
 - Anonymous access to `https://jenkins.houli.eu` redirects to login.
 - Running the role again is idempotent and logs no secret.
 
@@ -106,4 +107,23 @@ Verified after deploying:
 - The default security realm still renders, so `configScripts` did not displace it.
 
 Remaining: the Docker Hub token, and the idempotent re-run.
+
+### 2026-09-17 — Docker Hub token done, ticket closed
+
+The Secret gained a `dockerhub-token` key from `vault_jenkins_docker_token`, mounted through a second `additionalExistingSecrets` entry, with a `dockerhub` credential declared alongside `github-pat`.
+
+The Docker Hub account is `rhoulihan`, confirmed by logging into the Hub API with the token. The namespace holds five repositories including `rhoulihan/nfty-signal-bridge`, so ticket 06's image path was correct. The GitHub and Docker Hub accounts genuinely differ.
+
+Every acceptance criterion now passes:
+
+- The vault admin password logs in with 200, a wrong password gives 401, anonymous gives 403.
+- The chart renders no Secret of its own. `jenkins-credentials` is the only one in the namespace and holds four keys.
+- Both credentials load with real values. The script console reports `id=github-pat user=mcrors len=40` and `id=dockerhub user=rhoulihan len=36`, neither an unresolved placeholder.
+- `git grep` finds none of the three secrets in any tracked file.
+- The Secret task reported `ok` rather than `changed` on an unchanged re-run, and logs nothing under `no_log: true`.
+- The controller log holds no SEVERE or Exception line.
+
+Two checks are Rory's to confirm in a browser, since they are visual: that `https://jenkins.houli.eu` redirects to the login form, and that both credentials appear in Manage Jenkins with no plaintext.
+
+Unblocks ticket 06.
 

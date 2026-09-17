@@ -13,6 +13,8 @@ controller:
   additionalExistingSecrets:
     - name: jenkins-credentials
       keyName: github-pat
+    - name: jenkins-credentials
+      keyName: dockerhub-token
 
   JCasC:
     configScripts:
@@ -27,6 +29,12 @@ controller:
                       username: mcrors
                       password: ${jenkins-credentials-github-pat}
                       description: "GitHub PAT for organization folder scanning"
+                  - usernamePassword:
+                      scope: GLOBAL
+                      id: dockerhub
+                      username: rhoulihan
+                      password: ${jenkins-credentials-dockerhub-token}
+                      description: "Docker Hub token for image pushes"
 
   numExecutors: 0
 

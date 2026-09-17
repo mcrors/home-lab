@@ -37,6 +37,7 @@
         admin-user: "{{ jenkins_admin_user }}"
         admin-password: "{{ vault_jenkins_admin_password }}"
         github-pat: "{{ vault_jenkins_github_token }}"
+        dockerhub-token: "{{ vault_jenkins_docker_token }}"
   no_log: true
 
 - name: Install/Upgrade jenkins with values.yaml
