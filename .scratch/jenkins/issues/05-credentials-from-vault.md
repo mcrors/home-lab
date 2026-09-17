@@ -7,7 +7,7 @@ Blocked by: 04
 
 Jenkins needs three secrets: the admin password, a GitHub PAT for repository scanning, and a Docker Hub token for pushes. Ansible Vault holds the source values. JCasC reads them from a mounted Secret.
 
-This ticket is `ready-for-human` because it needs the vault password and new tokens created in GitHub and Docker Hub.
+This ticket was `ready-for-human` because it needed the vault password, and tokens created by hand in GitHub and Docker Hub. All three exist now. See the Comments for what was deployed and verified.
 
 See `docs/jenkins/jenkins-prd.md` section 7 (Secrets) and the pattern in `infra/roles/signal_bridge/tasks/main.yaml`.
 
