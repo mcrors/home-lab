@@ -36,6 +36,60 @@ controller:
                       password: ${jenkins-credentials-dockerhub-token}
                       description: "Docker Hub token for image pushes"
 
+      # PRD section 4 (Job discovery). One organization folder replaces the job
+      # definitions lost with the old JENKINS_HOME. The folder creates a
+      # multibranch pipeline for each repository that holds a Jenkinsfile at its
+      # root and skips the rest.
+      #
+      # There is no webhook. jenkins.houli.eu has no public DNS record, so
+      # GitHub cannot reach it. The 15 minute scan is the only trigger.
+      #
+      # The jobs root element comes from the job-dsl plugin, listed below. The
+      # script runs at every start and converges the folder, so an edit here
+      # reaches the controller through a Helm upgrade and a restart.
+      jobs: |
+        jobs:
+          - script: |
+              organizationFolder('mcrors') {
+                  description('Repositories in the mcrors GitHub account that hold a Jenkinsfile.')
+                  organizations {
+                      github {
+                          repoOwner('mcrors')
+                          credentialsId('github-pat')
+                          traits {
+                              // Every branch except one that has an open pull
+                              // request. That branch is built as a pull
+                              // request instead, so nothing is built twice.
+                              gitHubBranchDiscovery {
+                                  strategyId(1)
+                              }
+                              // Pull requests opened from a branch of this same
+                              // repository. Forks are not discovered. Builds
+                              // the head commit of the pull request.
+                              gitHubPullRequestDiscovery {
+                                  strategyId(2)
+                              }
+                          }
+                      }
+                  }
+                  projectFactories {
+                      workflowMultiBranchProjectFactory {
+                          scriptPath('Jenkinsfile')
+                      }
+                  }
+                  orphanedItemStrategy {
+                      discardOldItems {
+                          numToKeep(10)
+                          daysToKeep(14)
+                      }
+                  }
+                  triggers {
+                      periodicFolderTrigger {
+                          interval('15m')
+                      }
+                  }
+              }
+
   numExecutors: 0
 
   # Without this the controller reports a reverse proxy misconfiguration.
@@ -75,17 +129,18 @@ controller:
 
   # Setting installPlugins replaces the chart's list rather than extending it,
   # so the chart's four defaults are restated here at the chart's own versions.
-  # The five below them are the additions tickets 04 to 06 need.
+  # The six below them are the additions tickets 04 to 06 need.
   installPlugins:
-    - kubernetes:4540.v612369217f87
+    - kubernetes:4557.ve746270f672f
     - workflow-aggregator:608.v67378e9d3db_1
     - git:5.10.1
-    - configuration-as-code:2117.vc05a_0b_e6b_f4e
+    - configuration-as-code:2121.v86fe99d4b_b_a_b_
     - github-branch-source:1983.vfa_27ed961853
     - docker-workflow:653.v2f2c08eff0ec
     - credentials-binding:728.v902a_273b_8947
     - timestamper:1.30
     - build-timeout:1.41
+    - job-dsl:3732.v9a_c49a_61a_313
 
   # Plugins reinstall at every start until ticket 08 sets this to true.
   initializeOnce: false
