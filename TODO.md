@@ -5,11 +5,8 @@
 * Add the secret creation to the playbook
 * Get the cert-sync credentials from the cluster to the node that runs the playbook
 
-# Add jenkins agent
+# Jenkins
 * Fix reverse proxy issue
-* Add pi, potato and nuc node labels
-* Move jenkins to pi node
-* Set executors to 0
 
 # Monitoring
 * Setup alerts for disk space
