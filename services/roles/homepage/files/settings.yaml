@@ -20,20 +20,6 @@ headerStyle: underlined
 # being written as YAML in a values file: Go templating sorts map keys
 # alphabetically, which would silently reorder the page to CI/Ops, Infra, Media.
 layout:
-  # Same shape as Media below: no cards directly, three subgroups in a 3-column
-  # grid. Metrics collects, Alerting reports, Platform is what the cluster runs on.
-  Infra:
-    style: row
-    columns: 3
-    Metrics:
-      style: column
-      header: false
-    Alerting:
-      style: column
-      header: false
-    Platform:
-      style: column
-      header: false
   # Media holds no cards, only these three subgroups, rendered as a 3-column grid.
   # Services keep a flat `gethomepage.dev/group` naming a leaf; the nesting lives
   # only here, so moving a card between columns is a one-word annotation change.
@@ -49,6 +35,20 @@ layout:
       style: column
       header: false
     Arr:
+      style: column
+      header: false
+  # Same shape as Media above: no cards directly, three subgroups in a 3-column
+  # grid. Metrics collects, Alerting reports, Platform is what the cluster runs on.
+  Infra:
+    style: row
+    columns: 3
+    Metrics:
+      style: column
+      header: false
+    Alerting:
+      style: column
+      header: false
+    Platform:
       style: column
       header: false
   # Both flat: no subgroups, so columns is just how many cards sit side by side,
