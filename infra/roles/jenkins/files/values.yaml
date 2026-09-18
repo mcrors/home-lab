@@ -37,9 +37,9 @@ controller:
                       description: "Docker Hub token for image pushes"
 
       # PRD section 4 (Job discovery). One organization folder replaces the job
-      # definitions lost with the old JENKINS_HOME. The folder creates a
-      # multibranch pipeline for each repository that holds a Jenkinsfile at its
-      # root and skips the rest.
+      # definitions lost with the old JENKINS_HOME.
+      # The organization folder creates a multibranch pipeline for each repository that
+      # holds a Jenkinsfile at its root and skips the rest.
       #
       # There is no webhook. jenkins.houli.eu has no public DNS record, so
       # GitHub cannot reach it. The 15 minute scan is the only trigger.
@@ -83,9 +83,23 @@ controller:
                           daysToKeep(14)
                       }
                   }
-                  triggers {
-                      periodicFolderTrigger {
-                          interval('15m')
+                  // PeriodicFolderTrigger carries no @Symbol, and the DSL's
+                  // own triggers block left the folder on the 1 day default
+                  // without reporting an error, so the trigger is written into
+                  // the folder XML directly.
+                  //
+                  // Both fields matter. spec decides when the trigger fires,
+                  // and interval gates whether a firing rescans at all, so a
+                  // spec of every 15 minutes with the default 1 day interval
+                  // would still scan once a day.
+                  configure { folder ->
+                      def triggers = folder / 'triggers'
+                      triggers.children().removeAll {
+                          it.name() == 'com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger'
+                      }
+                      triggers.appendNode('com.cloudbees.hudson.plugins.folder.computed.PeriodicFolderTrigger').with {
+                          appendNode('spec', 'H/15 * * * *')
+                          appendNode('interval', 900000)
                       }
                   }
               }
@@ -171,7 +185,7 @@ persistence:
   size: 8Gi
   accessMode: ReadWriteOnce
 
-# One ephemeral pod per build, deleted when the build ends. PRD section 4.
+# One ephemeral pod per build, deleted when the build ends.
 #
 # The chart's agent keys have three gaps. They cannot express pod affinity.
 # They cannot set environment variables on a container declared under

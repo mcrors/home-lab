@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: resolved
 Blocked by: 05
 
 # M3: add the GitHub org folder and build a real image
@@ -83,3 +83,62 @@ Do not repoint the running `signal_bridge` role at the new tag in this ticket. T
 - `docker manifest inspect` shows the pushed image is `arm64`.
 - A pod on a potato pulls and starts the new tag.
 - A commit pushed to the repository is picked up by the next scan, within 15 minutes.
+
+## Comments
+
+### 2026-09-18 — org folder deployed, first real build, ticket closed
+
+The org folder is declared in JCasC and reached the controller through a Helm
+upgrade. It scans `mcrors`, discovers every branch except one with an open pull
+request, and discovers pull requests from origin at their head commit. Pull
+requests build the head rather than a merge with the target, so the short SHA an
+image is tagged with names a commit that exists.
+
+The `jobs` root element needs the job-dsl plugin. It was missing from
+`installPlugins`, and without it the block is ignored at startup rather than
+rejected.
+
+The chart moved to 5.9.63, which ships Jenkins 2.568.3 and clears the advisory
+against 2.568.2. The `kubernetes` and `configuration-as-code` pins moved to the
+versions that chart defaults to, since `installPlugins` replaces the chart's list
+rather than extending it.
+
+`nfty-signal-bridge` got a new `Jenkinsfile` at commit `dd06f29`. The inline pod
+definition is gone, replaced by `inheritFrom 'docker-arm64'` with
+`defaultContainer 'docker'`. A first stage polls `docker info` until the daemon
+answers. `TAG` is set after checkout rather than in the `environment` block,
+which is evaluated before `GIT_COMMIT` is populated and would have tagged the
+image from the string "null".
+
+Acceptance criteria:
+
+- Every `docker` step runs in the `docker` container, by `defaultContainer`.
+- The org folder came from JCasC with no UI clicks.
+- Jobs appeared for `nfty-signal-bridge` and `ytd`.
+- Build 2 of `nfty-signal-bridge » main` pushed `rhoulihan/nfty-signal-bridge:dd06f29`. No `latest` tag.
+- `docker manifest inspect --verbose` reports `architecture: arm64`.
+- The pod spec in the build log carries the node affinity, the pod anti-affinity, the `docker-graph-storage` mount on `dind` alone, `DOCKER_TLS_CERTDIR: ""`, and both pinned image digests, so `inheritFrom` does carry `yamlTemplate` across.
+
+Two criteria were settled differently than written:
+
+- The potato pull test was skipped. The running `signal_bridge` already pulls
+  from the same public Docker Hub repository, which is the same evidence.
+- The 15 minute pickup was not observed on a timer. The trigger is verified in
+  the folder XML instead.
+
+Findings worth carrying forward:
+
+- The DSL's `triggers { periodicFolderTrigger { interval('15m') } }` was ignored
+  without an error and left the folder on the 1 day default. The trigger is now
+  written into the folder XML through a `configure` block, verified as
+  `spec H/15 * * * *` with `interval 900000`. `PeriodicFolderTrigger` carries no
+  `@Symbol`, which is the likely reason the generated DSL did not reach it.
+- The controller log reports "GitHub webhooks activated" on every scan. Nothing
+  is created: the repositories hold no webhooks, and no GitHub server is
+  configured for the github plugin to call. The line names the repositories it
+  considered. Rory may add a real webhook later as a learning exercise.
+- `ytd` holds a zero byte `Jenkinsfile`, so its job exists and cannot build. The
+  repository owns that file. `arr-exporter` never appeared, so it holds no
+  `Jenkinsfile`.
+- A `configScripts` change alone reloads live through the config sidecar, with
+  no controller restart. Only an image change restarts the pod.
