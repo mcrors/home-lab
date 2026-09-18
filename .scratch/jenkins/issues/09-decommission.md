@@ -1,4 +1,4 @@
-Status: ready-for-human
+Status: resolved
 Blocked by: 08
 
 # M4: delete the local chart and retire the old JENKINS_HOME
@@ -45,3 +45,33 @@ Remove the "Add jenkins agent" block. All four of its items are closed:
 - The old export is archived and no longer exported by OMV.
 - No PV or PVC in the cluster points at `192.168.1.96:/jenkins`.
 - The "Add jenkins agent" block is removed from `TODO.md`.
+
+## Comments
+
+Closed 2026-09-18. All four acceptance criteria hold.
+
+- The `jenkins/` directory is deleted. `git grep "jenkins/"` returns only
+  documentation and `infra/roles/jenkins/`, which is the new role at a
+  different path.
+- Rory archived `/export/jenkins` and removed the NFS export through the OMV
+  UI.
+- No PV or PVC points at `192.168.1.96:/jenkins`. Seven PVs still name that
+  host, and all seven are the media stack: `/media`, `/downloads`,
+  `/transmission`.
+- `TODO.md` held no "Add jenkins agent" block. Commit 387c633 removed it
+  before this ticket ran, so the scope item was already stale when written.
+
+Nothing broke from the export change. No pod cluster-wide sits outside
+`Running`, and plex, radarr, sonarr, transmission and `jenkins-0` are all up.
+
+Two findings worth carrying forward:
+
+- The ticket gives "different namespace" as a reason the local chart shares no
+  live object with the new release. Both use namespace `jenkins`. What makes
+  the deletion safe is that the local chart was never deployed, and its PVC
+  differs anyway: `jenkins-pvc` on the `nfs` class backed by the old export,
+  against the new release's `jenkins` PVC on longhorn, 8Gi, RWO.
+- The archive retention condition in the notes is unmet and stays open. It
+  says keep the tarball until a Longhorn backup of the new PVC is verified,
+  and ticket 07 deferred that backup, so no backup covers the `jenkins` PVC
+  today. Keep the archive.
