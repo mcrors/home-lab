@@ -1,4 +1,4 @@
-Status: ready-for-agent
+Status: resolved
 Blocked by: 06
 
 # M4: monitoring and the homepage entry
@@ -31,3 +31,27 @@ See `docs/jenkins/jenkins-prd.md` section 7 (Ingress annotations) and `docs/aler
 - An Uptime Kuma monitor exists and reports up.
 - The `jenkins` PVC is covered by the Longhorn backup target.
 - The build-failure notification decision is recorded under `## Comments`.
+
+## Comments
+
+Closed 2026-09-18. Two of the five items are done, one is declined, two are
+deferred out of this project.
+
+Done:
+
+- The blackbox probe for `jenkins.houli.eu` is green.
+- The Jenkins card appears on the homepage under CI/Ops.
+
+Declined:
+
+- No Uptime Kuma monitor. Uptime Kuma watches nodes in this home lab, not
+  services. The blackbox probe already covers the service.
+
+Deferred:
+
+- The `jenkins` PVC is not in the Longhorn backup target. PRD section 6 (Data)
+  requires it, so that requirement is open after this ticket closes. The
+  Longhorn backups effort this ticket defers to does not exist under `.scratch/`
+  yet.
+- The build failure notification decision is not made. Neither yes nor no was
+  chosen, so the pipeline sends nothing to ntfy today.
