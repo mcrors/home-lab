@@ -82,7 +82,6 @@ csi:
   snapshotterReplicaCount: ~
 
 defaultSettings:
-  backupTarget: ~
   createDefaultDiskLabeledNodes: true
   defaultDataPath: /mnt/longhorn-storage
   taintToleration: "node_type=nuc:NoSchedule"
@@ -90,8 +89,14 @@ defaultSettings:
   snapshotDataIntegrityImmediateCheckAfterSnapshotCreation: ~
   snapshotDataIntegrityCronjob: ~
   removeSnapshotsDuringFilesystemTrim: ~
+  freezeFilesystemForSnapshot: '{"v1":"true"}'
   fastReplicaRebuildEnabled: ~
   replicaFileSyncHttpClientTimeout: ~
+
+defaultBackupStore:
+  backupTarget: nfs://192.168.1.96:/longhorn-backup
+  backupTargetCredentialSecret: ~
+  pollInterval: ~
 
 longhornManager:
   log:

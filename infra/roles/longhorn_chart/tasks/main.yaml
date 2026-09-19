@@ -61,6 +61,14 @@
     state: present
     template: "{{ role_path }}/templates/metrics-service.yaml.j2"
 
+- name: Create Longhorn recurring jobs
+  # Tagged so the jobs can be applied without re-running the helm upgrade.
+  tags: longhorn-recurring-jobs
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    src: "{{ role_path }}/files/recurring-jobs.yaml"
+
 - name: Remove default annotation from local-path StorageClass
   kubernetes.core.k8s:
     state: patched
