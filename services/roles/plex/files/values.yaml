@@ -26,6 +26,17 @@ ingress:
         - plex.houli.eu
   tcpPassthrough:
     enabled: true
+
+# A memory request with no limit moves Plex out of the BestEffort QoS class
+# and into Burstable, so the kubelet stops treating it as the first candidate
+# for eviction under node memory pressure. No limit is set on purpose: almost
+# all of the 20 GiB the metrics show is reclaimable page cache from reading
+# media, and a limit sized against that figure would force pointless reclaim.
+# Plex's own footprint (container_memory_rss) sits around 300 MiB.
+resources:
+  requests:
+    memory: 1Gi
+
 nodeSelector:
   node_size: x-large
 podLabels:
