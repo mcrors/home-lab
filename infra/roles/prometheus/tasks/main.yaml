@@ -12,9 +12,9 @@
 - name: Nginx Setup
   import_tasks: nginx.yaml
 
-- name: Copy Docker Compose file
-  copy:
-    src: docker-compose.yaml
+- name: Render Docker Compose file
+  template:
+    src: docker-compose.yaml.j2
     dest: "{{ compose_file_dir }}/docker-compose.yaml"
 
 - name: Run Docker Compose

@@ -14,3 +14,15 @@ prometheus_lvs:
   - { name: "prometheus", size: "200G", mount: "/mnt/prometheus" }
   - { name: "nginx", size: "512M", mount: "/mnt/nginx" }
 
+# Retention is a command-line flag only. It has no equivalent in
+# prometheus.yml, so it is set in the compose template.
+#
+# The TSDB grows at about 0.51 GiB/day at the September 2026 scrape rate, so
+# 90d costs roughly 46 GiB. The size cap is a backstop: whichever limit trips
+# first wins, so adding scrape targets cannot fill the 200G LV and wedge
+# Prometheus.
+#
+# Prometheus parses the size flag in base-2 and reports it back as GiB, so
+# write the unit as GiB here to match what the running process shows.
+prometheus_retention_time: 90d
+prometheus_retention_size: 120GiB

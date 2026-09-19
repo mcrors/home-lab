@@ -4,6 +4,17 @@ services:
   prometheus:
     image: prom/prometheus:v3.5.0
     container_name: prometheus
+    # A compose `command` replaces the image CMD, so the five flags the
+    # prom/prometheus image sets by default are restated here. Dropping any of
+    # them starts Prometheus with no scrape config or an empty database.
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=console_libraries
+      - --web.console.templates=consoles
+      - --web.listen-address=0.0.0.0:9090
+      - --storage.tsdb.retention.time={{ prometheus_retention_time }}
+      - --storage.tsdb.retention.size={{ prometheus_retention_size }}
     volumes:
       - /mnt/prometheus/data:/prometheus
       - /mnt/prometheus/config:/etc/prometheus
