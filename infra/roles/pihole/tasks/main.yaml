@@ -36,7 +36,7 @@
     state: absent
     update_repo_cache: true
 
-- name: Install/Upgrade longhorn with values.yaml
+- name: Install/Upgrade pihole with values.yaml
   kubernetes.core.helm:
     kubeconfig: "{{ kubeconfig_path }}"
     name: pihole

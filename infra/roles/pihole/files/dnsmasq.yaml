@@ -23,7 +23,7 @@ dnsmasq:
     - address=/plex.home/192.168.1.250
     - address=/paperless.houli.eu/192.168.1.250
     - address=/authentik.houli.eu/192.168.1.250
-    - address=/home.houli.eu/192.168.1.250
+    - address=/homepage.houli.eu/192.168.1.250
 
   # -- Dnsmasq reads the /etc/hosts file to resolve ips. You can add additional entries if you like
   additionalHostsEntries:
