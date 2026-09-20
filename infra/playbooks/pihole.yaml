@@ -1,9 +1,14 @@
+---
 
 - name: Install pihole into k3s cluster
   hosts: localhost
+  connection: local
   gather_facts: false
   become: false
   roles:
     - pihole
+  vars:
+    ansible_python_interpreter: "{{ ansible_playbook_python }}"
   vars_files:
-      - ../vars/main.yaml
+    - ../vars/main.yaml
+  tags: pihole

@@ -11,6 +11,10 @@
   tags:
     - longhorn
 
+- import_playbook: "{{ playbook_dir }}/playbooks/pihole.yaml"
+  tags:
+    - pihole
+
 - import_playbook: "{{ playbook_dir }}/playbooks/observability.yaml"
   tags:
     - observability
