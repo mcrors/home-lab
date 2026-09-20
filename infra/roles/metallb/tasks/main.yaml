@@ -58,3 +58,4 @@
 
 - name: Smoke Test
   include_tasks: smoke_test.yaml
+  when: metallb_smoke_test
