@@ -6,6 +6,11 @@ systemd_dir: /etc/systemd/system
 networkmanager_connection_name: ansible-managed
 gateway: 192.168.1.1
 pihole_dns_ip: 192.168.1.15
+# Traefik fronts every ingress, and .250 is written into the dnsmasq records
+# the pihole role serves. MetalLB holds it in reserved-pool, which hands out an
+# address only to a service that names it, so this value reaches Traefik through
+# the loadBalancerIPs annotation in k3s_config/templates.
+traefik_lb_ip: 192.168.1.250
 k3s_pihole_dns_ip: 192.168.1.252
 
 # k3 vars

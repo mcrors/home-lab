@@ -7,7 +7,7 @@ metallb_wait_timeout: 300
 
 # Address map for 192.168.1.250-254:
 #
-#   .250  Traefik     reserved (also hardcoded in k3s_config/files/traefik-helm-chart-config.yaml)
+#   .250  Traefik     reserved (traefik_lb_ip in infra/vars/main.yaml)
 #   .251  Pi-hole 1   reserved
 #   .252  Pi-hole 2   reserved
 #   .253  unused      auto-assign
