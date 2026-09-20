@@ -21,7 +21,7 @@
     kubeconfig: "{{ kubeconfig_path }}"
     name: "{{ metallb_release_name }}"
     chart_ref: metallb/metallb
-    chart_version: "{{ metallb_chart_version | default(omit) }}"
+    chart_version: "{{ metallb_chart_version | default(omit, true) }}"
     release_namespace: "{{ metallb_namespace }}"
     values_files:
       - "{{ metallb_values_file }}"
@@ -29,7 +29,7 @@
     wait: true
     wait_timeout: "{{ metallb_wait_timeout }}s"
 
-- name: Apply IPAddressPool
+- name: Apply IPAddressPools
   kubernetes.core.k8s:
     kubeconfig: "{{ kubeconfig_path }}"
     state: present
@@ -37,10 +37,14 @@
       apiVersion: metallb.io/v1beta1
       kind: IPAddressPool
       metadata:
-        name: "{{ metallb_pool_name }}"
+        name: "{{ item.name }}"
         namespace: "{{ metallb_namespace }}"
       spec:
-        addresses: "{{ metallb_pool_addresses }}"
+        addresses: "{{ item.addresses }}"
+        autoAssign: "{{ item.auto_assign }}"
+  loop: "{{ metallb_pools }}"
+  loop_control:
+    label: "{{ item.name }}"
 
 - name: Apply L2Advertisement
   kubernetes.core.k8s:
@@ -53,8 +57,7 @@
         name: "{{ metallb_l2adv_name }}"
         namespace: "{{ metallb_namespace }}"
       spec:
-        ipAddressPools:
-          - "{{ metallb_pool_name }}"
+        ipAddressPools: "{{ metallb_pools | map(attribute='name') | list }}"
 
 - name: Smoke Test
   include_tasks: smoke_test.yaml

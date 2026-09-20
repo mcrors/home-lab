@@ -1,11 +1,37 @@
 # metallb/defaults/main.yml
 metallb_namespace: metallb-system
 metallb_release_name: metallb
-metallb_chart_version: ""
+metallb_chart_version: "0.16.1"
 metallb_values_file: "{{ role_path }}/files/values.yaml"
 metallb_wait_timeout: 300
-metallb_pool_name: default-pool
-metallb_pool_addresses:
-  - 192.168.1.250-192.168.1.254
+
+# Address map for 192.168.1.250-254:
+#
+#   .250  Traefik     reserved (also hardcoded in k3s_config/files/traefik-helm-chart-config.yaml)
+#   .251  Pi-hole 1   reserved
+#   .252  Pi-hole 2   reserved
+#   .253  unused      auto-assign
+#   .254  unused      auto-assign
+#
+# MetalLB gives an address from a pool with autoAssign false only to a service
+# that names that address in its metallb.universe.tf/loadBalancerIPs annotation.
+# A service that asks for any free address draws from default-pool.
+#
+# MetalLB's validating webhook rejects any pool whose range overlaps another
+# pool, so these two ranges can never intersect, even for one apply. Changing
+# the split on a running cluster therefore drops an address out of every pool
+# for as long as it takes the second apply to land, and MetalLB withdraws that
+# address from its service in the gap. Shrink the pool that keeps an in-use
+# address last, or take the outage knowingly.
+metallb_pools:
+  - name: reserved-pool
+    auto_assign: false
+    addresses:
+      - 192.168.1.250-192.168.1.252
+  - name: default-pool
+    auto_assign: true
+    addresses:
+      - 192.168.1.253-192.168.1.254
+
 metallb_l2adv_name: default-l2adv
 metallb_smoke_test: true
