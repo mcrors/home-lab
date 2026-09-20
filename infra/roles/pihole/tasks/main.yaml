@@ -6,7 +6,7 @@
     state: present
     definition:
       apiVersion: v1
-      kind: namespace
+      kind: Namespace
       metadata:
         name: "{{ pihole_namespace }}"
 
@@ -36,10 +36,13 @@
     state: absent
     update_repo_cache: true
 
-- name: Install/Upgrade pihole with values.yaml
+# Both releases read the same three values files, so blocklists, custom DNS
+# records and host entries are defined once. `values` is merged over them by
+# Helm and carries only what distinguishes one release from the other.
+- name: Install/Upgrade pihole releases
   kubernetes.core.helm:
     kubeconfig: "{{ kubeconfig_path }}"
-    name: pihole
+    name: "{{ item.name }}"
     chart_ref: mojo2600/pihole
     chart_version: "{{ chart_version }}"
     release_namespace: "{{ pihole_namespace }}"
@@ -48,8 +51,24 @@
     values_files:
       - "{{ role_path }}/files/values.yaml"
       - "{{ role_path }}/files/dnsmasq.yaml"
+      - "{{ role_path }}/files/adlist.yaml"
     values:
       serviceDns:
-        loadBalancerIP: "{{ k3s_pihole_dns_ip }}"
+        loadBalancerIP: "{{ item.dns_ip }}"
         annotations:
-          metallb.universe.tf/loadBalancerIPs: "{{ k3s_pihole_dns_ip }}"
+          metallb.universe.tf/loadBalancerIPs: "{{ item.dns_ip }}"
+      antiaff:
+        enabled: true
+        strict: true
+        avoidRelease: "{{ item.avoid_release }}"
+      virtualHost: "{{ item.host }}"
+      ingress:
+        hosts:
+          - "{{ item.host }}"
+        tls:
+          - secretName: houli-eu-wildcard
+            hosts:
+              - "{{ item.host }}"
+  loop: "{{ pihole_instances }}"
+  loop_control:
+    label: "{{ item.name }}"

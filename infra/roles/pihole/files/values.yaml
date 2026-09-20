@@ -10,7 +10,12 @@ serviceDns:
   mixedService: true
   type: LoadBalancer
   port: 53
-  externalTrafficPolicy: Cluster
+  # Cluster would rewrite every query's source address to the receiving node, so
+  # Pi-hole would attribute all traffic to a handful of node addresses and the
+  # per-client views would be empty. Local costs nothing here: each release has
+  # one pod and its own address, and MetalLB announces an address only from a
+  # node holding a ready endpoint for it.
+  externalTrafficPolicy: Local
 
 serviceDhcp:
   enabled: false
@@ -23,8 +28,9 @@ serviceWeb:
     enabled: false  # Traefik handles TLS termination, no need for HTTPS on the pod itself
   type: ClusterIP
 
-virtualHost: pihole.houli.eu
-
+# virtualHost, ingress.hosts and ingress.tls name a single release and are set
+# per instance in tasks/main.yaml. Each release serves its own hostname so the
+# dashboard you are looking at is the instance whose query log you are reading.
 ingress:
   enabled: true
   ingressClassName: traefik
@@ -33,12 +39,6 @@ ingress:
     traefik.ingress.kubernetes.io/router.tls: "true"
   path: /
   pathType: Prefix
-  hosts:
-    - pihole.houli.eu
-  tls:
-    - secretName: houli-eu-wildcard
-      hosts:
-        - pihole.houli.eu
 
 probes:
   liveness:
@@ -70,9 +70,15 @@ resources:
     cpu: 50m
     memory: 128Mi
 
+# Each release provisions its own claim, named after the release. storageClass is
+# explicit because both local-path and longhorn are marked default on this
+# cluster, so an unset class picks one arbitrarily.
 persistentVolumeClaim:
-  enabled: false
-  existingClaim: "pihole-data"
+  enabled: true
+  storageClass: longhorn
+  accessModes:
+    - ReadWriteOnce
+  size: 4Gi
 
 nodeSelector:
   node_type: pi

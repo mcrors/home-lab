@@ -1,2 +1,19 @@
 pihole_namespace: pihole
 chart_version: 2.35.0
+
+# Two independent releases rather than one Deployment with several replicas.
+# Pi-hole keeps its query log, gravity database and web sessions in SQLite, which
+# several pods cannot share. See docs/adr/0003-pihole-as-two-helm-releases.md.
+#
+# avoid_release names the other release. The chart turns that into a required
+# anti-affinity rule on the `release` label, keeping the two pods on separate
+# nodes. Everything else the releases need is identical and lives in files/.
+pihole_instances:
+  - name: pihole-1
+    dns_ip: "{{ k3s_pihole_1_dns_ip }}"
+    host: pihole-1.houli.eu
+    avoid_release: pihole-2
+  - name: pihole-2
+    dns_ip: "{{ k3s_pihole_2_dns_ip }}"
+    host: pihole-2.houli.eu
+    avoid_release: pihole-1

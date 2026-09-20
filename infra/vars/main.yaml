@@ -11,7 +11,11 @@ pihole_dns_ip: 192.168.1.15
 # address only to a service that names it, so this value reaches Traefik through
 # the loadBalancerIPs annotation in k3s_config/templates.
 traefik_lb_ip: 192.168.1.250
-k3s_pihole_dns_ip: 192.168.1.252
+# Pi-hole runs as two independent Helm releases, one per address, so a client
+# fails over between them through its own secondary DNS setting rather than
+# waiting for MetalLB to move one address. See docs/adr/0003.
+k3s_pihole_1_dns_ip: 192.168.1.251
+k3s_pihole_2_dns_ip: 192.168.1.252
 
 # k3 vars
 k3s_version: v1.32.13+k3s1
