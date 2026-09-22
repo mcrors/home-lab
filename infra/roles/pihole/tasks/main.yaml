@@ -63,46 +63,9 @@
     state: absent
     update_repo_cache: true
 
-# Both releases read the same three values files, so blocklists, custom DNS
-# records and host entries are defined once. `values` is merged over them by
-# Helm and carries only what distinguishes one release from the other.
-- name: Install/Upgrade pihole releases
-  kubernetes.core.helm:
-    kubeconfig: "{{ kubeconfig_path }}"
-    name: "{{ item.name }}"
-    chart_ref: mojo2600/pihole
-    chart_version: "{{ chart_version }}"
-    release_namespace: "{{ pihole_namespace }}"
-    create_namespace: false
-    wait: true
-    values_files:
-      - "{{ role_path }}/files/values.yaml"
-      - "{{ role_path }}/files/dnsmasq.yaml"
-      - "{{ role_path }}/files/adlist.yaml"
-    values:
-      # The address is requested through the annotation alone. MetalLB refuses a
-      # service carrying both the annotation and spec.loadBalancerIP, and the
-      # chart sets that field whenever serviceDns.loadBalancerIP is given, so
-      # setting both leaves the service pending with AllocationFailed.
-      # spec.loadBalancerIP is deprecated in Kubernetes, so the annotation is the
-      # one to keep. Traefik requests .250 the same way.
-      serviceDns:
-        annotations:
-          metallb.universe.tf/loadBalancerIPs: "{{ item.dns_ip }}"
-      antiaff:
-        enabled: true
-        strict: true
-        avoidRelease: "{{ item.avoid_release }}"
-      persistentVolumeClaim:
-        existingClaim: "{{ item.name }}-data"
-      virtualHost: "{{ item.host }}"
-      ingress:
-        hosts:
-          - "{{ item.host }}"
-        tls:
-          - secretName: houli-eu-wildcard
-            hosts:
-              - "{{ item.host }}"
+- name: Install and verify each pihole release
+  ansible.builtin.include_tasks: instance.yaml
   loop: "{{ pihole_instances }}"
   loop_control:
-    label: "{{ item.name }}"
+    loop_var: instance
+    label: "{{ instance.name }}"

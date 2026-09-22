@@ -1,0 +1,116 @@
+---
+
+# Everything one release needs, run to completion before the next one starts.
+# Deploying both in parallel would risk taking DNS down twice at once after
+# cutover, and the verify step below is what makes the ordering meaningful.
+
+# Both releases read the same three values files, so blocklists, custom DNS
+# records and host entries are defined once. `values` is merged over them by
+# Helm and carries only what distinguishes one release from the other.
+- name: "Install/Upgrade {{ instance.name }}"
+  kubernetes.core.helm:
+    kubeconfig: "{{ kubeconfig_path }}"
+    name: "{{ instance.name }}"
+    chart_ref: mojo2600/pihole
+    chart_version: "{{ chart_version }}"
+    release_namespace: "{{ pihole_namespace }}"
+    create_namespace: false
+    wait: true
+    values_files:
+      - "{{ role_path }}/files/values.yaml"
+      - "{{ role_path }}/files/dnsmasq.yaml"
+      - "{{ role_path }}/files/adlist.yaml"
+    values:
+      # The address is requested through the annotation alone. MetalLB refuses a
+      # service carrying both the annotation and spec.loadBalancerIP, and the
+      # chart sets that field whenever serviceDns.loadBalancerIP is given, so
+      # setting both leaves the service pending with AllocationFailed.
+      # spec.loadBalancerIP is deprecated in Kubernetes, so the annotation is the
+      # one to keep. Traefik requests .250 the same way.
+      serviceDns:
+        annotations:
+          metallb.universe.tf/loadBalancerIPs: "{{ instance.dns_ip }}"
+      antiaff:
+        enabled: true
+        strict: true
+        avoidRelease: "{{ instance.avoid_release }}"
+      persistentVolumeClaim:
+        existingClaim: "{{ instance.name }}-data"
+      virtualHost: "{{ instance.host }}"
+      ingress:
+        hosts:
+          - "{{ instance.host }}"
+        tls:
+          - secretName: houli-eu-wildcard
+            hosts:
+              - "{{ instance.host }}"
+
+- name: "Find the {{ instance.name }} pod"
+  kubernetes.core.k8s_info:
+    kubeconfig: "{{ kubeconfig_path }}"
+    kind: Pod
+    namespace: "{{ pihole_namespace }}"
+    label_selectors:
+      - "release={{ instance.name }}"
+    field_selectors:
+      - status.phase=Running
+  register: pihole_pod
+
+- name: "Assert exactly one {{ instance.name }} pod is running"
+  ansible.builtin.assert:
+    that: pihole_pod.resources | length == 1
+    fail_msg: >-
+      Expected one running pod for {{ instance.name }},
+      found {{ pihole_pod.resources | length }}.
+
+# Pi-hole seeds the adlist table from the mounted ConfigMap on first boot, then
+# downloads the lists once. It never downloads again on its own, so an edit to
+# adlist.yaml rolls the pod and updates the table while leaving the blocking
+# unchanged. Running gravity here is also what stops a half-finished first-boot
+# build going unnoticed: a pod whose gravity table is empty still answers DNS and
+# still passes both probes, it just blocks nothing.
+- name: "Rebuild gravity on {{ instance.name }}"
+  kubernetes.core.k8s_exec:
+    kubeconfig: "{{ kubeconfig_path }}"
+    namespace: "{{ pihole_namespace }}"
+    pod: "{{ pihole_pod.resources[0].metadata.name }}"
+    container: pihole
+    command: pihole -g
+  register: pihole_gravity
+  changed_when: true
+  when: pihole_update_gravity
+
+# FTL holds the blocklist in memory, so a rebuilt gravity table on disk changes
+# nothing until FTL is told to re-read it. This also flushes its DNS cache.
+- name: "Reload lists and flush the cache on {{ instance.name }}"
+  kubernetes.core.k8s_exec:
+    kubeconfig: "{{ kubeconfig_path }}"
+    namespace: "{{ pihole_namespace }}"
+    pod: "{{ pihole_pod.resources[0].metadata.name }}"
+    container: pihole
+    command: pihole reloaddns
+  changed_when: true
+  when: pihole_update_gravity
+
+# Resolution alone is not evidence the instance is working. pihole-2 resolved
+# every name correctly for half an hour while its gravity table was empty, and
+# both probes passed throughout. Blocking has to be asserted separately.
+- name: "Verify {{ instance.name }} resolves a local record"
+  ansible.builtin.command:
+    cmd: "dig +short +time=3 +tries=1 @{{ instance.dns_ip }} {{ pihole_verify_name }}"
+  register: pihole_verify_resolve
+  changed_when: false
+  until: pihole_verify_resolve.stdout | trim == pihole_verify_expect
+  retries: 12
+  delay: 5
+  failed_when: pihole_verify_resolve.stdout | trim != pihole_verify_expect
+
+- name: "Verify {{ instance.name }} blocks a known ad domain"
+  ansible.builtin.command:
+    cmd: "dig +short +time=3 +tries=1 @{{ instance.dns_ip }} {{ pihole_verify_blocked }}"
+  register: pihole_verify_block
+  changed_when: false
+  until: pihole_verify_block.stdout | trim == "0.0.0.0"
+  retries: 12
+  delay: 5
+  failed_when: pihole_verify_block.stdout | trim != "0.0.0.0"

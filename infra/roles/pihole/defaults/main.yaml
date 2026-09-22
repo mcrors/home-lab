@@ -18,3 +18,15 @@ pihole_instances:
     dns_ip: "{{ k3s_pihole_2_dns_ip }}"
     host: pihole-2.houli.eu
     avoid_release: pihole-1
+
+# Gravity is rebuilt on every run. Pi-hole only downloads the lists once, on
+# first boot, so without this an adlist.yaml edit changes nothing that blocks.
+# Set false with -e when changing something unrelated and the several minutes
+# per instance are not worth spending.
+pihole_update_gravity: true
+
+# What the per-instance verification asserts before the play moves on. The first
+# proves the custom DNS entries loaded, the second proves gravity is live.
+pihole_verify_name: grafana.houli.eu
+pihole_verify_expect: "{{ traefik_lb_ip }}"
+pihole_verify_blocked: doubleclick.net

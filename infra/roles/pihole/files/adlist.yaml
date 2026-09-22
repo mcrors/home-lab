@@ -28,8 +28,7 @@ adlists:
     - https://urlhaus.abuse.ch/downloads/hostfile/
     - https://lists.cyberhost.uk/malware.txt
     - https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
-    - https://easylist.to/easylist/easylist.txt
-    - https://github.com/blocklistproject/Lists/blob/master/youtube.txt
+    - https://raw.githubusercontent.com/blocklistproject/Lists/master/youtube.txt
 
 whitelist:
   - 0.client-channel.google.com
