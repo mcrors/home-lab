@@ -70,15 +70,12 @@ resources:
     cpu: 50m
     memory: 128Mi
 
-# Each release provisions its own claim, named after the release. storageClass is
-# explicit because both local-path and longhorn are marked default on this
-# cluster, so an unset class picks one arbitrarily.
+# enabled makes the chart mount a claim rather than an emptyDir. existingClaim is
+# set per instance in tasks/main.yaml, which also creates the claim, so the
+# chart's own size, storageClass and accessModes keys would be ignored and are
+# deliberately absent. The claim spec lives in the role.
 persistentVolumeClaim:
   enabled: true
-  storageClass: longhorn
-  accessModes:
-    - ReadWriteOnce
-  size: 4Gi
 
 nodeSelector:
   node_type: pi

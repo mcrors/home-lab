@@ -1,5 +1,6 @@
 pihole_namespace: pihole
 chart_version: 2.35.0
+pihole_pvc_size: 4Gi
 
 # Two independent releases rather than one Deployment with several replicas.
 # Pi-hole keeps its query log, gravity database and web sessions in SQLite, which

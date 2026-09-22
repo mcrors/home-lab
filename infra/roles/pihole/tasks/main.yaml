@@ -23,6 +23,33 @@
       stringData:
         password: "{{ vault_pihole_admin_password }}"
 
+# The claims are created here rather than by the chart so `helm uninstall` cannot
+# take them with it. A chart-managed claim is deleted on uninstall, and because
+# the longhorn class retains, its volume is left Released with a claimRef naming
+# the deleted claim. A reinstall does not rebind that volume, it provisions an
+# empty one. Owning the claim here means a release can be removed and reinstalled
+# onto the same data. Same pattern as the grafana, ntfy and signal_bridge roles.
+- name: Ensure pihole data claims exist
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_path }}"
+    state: present
+    definition:
+      apiVersion: v1
+      kind: PersistentVolumeClaim
+      metadata:
+        name: "{{ item.name }}-data"
+        namespace: "{{ pihole_namespace }}"
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        storageClassName: longhorn
+        resources:
+          requests:
+            storage: "{{ pihole_pvc_size }}"
+  loop: "{{ pihole_instances }}"
+  loop_control:
+    label: "{{ item.name }}-data"
+
 - name: Add pihole Helm repo
   kubernetes.core.helm_repository:
     name: mojo2600
@@ -61,6 +88,8 @@
         enabled: true
         strict: true
         avoidRelease: "{{ item.avoid_release }}"
+      persistentVolumeClaim:
+        existingClaim: "{{ item.name }}-data"
       virtualHost: "{{ item.host }}"
       ingress:
         hosts:
