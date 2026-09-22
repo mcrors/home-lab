@@ -63,6 +63,35 @@
       Expected one running pod for {{ instance.name }},
       found {{ pihole_pod.resources | length }}.
 
+# The mounted ConfigMaps are always current, and the database behind them is not,
+# so the database has to be reconciled against the files before gravity runs.
+# pihole_reconcile_check_mode renders the same comparison without applying it.
+- name: "Copy the list reconcile script into {{ instance.name }}"
+  kubernetes.core.k8s_cp:
+    kubeconfig: "{{ kubeconfig_path }}"
+    namespace: "{{ pihole_namespace }}"
+    pod: "{{ pihole_pod.resources[0].metadata.name }}"
+    container: pihole
+    remote_path: /tmp/reconcile-lists.sh
+    local_path: "{{ role_path }}/files/reconcile-lists.sh"
+    state: to_pod
+
+- name: "Reconcile the lists on {{ instance.name }}"
+  kubernetes.core.k8s_exec:
+    kubeconfig: "{{ kubeconfig_path }}"
+    namespace: "{{ pihole_namespace }}"
+    pod: "{{ pihole_pod.resources[0].metadata.name }}"
+    container: pihole
+    command: >-
+      sh /tmp/reconcile-lists.sh
+      {{ '--dry-run' if pihole_reconcile_check_mode else '' }}
+  register: pihole_reconcile
+  changed_when: "'reconcile: applied' in pihole_reconcile.stdout"
+
+- name: "Show what reconcile did on {{ instance.name }}"
+  ansible.builtin.debug:
+    msg: "{{ pihole_reconcile.stdout_lines }}"
+
 # Pi-hole seeds the adlist table from the mounted ConfigMap on first boot, then
 # downloads the lists once. It never downloads again on its own, so an edit to
 # adlist.yaml rolls the pod and updates the table while leaving the blocking

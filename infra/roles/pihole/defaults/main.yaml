@@ -30,3 +30,6 @@ pihole_update_gravity: true
 pihole_verify_name: grafana.houli.eu
 pihole_verify_expect: "{{ traefik_lb_ip }}"
 pihole_verify_blocked: doubleclick.net
+
+# Set true to have the reconcile print the differences without applying them.
+pihole_reconcile_check_mode: false
