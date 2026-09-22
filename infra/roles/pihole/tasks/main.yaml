@@ -80,8 +80,13 @@
       - "{{ role_path }}/files/dnsmasq.yaml"
       - "{{ role_path }}/files/adlist.yaml"
     values:
+      # The address is requested through the annotation alone. MetalLB refuses a
+      # service carrying both the annotation and spec.loadBalancerIP, and the
+      # chart sets that field whenever serviceDns.loadBalancerIP is given, so
+      # setting both leaves the service pending with AllocationFailed.
+      # spec.loadBalancerIP is deprecated in Kubernetes, so the annotation is the
+      # one to keep. Traefik requests .250 the same way.
       serviceDns:
-        loadBalancerIP: "{{ item.dns_ip }}"
         annotations:
           metallb.universe.tf/loadBalancerIPs: "{{ item.dns_ip }}"
       antiaff:
