@@ -1,6 +1,10 @@
 ---
 
 - name: Deploy coredns update to use pihole as upstream
+  # Tagged for the same reason as the IngressRoute below: without it the
+  # smallest runnable unit is the whole play, which also reapplies metallb,
+  # cert_manager and the Traefik HelmChartConfig.
+  tags: coredns
   kubernetes.core.k8s:
     kubeconfig: "{{ kubeconfig_path }}"
     state: present
@@ -12,9 +16,9 @@
         namespace: kube-system
       data:
         houli.override: |
-          forward houli.eu {{ pihole_dns_ip }}
+          forward houli.eu {{ k3s_pihole_1_dns_ip }} {{ k3s_pihole_2_dns_ip }}
         home.override: |
-          forward home {{ pihole_dns_ip }}
+          forward home {{ k3s_pihole_1_dns_ip }} {{ k3s_pihole_2_dns_ip }}
 
 - name: Scale CoreDNS to 2 replicas
   kubernetes.core.k8s:
