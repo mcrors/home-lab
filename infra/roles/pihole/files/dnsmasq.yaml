@@ -38,17 +38,28 @@ dnsmasq:
     - address=/homepage.houli.eu/192.168.1.250
 
   # -- Dnsmasq reads the /etc/hosts file to resolve ips. You can add additional entries if you like
+  # These must match the static_ip values in infra/inventory.yaml, which
+  # set_static_ip writes onto each node. The old values here predated that
+  # migration and pointed at addresses nothing is on any more.
+  #
+  # lib-pi-04 and lib-pi-06 are the exceptions: set_static_ip has not run on
+  # either, so they are still on their original addresses and these entries
+  # match where they actually are, not their inventory static_ip (.237 and
+  # .239). Update them when those nodes move.
+  #
+  # lib-hp-01 is the NAS, not an Ansible-managed node, so it has no static_ip
+  # entry in the inventory.
   additionalHostsEntries:
     - 192.168.1.96    lib-hp-01.home
-    - 192.168.1.169   lib-nuc-01.home
-    - 192.168.1.152   lib-pi-01.home
-    - 192.168.1.58    lib-pi-02.home
-    - 192.168.1.194   lib-pi-03.home
+    - 192.168.1.242   lib-nuc-01.home
+    - 192.168.1.234   lib-pi-01.home
+    - 192.168.1.235   lib-pi-02.home
+    - 192.168.1.236   lib-pi-03.home
     - 192.168.1.15    lib-pi-04.home
-    - 192.168.1.133   lib-pi-05.home
+    - 192.168.1.238   lib-pi-05.home
     - 192.168.1.226   lib-pi-06.home
-    - 192.168.1.57    lib-potato-01.home
-    - 192.168.1.156   lib-potato-02.home
-    - 192.168.1.228   lib-potato-03.home
-    - 192.168.1.136   lib-potato-04.home
+    - 192.168.1.230   lib-potato-01.home
+    - 192.168.1.231   lib-potato-02.home
+    - 192.168.1.232   lib-potato-03.home
+    - 192.168.1.233   lib-potato-04.home
 
