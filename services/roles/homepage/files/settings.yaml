@@ -37,11 +37,13 @@ layout:
     Arr:
       style: column
       header: false
-  # Same shape as Media above: no cards directly, three subgroups in a 3-column
-  # grid. Metrics collects, Alerting reports, Platform is what the cluster runs on.
+  # Same shape as Media above: no cards directly, four subgroups in a 4-column
+  # grid. Metrics collects, Alerting reports, Platform is what the cluster runs
+  # on, DNS is the Pi-hole pair. Four columns of two rather than three uneven
+  # ones.
   Infra:
     style: row
-    columns: 3
+    columns: 4
     Metrics:
       style: column
       header: false
@@ -49,6 +51,9 @@ layout:
       style: column
       header: false
     Platform:
+      style: column
+      header: false
+    DNS:
       style: column
       header: false
   # Both flat: no subgroups, so columns is just how many cards sit side by side,
