@@ -8,19 +8,31 @@ dnsmasq:
   # - server=/bar.foo/192.168.178.11
 
   # -- Add custom dns entries to override the dns resolution. All lines will be added to the pihole dnsmasq configuration.
+  # Every hostname the cluster serves needs an entry here. The blackbox
+  # exporter probes from inside the cluster, so it resolves these through
+  # CoreDNS and its probes fail for anything missing. Compare against
+  # `kubectl get ingress -A` plus the Traefik dashboard IngressRoute.
   customDnsEntries:
+    - address=/alertmanager.houli.eu/192.168.1.250
     - address=/blackbox.houli.eu/192.168.1.250
     - address=/grafana.houli.eu/192.168.1.250
     - address=/jenkins.houli.eu/192.168.1.250
+    - address=/ksm.houli.eu/192.168.1.250
     - address=/longhorn.houli.eu/192.168.1.250
+    - address=/ntfy.houli.eu/192.168.1.250
     - address=/omv.houli.eu/192.168.1.96
+    - address=/pihole-1.houli.eu/192.168.1.250
+    - address=/pihole-2.houli.eu/192.168.1.250
     - address=/prometheus.houli.eu/192.168.1.226
     - address=/postgres.houli.eu/192.168.1.226
     - address=/prowlarr.houli.eu/192.168.1.250
     - address=/sonarr.houli.eu/192.168.1.250
     - address=/radarr.houli.eu/192.168.1.250
+    - address=/traefik.houli.eu/192.168.1.250
     - address=/transmission.houli.eu/192.168.1.250
+    - address=/uptime.houli.eu/192.168.1.250
     - address=/plex.home/192.168.1.250
+    - address=/plex.houli.eu/192.168.1.250
     - address=/paperless.houli.eu/192.168.1.250
     - address=/authentik.houli.eu/192.168.1.250
     - address=/homepage.houli.eu/192.168.1.250
