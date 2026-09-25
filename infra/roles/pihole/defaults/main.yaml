@@ -11,10 +11,12 @@ pihole_pvc_size: 4Gi
 # nodes. Everything else the releases need is identical and lives in files/.
 pihole_instances:
   - name: pihole-1
+    display_name: Pi-hole 1
     dns_ip: "{{ k3s_pihole_1_dns_ip }}"
     host: pihole-1.houli.eu
     avoid_release: pihole-2
   - name: pihole-2
+    display_name: Pi-hole 2
     dns_ip: "{{ k3s_pihole_2_dns_ip }}"
     host: pihole-2.houli.eu
     avoid_release: pihole-1

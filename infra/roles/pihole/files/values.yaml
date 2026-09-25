@@ -37,6 +37,11 @@ ingress:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     traefik.ingress.kubernetes.io/router.tls: "true"
+    prometheus.io/probe: "true"
+    prometheus.io/probe-path: /admin/login
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: DNS
+    gethomepage.dev/icon: pi-hole
   path: /
   pathType: Prefix
 

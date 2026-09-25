@@ -38,6 +38,11 @@
         existingClaim: "{{ instance.name }}-data"
       virtualHost: "{{ instance.host }}"
       ingress:
+        annotations:
+          gethomepage.dev/name: "{{ instance.display_name }}"
+          gethomepage.dev/description: "DNS and ad blocking on {{ instance.dns_ip }}"
+          gethomepage.dev/pod-selector: "release={{ instance.name }}"
+          gethomepage.dev/href: "https://{{ instance.host }}/admin"
         hosts:
           - "{{ instance.host }}"
         tls:
@@ -84,7 +89,7 @@
     container: pihole
     command: >-
       sh /tmp/reconcile-lists.sh
-      {{ '--dry-run' if pihole_reconcile_check_mode else '' }}
+      {{ '--dry-run' if pihole_reconcile_check_mode | bool else '' }}
   register: pihole_reconcile
   changed_when: "'reconcile: applied' in pihole_reconcile.stdout"
 
@@ -107,7 +112,7 @@
     command: pihole -g
   register: pihole_gravity
   changed_when: true
-  when: pihole_update_gravity
+  when: pihole_update_gravity | bool
 
 # FTL holds the blocklist in memory, so a rebuilt gravity table on disk changes
 # nothing until FTL is told to re-read it. This also flushes its DNS cache.
@@ -119,7 +124,7 @@
     container: pihole
     command: pihole reloaddns
   changed_when: true
-  when: pihole_update_gravity
+  when: pihole_update_gravity | bool
 
 # Resolution alone is not evidence the instance is working. pihole-2 resolved
 # every name correctly for half an hour while its gravity table was empty, and
