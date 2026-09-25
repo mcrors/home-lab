@@ -153,6 +153,10 @@ dig @<new-metallb-ip> doubleclick.net  # should return NXDOMAIN or 0.0.0.0
   this stage — that is expected)
 - Gravity DB is populated and blocklists match the exported config from PIHOLE-02
 
+**Status:** Done. Both instances validated on .251 and .252. Hostnames are
+`pihole-1.houli.eu` and `pihole-2.houli.eu`, since the two keep separate query
+logs and a shared name would hide which you were reading.
+
 ---
 
 ### PIHOLE-06 — Enable automatic gravity updates
@@ -170,6 +174,12 @@ PiHole has this capability built in via the admin UI.
 - Schedule set to weekly
 - Verified that the setting persists across pod restarts (i.e. is stored in the PVC)
 
+**Status:** Done. The image ships a weekly cron at `/etc/crontabs/root`, at a
+random Sunday time per install. The role also rebuilds gravity on every run,
+controlled by `pihole_update_gravity`, because Pi-hole downloads the lists only
+on first boot. The third criterion is not met and does not need to be: the
+crontab is not on the PVC, so the time is re-randomised on each container start.
+
 ---
 
 ### PIHOLE-07 — Cut over the router
@@ -183,16 +193,21 @@ Update the router DNS settings to point at the new PiHole instance in the cluste
 This is the live cutover moment.
 
 **Steps:**
-1. Set primary DNS on router to the new MetalLB IP (from PIHOLE-01)
-2. Set secondary DNS on router to `1.1.1.1` as a fallback
-3. Monitor DNS resolution on devices for a period before decommissioning the old instance
+1. Set primary DNS on router to 192.168.1.251 and secondary to 192.168.1.252
+2. Monitor DNS resolution on devices for a period before decommissioning the old instance
 
 **Acceptance Criteria:**
-- Router primary DNS updated
-- Router secondary DNS set to `1.1.1.1`
+- Router primary and secondary DNS point at the two instances
 - DNS resolution working on multiple devices
-- `pihole.houli.eu` now resolves via the new cluster instance
 - No reported DNS failures after 24 hours
+
+**Status:** Not started. Also blocked by PIHOLE-10.
+
+`1.1.1.1` as a secondary is dropped. Routers and clients do not treat a secondary
+as failover-only, so a share of traffic would bypass blocking permanently. The
+two instances are the redundancy.
+
+The CoreDNS half is already done, commit `60db972`, and soaking.
 
 ---
 
@@ -209,6 +224,9 @@ that set up the docker-compose version of PiHole on lib-pi-06 should be deleted,
 along with its playbook import.
 
 **Acceptance Criteria:**
+- The old instance's local DNS list is diffed against `files/dnsmasq.yaml` first.
+  Six records existed only on that box and surfaced by accident; assume more.
+- `pihole_dns_ip` removed from `infra/vars/main.yaml` once nothing references it
 - Old PiHole service stopped on lib-pi-04
 - Pi either repurposed or documented as available
 - Legacy Ansible role for docker-compose PiHole removed from `home-lab/docker-server`
@@ -243,6 +261,34 @@ Metrics reachable from lib-pi-06 on <pihole-metallb-ip>:9617
 Prometheus successfully scraping the endpoint (visible in Prometheus targets UI)
 Grafana dashboard showing data — query rate, blocked percentage, top blocked domains
 
+**Status:** Not started. Availability probing is already covered separately, via
+`prometheus.io/probe` on both ingresses. The chart ships `monitoring.sidecar`
+using the same exporter, and there are two instances, so two targets.
+
+---
+
+### PIHOLE-10 — Point the nodes at the gateway for DNS
+
+**Type**: Infrastructure
+**Priority**: High
+**Blocked by**: PIHOLE-05
+
+**Description**:
+`set_static_ip` writes `pihole_dns_ip` as every node's nameserver. Pointing that
+at an in-cluster address means a node needs DNS to pull the image that provides
+DNS, which a cold start cannot satisfy. The gateway resolves independently of the
+cluster, and nodes need neither ad blocking nor `*.houli.eu`.
+
+**Acceptance Criteria**:
+- `static-netplan.yaml.j2` uses `gateway` instead of `pihole_dns_ip`
+- Applied to one node first, confirmed Ready and resolving, then the rest
+- The cluster survives a node reboot with the new resolver
+
+**Note**: `common.yaml`, tagged `static_ip`, against `all_nodes`. The handlers run
+`netplan apply` and restart networkd, resolved and dhcpcd on all nine nodes.
+
+**Status**: Not started.
+
 ## Summary
 
 | Task | Type | Blocked by |
@@ -253,6 +299,7 @@ Grafana dashboard showing data — query rate, blocked percentage, top blocked d
 | PIHOLE-04 | Implement K8s resources | PIHOLE-03, Longhorn |
 | PIHOLE-05 | Deploy and validate | PIHOLE-04 |
 | PIHOLE-06 | Enable gravity auto-updates | PIHOLE-05 |
-| PIHOLE-07 | Router cutover | PIHOLE-05, PIHOLE-06 |
+| PIHOLE-10 | Point nodes at the gateway | PIHOLE-05 |
+| PIHOLE-07 | Router cutover | PIHOLE-05, PIHOLE-06, PIHOLE-10 |
 | PIHOLE-08 | Decommission old Pi + remove legacy role | PIHOLE-07 + stabilisation |
 | PIHOLE-09 | Prometheus metrics + Grafana dashboard | PIHOLE-05 |
