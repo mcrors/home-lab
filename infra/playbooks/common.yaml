@@ -43,6 +43,10 @@
   tags:
     - storage
 
+# Applying netplan restarts k3s, which takes a control plane node out of the
+# `kubernetes` service endpoints for two to three minutes. Run this against one
+# control plane node at a time and wait for all three endpoints to come back
+# before the next, or a second node leaves etcd without quorum.
 - name: Set Static IP
   hosts: all_nodes
   become: true

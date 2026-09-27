@@ -18,7 +18,24 @@
     state: restarted
     enabled: true
 
+# Split in two because `netplan apply` was unreliable as a single fire-and-forget
+# task. `async: 1, poll: 0` capped it at one second, which is not long enough to
+# regenerate the config and reload, and `poll: 0` means Ansible never learns the
+# outcome. On lib-potato-03 it bounced the interface hard enough to restart k3s
+# and still left DNS=192.168.1.15 in /run/systemd/network, silently.
+#
+# `netplan generate` only rewrites the runtime config. It does not touch the live
+# network, so it cannot drop Ansible's own connection and can be run normally and
+# checked. By the time apply runs, the config it activates is already correct.
+- name: Generate netplan config
+  ansible.builtin.command: netplan generate
+  changed_when: true
+  notify: Apply netplan
+
+# Still fire-and-forget, because applying can drop the connection this task is
+# running over. The timeout is generous so it is not killed part way through.
 - name: Apply netplan
-  command: netplan apply
-  async: 1
+  ansible.builtin.command: netplan apply
+  async: 45
   poll: 0
+  changed_when: true
