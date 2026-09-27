@@ -267,25 +267,44 @@ using the same exporter, and there are two instances, so two targets.
 
 ---
 
-### PIHOLE-10 — Point the nodes at the gateway for DNS
+### PIHOLE-10 — Move the nodes off the old DNS address
 
 **Type**: Infrastructure
 **Priority**: High
 **Blocked by**: PIHOLE-05
 
 **Description**:
-`set_static_ip` writes `pihole_dns_ip` as every node's nameserver. Pointing that
-at an in-cluster address means a node needs DNS to pull the image that provides
-DNS, which a cold start cannot satisfy. The gateway resolves independently of the
-cluster, and nodes need neither ad blocking nor `*.houli.eu`.
+`set_static_ip` writes `pihole_dns_ip` as every node's nameserver, which is
+192.168.1.15, the box being decommissioned. The nodes have to point somewhere
+else before it goes away.
+
+They point at the two new instances.
+
+The alternative considered was the gateway, which resolves independently of the
+cluster and would survive a total outage. Rejected: the cluster being down is a
+bigger problem than DNS and is dealt with by hand anyway. A single instance
+failing is covered by the second one, and a node failing raises an alert. Both
+instances down at once means the alerting is down too, in which case the family
+reports it.
+
+Worth knowing rather than planning around: a Pi-hole pod does not reschedule
+when its node dies. The ReadWriteOnce Longhorn volume keeps the VolumeAttachment
+on the dead node and the pod sits Terminating. The redundancy is the second
+instance on its own address, not Kubernetes moving the first.
 
 **Acceptance Criteria**:
-- `static-netplan.yaml.j2` uses `gateway` instead of `pihole_dns_ip`
+- `static-netplan.yaml.j2` lists `k3s_pihole_1_dns_ip` and `k3s_pihole_2_dns_ip`
 - Applied to one node first, confirmed Ready and resolving, then the rest
+- The node resolves public names and can pull an uncached image
 - The cluster survives a node reboot with the new resolver
 
 **Note**: `common.yaml`, tagged `static_ip`, against `all_nodes`. The handlers run
 `netplan apply` and restart networkd, resolved and dhcpcd on all nine nodes.
+
+Do not run this against lib-pi-04 or lib-pi-06. Neither has had `set_static_ip`
+applied, so the play would also move their addresses and take the old Pi-hole or
+Prometheus offline. lib-potato-04 is the right first target: a plain worker, not
+a control plane node, not in the `longhorn` group.
 
 **Status**: Not started.
 
@@ -299,7 +318,7 @@ cluster, and nodes need neither ad blocking nor `*.houli.eu`.
 | PIHOLE-04 | Implement K8s resources | PIHOLE-03, Longhorn |
 | PIHOLE-05 | Deploy and validate | PIHOLE-04 |
 | PIHOLE-06 | Enable gravity auto-updates | PIHOLE-05 |
-| PIHOLE-10 | Point nodes at the gateway | PIHOLE-05 |
+| PIHOLE-10 | Move nodes off the old DNS address | PIHOLE-05 |
 | PIHOLE-07 | Router cutover | PIHOLE-05, PIHOLE-06, PIHOLE-10 |
 | PIHOLE-08 | Decommission old Pi + remove legacy role | PIHOLE-07 + stabilisation |
 | PIHOLE-09 | Prometheus metrics + Grafana dashboard | PIHOLE-05 |

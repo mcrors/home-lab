@@ -10,4 +10,5 @@ network:
           via: {{ gateway }}
       nameservers:
         addresses:
-          - {{ pihole_dns_ip }}
+          - {{ k3s_pihole_1_dns_ip }}
+          - {{ k3s_pihole_2_dns_ip }}
