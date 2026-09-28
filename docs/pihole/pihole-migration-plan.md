@@ -201,7 +201,9 @@ This is the live cutover moment.
 - DNS resolution working on multiple devices
 - No reported DNS failures after 24 hours
 
-**Status:** Not started. Also blocked by PIHOLE-10.
+**Status:** In progress. The router points at .251 and .252 as of 2026-09-28.
+Soaking for 23 hours before PIHOLE-08 starts. A laptop resolves public names,
+the local `houli.eu` records and blocked domains through both instances.
 
 `1.1.1.1` as a secondary is dropped. Routers and clients do not treat a secondary
 as failover-only, so a share of traffic would bypass blocking permanently. The
@@ -306,7 +308,9 @@ applied, so the play would also move their addresses and take the old Pi-hole or
 Prometheus offline. lib-potato-04 is the right first target: a plain worker, not
 a control plane node, not in the `longhorn` group.
 
-**Status**: Not started.
+**Status**: Done. Commit `0826dfb` applied it to all nine k3s nodes and verified
+each resolves through .251 and .252. lib-pi-04 and lib-pi-06 are excluded until
+the decommission, since the play would also move their addresses.
 
 ## Summary
 
