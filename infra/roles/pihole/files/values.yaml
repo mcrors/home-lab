@@ -67,13 +67,23 @@ probes:
     failureThreshold: 10
     timeoutSeconds: 5
 
+# FTL holds about 190Mi it cannot release: 160Mi of anonymous memory in the
+# process and 32Mi of shared memory under /dev/shm for its query history. That
+# floor grew from 11Mi to 150Mi over the five days after the DNS cutover, then
+# flattened. Gravity rebuilds and database maintenance add steps of 40Mi to
+# 70Mi that last several minutes. At a 256Mi limit those steps no longer fit,
+# and both instances were OOMKilled repeatedly on 2026-10-03 and 2026-10-04.
+#
+# The request is set to the floor rather than to the idle footprint. At the
+# previous 128Mi request each pod permanently exceeded its own request, which
+# made it an eviction candidate whenever its node came under memory pressure.
 resources:
   limits:
     cpu: 200m
-    memory: 256Mi
+    memory: 512Mi
   requests:
     cpu: 50m
-    memory: 128Mi
+    memory: 256Mi
 
 # enabled makes the chart mount a claim rather than an emptyDir. existingClaim is
 # set per instance in tasks/main.yaml, which also creates the claim, so the
