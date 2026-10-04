@@ -68,6 +68,27 @@
       Expected one running pod for {{ instance.name }},
       found {{ pihole_pod.resources | length }}.
 
+# FTL passes both probes before it writes cli_pw, so helm's wait and the Running
+# check above do not prove it is ready to authenticate. On 2026-10-04 pihole-2
+# reached Ready at 10:58:51 and cli_pw appeared at 10:59, and the reconcile below
+# failed with "authentication failed". The reconcile reads that file, so wait for
+# the file rather than for the pod. The command always exits 0 so that `until`
+# governs the retries, and the task fails with a readable message if the file
+# never arrives.
+- name: "Wait for FTL to write cli_pw on {{ instance.name }}"
+  kubernetes.core.k8s_exec:
+    kubeconfig: "{{ kubeconfig_path }}"
+    namespace: "{{ pihole_namespace }}"
+    pod: "{{ pihole_pod.resources[0].metadata.name }}"
+    container: pihole
+    command: >-
+      sh -c "test -s /etc/pihole/cli_pw && echo present || echo absent"
+  register: pihole_cli_pw
+  until: "'present' in pihole_cli_pw.stdout"
+  retries: 24
+  delay: 5
+  changed_when: false
+
 # The mounted ConfigMaps are always current, and the database behind them is not,
 # so the database has to be reconciled against the files before gravity runs.
 # pihole_reconcile_check_mode renders the same comparison without applying it.
