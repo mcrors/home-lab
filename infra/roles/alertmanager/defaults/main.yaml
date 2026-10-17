@@ -1,2 +1,2 @@
 alertmanager_namespace: alertmanager
-chart_version: 1.37.0
+chart_version: 2.1.1

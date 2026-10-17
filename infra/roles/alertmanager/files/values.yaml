@@ -6,6 +6,19 @@ resources:
     cpu: 100m
     memory: 128Mi
 
+# Chart 2.x adds a config-reload sidecar so a values change reloads alertmanager in
+# place instead of restarting the pod. The chart ships it with no resources, which
+# would leave an unbounded container on a pi node, so bound it here. The container
+# idles between config changes, and a throttled reload only delays the reload.
+configmapReload:
+  resources:
+    requests:
+      cpu: 5m
+      memory: 16Mi
+    limits:
+      cpu: 50m
+      memory: 64Mi
+
 affinity:
   nodeAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
