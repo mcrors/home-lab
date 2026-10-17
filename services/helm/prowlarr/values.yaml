@@ -87,10 +87,10 @@ securityContext:
 resources:
   requests:
     cpu: 50m
-    memory: 128Mi
+    memory: 200Mi
   limits:
     cpu: 500m
-    memory: 512Mi
+    memory: 270Mi
 
 # Scheduling passthroughs. Leave empty to let the scheduler decide.
 nodeSelector: {}
