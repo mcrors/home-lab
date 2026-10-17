@@ -15,8 +15,18 @@ strategy:
 image:
   registry: quay.io
   repository: prometheus/blackbox-exporter
-  tag: "v0.27.0"
+  tag: "v0.29.0"
   pullPolicy: IfNotPresent
+
+# The chart sets no resources, which left this container unbounded. RSS over the week
+# to 2026-10-17 held between 32.6 and 33.6 MiB, so 42Mi requested leaves headroom above
+# the peak. CPU is deliberately left unset: the container averages 59.8m probing 19
+# targets, so any limit close to that average would throttle it continuously.
+resources:
+  requests:
+    memory: 42Mi
+  limits:
+    memory: 55Mi
 
 ## User and Group to run blackbox-exporter container as
 securityContext:
