@@ -39,7 +39,7 @@ livenessProbe:
 image:
   registry: docker.io
   repository: grafana/grafana
-  tag: "12.2.0-17027759091"
+  tag: "12.4.13"
   pullPolicy: IfNotPresent
 
 securityContext:
@@ -119,10 +119,10 @@ ingress:
 
 resources:
   requests:
-    cpu: 250m
-    memory: 512Mi
+    cpu: 50m
+    memory: 256Mi
   limits:
-    cpu: "1"        # or omit to avoid CPU throttling
+    cpu: "1"
     memory: 1Gi
 
 extraLabels:
